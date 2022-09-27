@@ -1,0 +1,1 @@
+`eden_exercise`.`users`, CONSTRAINT `user_permissions` FOREIGN KEY (`fk_permissions`) REFERENCES `permissions` (`id`)

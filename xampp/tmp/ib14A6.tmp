@@ -1,0 +1,39 @@
+2022-09-26 22:57:34 2a68 Transaction:
+TRANSACTION 8096, ACTIVE 0 sec updating or deleting
+mysql tables in use 1, locked 1
+4 lock struct(s), heap size 312, 2 row lock(s), undo log entries 1
+MySQL thread id 817, OS thread handle 0x2a68, query id 16274 localhost 127.0.0.1 root updating
+UPDATE `users` SET `fk_permissions` = '' WHERE `users`.`id` = 4
+Foreign key constraint fails for table `eden_exercise`.`users`:
+,
+  CONSTRAINT `user_permissions` FOREIGN KEY (`fk_permissions`) REFERENCES `permissions` (`id`)
+Trying to add in child table, in index `user_permissions` tuple:
+DATA TUPLE: 2 fields;
+ 0: len 4; hex 80000000; asc     ;;
+ 1: len 4; hex 80000004; asc     ;;
+
+But in parent table `eden_exercise`.`permissions`, in index `PRIMARY`,
+the closest match we can find is record:
+PHYSICAL RECORD: n_fields 11; compact format; info bits 0
+ 0: len 4; hex 80000001; asc     ;;
+ 1: len 6; hex 000000001a3d; asc      =;;
+ 2: len 7; hex 66000001a903d1; asc f      ;;
+ 3: SQL NULL;
+ 4: len 11; hex 53757065722041646d696e; asc Super Admin;;
+ 5: len 1; hex 81; asc  ;;
+ 6: len 1; hex 81; asc  ;;
+ 7: len 1; hex 81; asc  ;;
+ 8: len 1; hex 81; asc  ;;
+ 9: len 1; hex 81; asc  ;;
+ 10: len 1; hex 81; asc  ;;
+
+ len 22; hex 44617461626173652041646d696e6973747261746f72; asc Database Administrator;;
+ 5: len 9; hex 4272616e6b736f6d65; asc Branksome;;
+ 6: len 13; hex 41422031322033342035362043; asc AB 12 34 56 C;;
+ 7: len 19; hex 42616e6b206f66204c6f72656d20497073756d; asc Bank of Lorem Ipsum;;
+ 8: len 8; hex 31322d33342d3536; asc 12-34-56;;
+ 9: len 8; hex 3031323334353637; asc 01234567;;
+ 10: len 12; hex 4d727320457665204164616d; asc Mrs Eve Adam;;
+ 11: len 11; hex 3031323032203938373635; asc 01202 98765;;
+ 12: len 30; hex 4c6f72656d20497073756d2c20426f75726e656d6f7574682c2042483132; asc Lorem Ipsum, Bournemouth, BH12; (total 35 bytes);
+

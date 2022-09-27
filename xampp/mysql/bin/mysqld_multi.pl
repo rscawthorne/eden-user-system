@@ -1,7 +1,6 @@
 #!/usr/bin/perl
-
-# Copyright (c) 2000, 2017, Oracle and/or its affiliates.
-# Copyright (c) 2010, 2017, MariaDB Corporation
+# Copyright (c) 2000, 2010, Oracle and/or its affiliates.
+# Copyright (c) 2000-2011 Monty Program Ab, Jani Tolonen
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Library General Public
@@ -16,22 +15,38 @@
 # You should have received a copy of the GNU Library General Public
 # License along with this library; if not, write to the Free
 # Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-# MA 02110-1335  USA
+# MA 02110-1301, USA
+
+# Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Library General Public
+# License as published by the Free Software Foundation; version 2
+# of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Library General Public License for more details.
+#
+# You should have received a copy of the GNU Library General Public
+# License along with this library; if not, write to the Free
+# Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+# MA 02110-1301, USA
 
 use Getopt::Long;
 use POSIX qw(strftime getcwd);
-use File::Path qw(mkpath);
 
 $|=1;
-$VER="3.0";
+$VER="2.20";
 
 my @defaults_options;   #  Leading --no-defaults, --defaults-file, etc.
 
 $opt_example       = 0;
 $opt_help          = 0;
 $opt_log           = undef();
-$opt_mysqladmin    = "C:/Program Files/MySQL/bin/mysqladmin";
-$opt_mysqld        = "./bin/mysqld";
+$opt_mysqladmin    = "C:/Program Files (x86)/MySQL/bin/mysqladmin";
+$opt_mysqld        = "C:/Program Files (x86)/MySQL/bin/mysqld";
 $opt_no_log        = 0;
 $opt_password      = undef();
 $opt_tcp_ip        = 0;
@@ -148,7 +163,6 @@ sub main
   usage() if (!defined($ARGV[0]) ||
 	      (!($ARGV[0] =~ m/^start$/i) &&
 	       !($ARGV[0] =~ m/^stop$/i) &&
-	       !($ARGV[0] =~ m/^reload$/i) &&
 	       !($ARGV[0] =~ m/^report$/i)));
 
   if (!$opt_no_log)
@@ -162,7 +176,7 @@ sub main
     print strftime "%a %b %e %H:%M:%S %Y", localtime;
     print "\n";
   }
-  if (($ARGV[0] =~ m/^start$/i) || ($ARGV[0] =~ m/^reload$/i))
+  if ($ARGV[0] =~ m/^start$/i)
   {
     if (!defined(($mysqld= my_which($opt_mysqld))) && $opt_verbose)
     {
@@ -171,11 +185,7 @@ sub main
       print "This is OK, if you are using option \"mysqld=...\" in ";
       print "groups [mysqldN] separately for each.\n\n";
     }
-    if ($ARGV[0] =~ m/^start$/i) {
-      start_mysqlds();
-    } elsif ($ARGV[0] =~ m/^reload$/i) {
-      reload_mysqlds();
-    }
+    start_mysqlds();
   }
   else
   {
@@ -227,7 +237,7 @@ sub defaults_for_group
 
 ####
 #### Init log file. Check for appropriate place for log file, in the following
-#### order:  my_print_defaults mysqld datadir, C:/Program Files/MySQL/share
+#### order:  my_print_defaults mysqld datadir, C:/Program Files (x86)/MySQL/share
 ####
 
 sub init_log
@@ -241,7 +251,7 @@ sub init_log
   }
   if (!defined($logdir))
   {
-    $logdir= "C:/Program Files/MySQL/share" if (-d "C:/Program Files/MySQL/share" && -w "C:/Program Files/MySQL/share");
+    $logdir= "C:/Program Files (x86)/MySQL/share" if (-d "C:/Program Files (x86)/MySQL/share" && -w "C:/Program Files (x86)/MySQL/share");
   }
   if (!defined($logdir))
   {
@@ -314,9 +324,7 @@ sub report_mysqlds
 
 sub start_mysqlds()
 {
-  my (@groups, $com, $tmp, $i, @options, $j, $mysqld_found, $suffix_found, $info_sent);
-
-  $suffix_found= 0;
+  my (@groups, $com, $tmp, $i, @options, $j, $mysqld_found, $info_sent);
 
   if (!$opt_no_log)
   {
@@ -335,42 +343,8 @@ sub start_mysqlds()
     $mysqld_found= 1; # The default
     $mysqld_found= 0 if (!length($mysqld));
     $com= "$mysqld";
-
     for ($j = 0, $tmp= ""; defined($options[$j]); $j++)
     {
-      if ("--datadir=" eq substr($options[$j], 0, 10)) {
-        $datadir = $options[$j];
-        $datadir =~ s/\-\-datadir\=//;
-        eval { mkpath($datadir) };
-        if ($@) {
-          print "FATAL ERROR: Cannot create data directory $datadir: $!\n";
-          exit(1);
-        }
-        if (! -d $datadir."/mysql") {
-          if (-w $datadir) {
-            print "\n\nInstalling new database in $datadir\n\n";
-            $install_cmd="C:/Program Files/MySQL/bin/mysql_install_db ";
-            $install_cmd.="--user=mysql ";
-            $install_cmd.="--datadir=$datadir";
-            system($install_cmd);
-          } else {
-            print "\n";
-            print "FATAL ERROR: Tried to create mysqld under group [$groups[$i]],\n";
-            print "but the data directory is not writable.\n";
-            print "data directory used: $datadir\n";
-            exit(1);
-          }
-        }
-
-        if (! -d $datadir."/mysql") {
-          print "\n";
-          print "FATAL ERROR: Tried to start mysqld under group [$groups[$i]],\n";
-          print "but no data directory was found or could be created.\n";
-          print "data directory used: $datadir\n";
-          exit(1);
-        }
-      }
-
       if ("--mysqladmin=" eq substr($options[$j], 0, 13))
       {
 	# catch this and ignore
@@ -389,10 +363,6 @@ sub start_mysqlds()
         $options[$j]= quote_shell_word($options[$j]);
         $tmp.= " $options[$j]";
       }
-      elsif ("--defaults-group-suffix=" eq substr($options[$j], 0, 24))
-      {
-        $suffix_found= 1;
-      }
       else
       {
 	$options[$j]= quote_shell_word($options[$j]);
@@ -408,13 +378,6 @@ sub start_mysqlds()
       print "wanted mysqld binary.\n\n";
       $info_sent= 1;
     }
-
-    if (!$suffix_found)
-    {
-      $com.= " --defaults-group-suffix=";
-      $com.= substr($groups[$i],6);
-    }
-
     $com.= $tmp;
 
     if ($opt_wsrep_new_cluster) {
@@ -451,58 +414,6 @@ sub start_mysqlds()
 }
 
 ####
-#### reload multiple servers
-####
-
-sub reload_mysqlds()
-{
-  my (@groups, $com, $tmp, $i, @options, $j);
-
-  if (!$opt_no_log)
-  {
-    w2log("\nReloading MySQL servers\n","$opt_log",0,0);
-  }
-  else
-  {
-    print "\nReloading MySQL servers\n";
-  }
-  @groups = &find_groups($groupids);
-  for ($i = 0; defined($groups[$i]); $i++)
-  {
-    $mysqld_server = $mysqld;
-    @options = defaults_for_group($groups[$i]);
-
-    for ($j = 0, $tmp= ""; defined($options[$j]); $j++)
-    {
-      if ("--mysqladmin=" eq substr($options[$j], 0, 13))
-      {
-        # catch this and ignore
-      }
-      elsif ("--mysqld=" eq substr($options[$j], 0, 9))
-      {
-        $options[$j] =~ s/\-\-mysqld\=//;
-        $mysqld_server = $options[$j];
-      }
-      elsif ("--pid-file=" eq substr($options[$j], 0, 11))
-      {
-        $options[$j] =~ s/\-\-pid-file\=//;
-        $pid_file = $options[$j];
-      }
-    }
-    $com = "killproc -p $pid_file -HUP $mysqld_server";
-    system($com);
-
-    $com = "touch $pid_file";
-    system($com);
-  }
-  if (!$i && !$opt_no_log)
-  {
-    w2log("No MySQL servers to be reloaded (check your GNRs)",
-         "$opt_log", 0, 0);
-  }
-}
-
-###
 #### stop multiple servers
 ####
 
@@ -597,19 +508,12 @@ sub list_defaults_files
 
   return ($opt{file}) if exists $opt{file};
 
-  my @dirs;
-
-  # same rule as in mysys/my_default.c
-  if ('/etc') {
-    push @dirs, '/etc/my.cnf';
-  } else {
-    push @dirs, '/etc/my.cnf', '/etc/mysql/my.cnf';
-  }
-  push @dirs, "$ENV{MYSQL_HOME}/my.cnf" if $ENV{MYSQL_HOME};
-  push @dirs, $opt{'extra-file'} if $opt{'extra-file'};
-  push @dirs, "$ENV{HOME}/.my.cnf" if $ENV{HOME};
-
-  return @dirs;
+  return      ('/etc/my.cnf',
+               '/etc/mysql/my.cnf',
+               'C:/Program Files (x86)/MySQL/my.cnf',
+               ($ENV{MYSQL_HOME} ? "$ENV{MYSQL_HOME}/my.cnf" : undef),
+               $opt{'extra-file'},
+               ($ENV{HOME} ? "$ENV{HOME}/.my.cnf" : undef));
 }
 
 
@@ -823,7 +727,7 @@ sub example
 #   (as per Linux/Unix standard). You may even replace the
 #   /etc/init.d/mysql.server script with it.
 #
-#   Before using, you must create a my.cnf file either in C:/Program Files/MySQL/my.cnf
+#   Before using, you must create a my.cnf file either in C:/Program Files (x86)/MySQL/my.cnf
 #   or /root/.my.cnf and add the [mysqld_multi] and [mysqld#] groups.
 #
 #   The script can be found from support-files/mysqld_multi.server.sh
@@ -831,17 +735,17 @@ sub example
 #
 
 [mysqld_multi]
-mysqld     = C:/Program Files/MySQL/bin/mysqld_safe
-mysqladmin = C:/Program Files/MySQL/bin/mysqladmin
+mysqld     = C:/Program Files (x86)/MySQL/bin/mysqld_safe
+mysqladmin = C:/Program Files (x86)/MySQL/bin/mysqladmin
 user       = multi_admin
 password   = my_password
 
 [mysqld2]
 socket     = /tmp/mysql.sock2
 port       = 3307
-pid-file   = C:/Program Files/MariaDB 10.4/data2/hostname.pid2
-datadir    = C:/Program Files/MariaDB 10.4/data2
-language   = C:/Program Files/MySQL/share/mysql/english
+pid-file   = C:/MariaDB10.1/data2/hostname.pid2
+datadir    = C:/MariaDB10.1/data2
+language   = C:/Program Files (x86)/MySQL/share/mysql/english
 user       = unix_user1
 
 [mysqld3]
@@ -850,25 +754,25 @@ ledir      = /path/to/mysqld-binary/
 mysqladmin = /path/to/mysqladmin
 socket     = /tmp/mysql.sock3
 port       = 3308
-pid-file   = C:/Program Files/MariaDB 10.4/data3/hostname.pid3
-datadir    = C:/Program Files/MariaDB 10.4/data3
-language   = C:/Program Files/MySQL/share/mysql/swedish
+pid-file   = C:/MariaDB10.1/data3/hostname.pid3
+datadir    = C:/MariaDB10.1/data3
+language   = C:/Program Files (x86)/MySQL/share/mysql/swedish
 user       = unix_user2
 
 [mysqld4]
 socket     = /tmp/mysql.sock4
 port       = 3309
-pid-file   = C:/Program Files/MariaDB 10.4/data4/hostname.pid4
-datadir    = C:/Program Files/MariaDB 10.4/data4
-language   = C:/Program Files/MySQL/share/mysql/estonia
+pid-file   = C:/MariaDB10.1/data4/hostname.pid4
+datadir    = C:/MariaDB10.1/data4
+language   = C:/Program Files (x86)/MySQL/share/mysql/estonia
 user       = unix_user3
  
 [mysqld6]
 socket     = /tmp/mysql.sock6
 port       = 3311
-pid-file   = C:/Program Files/MariaDB 10.4/data6/hostname.pid6
-datadir    = C:/Program Files/MariaDB 10.4/data6
-language   = C:/Program Files/MySQL/share/mysql/japanese
+pid-file   = C:/MariaDB10.1/data6/hostname.pid6
+datadir    = C:/MariaDB10.1/data6
+language   = C:/Program Files (x86)/MySQL/share/mysql/japanese
 user       = unix_user4
 EOF
   exit(0);
@@ -884,7 +788,7 @@ sub usage
 $my_progname version $VER by Jani Tolonen
 
 Description:
-$my_progname can be used to start, reload, or stop any number of separate
+$my_progname can be used to start, or stop any number of separate
 mysqld processes running in different TCP/IP ports and UNIX sockets.
 
 $my_progname can read group [mysqld_multi] from my.cnf file. You may
@@ -902,16 +806,16 @@ integer starting from 1. These groups should be the same as the regular
 [mysqld] group, but with those port, socket and any other options
 that are to be used with each separate mysqld process. The number
 in the group name has another function; it can be used for starting,
-reloading, stopping, or reporting any specific mysqld server.
+stopping, or reporting any specific mysqld server.
 
-Usage: $my_progname [OPTIONS] {start|reload|stop|report} [GNR,GNR,GNR...]
-or     $my_progname [OPTIONS] {start|reload|stop|report} [GNR-GNR,GNR,GNR-GNR,...]
+Usage: $my_progname [OPTIONS] {start|stop|report} [GNR,GNR,GNR...]
+or     $my_progname [OPTIONS] {start|stop|report} [GNR-GNR,GNR,GNR-GNR,...]
 
-The GNR means the group number. You can start, reload, stop or report any GNR,
+The GNR means the group number. You can start, stop or report any GNR,
 or several of them at the same time. (See --example) The GNRs list can
 be comma separated or a dash combined. The latter means that all the
 GNRs between GNR1-GNR2 will be affected. Without GNR argument all the
-groups found will either be started, reloaded, stopped, or reported. Note that
+groups found will either be started, stopped, or reported. Note that
 syntax for specifying GNRs must appear without spaces.
 
 Options:
