@@ -1,15 +1,22 @@
+
 package Moose::Meta::Method::Constructor;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Constructor::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Constructor::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
-use Scalar::Util 'weaken';
+use Carp ();
+use List::MoreUtils 'any';
+use Scalar::Util 'blessed', 'weaken', 'looks_like_number', 'refaddr';
+use Try::Tiny;
 
-use parent 'Moose::Meta::Method',
+use base 'Moose::Meta::Method',
          'Class::MOP::Method::Constructor';
-
-use Moose::Util 'throw_exception';
 
 sub new {
     my $class   = shift;
@@ -18,14 +25,10 @@ sub new {
     my $meta = $options{metaclass};
 
     (ref $options{options} eq 'HASH')
-        || throw_exception( MustPassAHashOfOptions => params => \%options,
-                                                      class  => $class
-                          );
+        || $class->throw_error("You must pass a hash of options", data => $options{options});
 
     ($options{package_name} && $options{name})
-        || throw_exception( MustSupplyPackageNameAndName => params => \%options,
-                                                            class  => $class
-                          );
+        || $class->throw_error("You must supply the package_name and name parameters $Class::MOP::Method::UPGRADE_ERROR_TEXT");
 
     my $self = bless {
         'body'          => undef,
@@ -58,11 +61,9 @@ sub _initialize_body {
 
 # ABSTRACT: Method Meta Object for constructors
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -70,14 +71,14 @@ Moose::Meta::Method::Constructor - Method Meta Object for constructors
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
 This class is a subclass of L<Class::MOP::Method::Constructor> that
 provides additional Moose-specific functionality
 
-To understand this class, you should read the
+To understand this class, you should read the the
 L<Class::MOP::Method::Constructor> documentation as well.
 
 =head1 INHERITANCE
@@ -89,57 +90,20 @@ L<Moose::Meta::Method> I<and> L<Class::MOP::Method::Constructor>.
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+

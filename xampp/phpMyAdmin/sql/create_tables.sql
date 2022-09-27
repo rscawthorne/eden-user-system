@@ -4,7 +4,7 @@
 -- This file is meant for use with MySQL 5 and above!
 --
 -- This script expects the user pma to already be existing. If we would put a
--- line here to create them too many users might just use this script and end
+-- line here to create him too many users might just use this script and end
 -- up with having the same password for the controluser.
 --
 -- This user "pma" must be defined in config.inc.php (controluser/controlpass)
@@ -37,7 +37,7 @@ USE phpmyadmin;
 --
 
 CREATE TABLE IF NOT EXISTS `pma__bookmark` (
-  `id` int(10) unsigned NOT NULL auto_increment,
+  `id` int(11) NOT NULL auto_increment,
   `dbase` varchar(255) NOT NULL default '',
   `user` varchar(255) NOT NULL default '',
   `label` varchar(255) COLLATE utf8_general_ci NOT NULL default '',

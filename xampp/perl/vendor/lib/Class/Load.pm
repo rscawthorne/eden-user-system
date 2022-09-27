@@ -1,15 +1,18 @@
+package Class::Load;
+{
+  $Class::Load::VERSION = '0.20';
+}
 use strict;
 use warnings;
-package Class::Load; # git description: v0.24-5-g22a44fd
-# ABSTRACT: A working (require "Class::Name") and more
-# KEYWORDS: class module load require use runtime
-
-our $VERSION = '0.25';
-
 use base 'Exporter';
-use Data::OptList 0.110 ();
+use Data::OptList 'mkopt';
 use Module::Implementation 0.04;
-use Module::Runtime 0.012 ();
+use Module::Runtime 0.012 qw(
+    check_module_name
+    module_notional_filename
+    require_module
+    use_module
+);
 use Try::Tiny;
 
 {
@@ -43,7 +46,7 @@ sub load_first_existing_class {
         or return;
 
     foreach my $class (@{$classes}) {
-        Module::Runtime::check_module_name($class->[0]);
+        check_module_name($class->[0]);
     }
 
     for my $class (@{$classes}) {
@@ -57,7 +60,7 @@ sub load_first_existing_class {
 
         return $name if $res;
 
-        my $file = Module::Runtime::module_notional_filename($name);
+        my $file = module_notional_filename($name);
 
         next if $e =~ /^Can't locate \Q$file\E in \@INC/;
         next
@@ -92,7 +95,7 @@ sub _version_fail_re {
 sub _nonexistent_fail_re {
     my $name = shift;
 
-    my $file = Module::Runtime::module_notional_filename($name);
+    my $file = module_notional_filename($name);
     return qr/Can't locate \Q$file\E in \@INC/;
 }
 
@@ -113,7 +116,7 @@ sub load_optional_class {
     my $class   = shift;
     my $options = shift;
 
-    Module::Runtime::check_module_name($class);
+    check_module_name($class);
 
     my ($res, $e) = try_load_class($class, $options);
     return 1 if $res;
@@ -133,7 +136,7 @@ sub try_load_class {
     my $class   = shift;
     my $options = shift;
 
-    Module::Runtime::check_module_name($class);
+    check_module_name($class);
 
     local $@;
     undef $ERROR;
@@ -152,7 +155,7 @@ sub try_load_class {
         };
     }
 
-    my $file = Module::Runtime::module_notional_filename($class);
+    my $file = module_notional_filename($class);
     # This says "our diagnostics of the package
     # say perl's INC status about the file being loaded are
     # wrong", so we delete it from %INC, so when we call require(),
@@ -163,15 +166,15 @@ sub try_load_class {
     #
     # The extra benefit of this trick, is it helps even on
     # 5.10, as instead of dying with "Compilation failed",
-    # it will die with the actual error, and that's a win-win.
+    # it will die with the actual error, and thats a win-win.
     delete $INC{$file};
     return try {
         local $SIG{__DIE__} = 'DEFAULT';
         if ($options && defined $options->{-version}) {
-            Module::Runtime::use_module($class, $options->{-version});
+            use_module($class, $options->{-version});
         }
         else {
-            Module::Runtime::require_module($class);
+            require_module($class);
         }
         1;
     }
@@ -199,19 +202,19 @@ sub _croak {
 
 1;
 
-__END__
+# ABSTRACT: a working (require "Class::Name") and more
+
+
 
 =pod
 
-=encoding UTF-8
-
 =head1 NAME
 
-Class::Load - A working (require "Class::Name") and more
+Class::Load - a working (require "Class::Name") and more
 
 =head1 VERSION
 
-version 0.25
+version 0.20
 
 =head1 SYNOPSIS
 
@@ -306,7 +309,7 @@ If the class doesn't exist, and it appears to not exist on disk either, it
 will return 0.
 
 If the class exists on disk, but loading from disk results in an error
-(e.g.: a syntax error), then it will C<croak> with that error.
+( i.e.: a syntax error ), then it will C<croak> with that error.
 
 This is useful for using if you want a fallback module system, i.e.:
 
@@ -314,17 +317,6 @@ This is useful for using if you want a fallback module system, i.e.:
 
 That way, if $foo does exist, but can't be loaded due to error, you won't
 get the behaviour of it simply not existing.
-
-=head1 CAVEATS
-
-Because of some of the heuristics that this module uses to infer whether a
-module has been loaded, some false positives may occur in C<is_class_loaded>
-checks (which are also performed internally in other interfaces) -- if a class
-has started to be loaded but then dies, it may appear that it has already been
-loaded, which can cause other things to make the wrong decision.
-L<Module::Runtime> doesn't have this issue, but it also doesn't do some things
-that this module does -- for example gracefully handle packages that have been
-defined inline in the same file as another package.
 
 =head1 SEE ALSO
 
@@ -349,72 +341,22 @@ over its competitors.
 This module was designed to be used anywhere you have
 C<if (eval "require $module"; 1)>, which occurs in many large projects.
 
-=item L<Module::Runtime>
-
-A leaner approach to loading modules
-
 =back
-
-=head1 SUPPORT
-
-Bugs may be submitted through L<the RT bug tracker|https://rt.cpan.org/Public/Dist/Display.html?Name=Class-Load>
-(or L<bug-Class-Load@rt.cpan.org|mailto:bug-Class-Load@rt.cpan.org>).
-
-There is also a mailing list available for users of this distribution, at
-L<http://lists.perl.org/list/moose.html>.
-
-There is also an irc channel available for users of this distribution, at
-L<C<#moose> on C<irc.perl.org>|irc://irc.perl.org/#moose>.
 
 =head1 AUTHOR
 
 Shawn M Moore <sartak at bestpractical.com>
 
-=head1 CONTRIBUTORS
-
-=for stopwords Dave Rolsky Karen Etheridge Shawn Moore Jesse Luehrs Kent Fredric Paul Howarth Olivier Mengué Caleb Cushing
-
-=over 4
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Shawn Moore <sartak@bestpractical.com>
-
-=item *
-
-Jesse Luehrs <doy@tozt.net>
-
-=item *
-
-Kent Fredric <kentfredric@gmail.com>
-
-=item *
-
-Paul Howarth <paul@city-fan.org>
-
-=item *
-
-Olivier Mengué <dolmen@cpan.org>
-
-=item *
-
-Caleb Cushing <xenoterracide@gmail.com>
-
-=back
-
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2008 by Shawn M Moore.
+This software is copyright (c) 2012 by Shawn M Moore.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+

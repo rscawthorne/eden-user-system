@@ -3,19 +3,15 @@
 ##
 
 package Net::FTP::A;
-
-use 5.008001;
-
 use strict;
-use warnings;
-
+use vars qw(@ISA $buf $VERSION);
 use Carp;
-use Net::FTP::dataconn;
 
-our @ISA     = qw(Net::FTP::dataconn);
-our $VERSION = "3.13";
+require Net::FTP::dataconn;
 
-our $buf;
+@ISA     = qw(Net::FTP::dataconn);
+$VERSION = "1.18";
+
 
 sub read {
   my $data = shift;
@@ -46,7 +42,7 @@ sub read {
           : undef;
       }
       else {
-        return
+        return undef
           unless defined $n;
 
         ${*$data}{'net_ftp_eof'} = 1;
@@ -81,8 +77,8 @@ sub write {
   my $timeout = @_ ? shift: $data->timeout;
 
   my $nr = (my $tmp = substr($buf, 0, $size)) =~ tr/\r\n/\015\012/;
-  $tmp =~ s/(?<!\015)\012/\015\012/sg if $nr;
-  $tmp =~ s/^\015// if ${*$data}{'net_ftp_outcr'};
+  $tmp =~ s/([^\015])\012/$1\015\012/sg if $nr;
+  $tmp =~ s/^\012/\015\012/ unless ${*$data}{'net_ftp_outcr'};
   ${*$data}{'net_ftp_outcr'} = substr($tmp, -1) eq "\015";
 
   # If the remote server has closed the connection we will be signal'd
@@ -104,7 +100,7 @@ sub write {
 
     $off += $wrote;
     $wrote = syswrite($data, substr($tmp, $off), $len > $blksize ? $blksize : $len);
-    return
+    return undef
       unless defined($wrote);
     $len -= $wrote;
   }

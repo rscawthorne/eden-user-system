@@ -1,8 +1,8 @@
 package Imager::Fill;
-use 5.006;
 use strict;
+use vars qw($VERSION);
 
-our $VERSION = "1.013";
+$VERSION = "1.011";
 
 # this needs to be kept in sync with the array of hatches in fills.c
 my @hatch_types =
@@ -269,12 +269,11 @@ Creates a hatched fill.  You can specify the following keywords:
 
 =over
 
-=item *
+=item hatch
 
-C<hatch> - The type of hatch to perform, this can either be the
-numeric index of the hatch (not recommended), the symbolic name of the
-hatch, or an array of 8 integers which specify the pattern of the
-hatch.
+The type of hatch to perform, this can either be the numeric index of
+the hatch (not recommended), the symbolic name of the hatch, or an
+array of 8 integers which specify the pattern of the hatch.
 
 Hatches are represented as cells 8x8 arrays of bits, which limits their
 complexity.
@@ -354,7 +353,7 @@ C<dx>, C<dy> - An offset into the hatch cell.  Both default to zero.
 
 =back
 
-A blue and white 4-pixel check pattern:
+A blue and white 4-pixel check patten:
 
   my $fill = Imager::Fill->new(hatch => "check2x2", fg => "blue");
 

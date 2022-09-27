@@ -1,10 +1,12 @@
 package TAP::Parser::Aggregator;
 
 use strict;
-use warnings;
 use Benchmark;
+use vars qw($VERSION @ISA);
 
-use base 'TAP::Object';
+use TAP::Object ();
+
+@ISA = qw(TAP::Object);
 
 =head1 NAME
 
@@ -12,11 +14,11 @@ TAP::Parser::Aggregator - Aggregate TAP::Parser results
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 SYNOPSIS
 

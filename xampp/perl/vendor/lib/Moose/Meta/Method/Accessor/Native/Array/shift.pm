@@ -1,12 +1,26 @@
 package Moose::Meta::Method::Accessor::Native::Array::shift;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Array::shift::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Array::shift::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Array::Writer';
+with 'Moose::Meta::Method::Accessor::Native::Array::Writer' => {
+    -excludes => [
+        qw(
+            _maximum_arguments
+            _inline_capture_return_value
+            _inline_optimized_set_new_value
+            _return_value
+            )
+    ]
+};
 
 sub _maximum_arguments { 0 }
 

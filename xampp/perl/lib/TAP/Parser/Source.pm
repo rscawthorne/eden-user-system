@@ -1,12 +1,14 @@
 package TAP::Parser::Source;
 
 use strict;
-use warnings;
+use vars qw($VERSION @ISA);
 
+use TAP::Object ();
 use File::Basename qw( fileparse );
-use base 'TAP::Object';
 
 use constant BLK_SIZE => 512;
+
+@ISA = qw(TAP::Object);
 
 =head1 NAME
 
@@ -14,11 +16,11 @@ TAP::Parser::Source - a TAP source & meta data about it
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 SYNOPSIS
 
@@ -327,7 +329,7 @@ May be called as a class method
         open my $fh, '<', $file or die "Can't read $file: $!\n";
 
         # Might be a binary file - so read a fixed number of bytes.
-        my $got = read $fh, my ($buf), BLK_SIZE;
+        my $got = read $fh, my $buf, BLK_SIZE;
         defined $got or die "I/O error: $!\n";
         return $1 if $buf =~ /(.*)/;
         return;

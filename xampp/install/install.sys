@@ -1,4 +1,4 @@
-DIR = \Users\Cosmic\Documents\GitHub\eden-user-system\xampp
+DIR = \xampp
 xampp = ?.?.?
 server = 1.8.0
 perl = 0

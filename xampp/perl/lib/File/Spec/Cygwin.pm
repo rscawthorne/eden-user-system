@@ -1,12 +1,13 @@
 package File::Spec::Cygwin;
 
 use strict;
+use vars qw(@ISA $VERSION);
 require File::Spec::Unix;
 
-our $VERSION = '3.78';
-$VERSION =~ tr/_//d;
+$VERSION = '3.40';
+$VERSION =~ tr/_//;
 
-our @ISA = qw(File::Spec::Unix);
+@ISA = qw(File::Spec::Unix);
 
 =head1 NAME
 
@@ -91,20 +92,15 @@ from the following list:
     $ENV{'TEMP'}
     C:/temp
 
-If running under taint mode, and if the environment
+Since Perl 5.8.0, if running under taint mode, and if the environment
 variables are tainted, they are not used.
 
 =cut
 
+my $tmpdir;
 sub tmpdir {
-    my $cached = $_[0]->_cached_tmpdir(qw 'TMPDIR TMP TEMP');
-    return $cached if defined $cached;
-    $_[0]->_cache_tmpdir(
-        $_[0]->_tmpdir(
-            $ENV{TMPDIR}, "/tmp", $ENV{'TMP'}, $ENV{'TEMP'}, 'C:/temp'
-        ),
-        qw 'TMPDIR TMP TEMP'
-    );
+    return $tmpdir if defined $tmpdir;
+    $tmpdir = $_[0]->_tmpdir( $ENV{TMPDIR}, "/tmp", $ENV{'TMP'}, $ENV{'TEMP'}, 'C:/temp' );
 }
 
 =item case_tolerant
@@ -136,11 +132,7 @@ sub case_tolerant {
   if ($mntopts and ($mntopts =~ /,managed/)) {
     return 0;
   }
-  eval {
-      local @INC = @INC;
-      pop @INC if $INC[-1] eq '.';
-      require Win32API::File;
-  } or return 1;
+  eval { require Win32API::File; } or return 1;
   my $osFsType = "\0"x256;
   my $osVolName = "\0"x256;
   my $ouFsFlags = 0;

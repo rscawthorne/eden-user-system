@@ -570,8 +570,4 @@ image.
 
 =back
 
-=head1 AUTHOR
-
-Tony Cook <tonyc@cpan.org>, Arnar M. Hrafnkelsson
-
 =cut

@@ -1,31 +1,298 @@
-[Wed Sep 21 01:35:59.400131 2022] [ssl:warn] [pid 2908:tid 444] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Wed Sep 21 01:35:59.439187 2022] [ssl:warn] [pid 2908:tid 444] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Wed Sep 21 01:35:59.672292 2022] [mpm_winnt:notice] [pid 2908:tid 444] AH00455: Apache/2.4.53 (Win64) OpenSSL/1.1.1n PHP/7.4.29 configured -- resuming normal operations
-[Wed Sep 21 01:35:59.672292 2022] [mpm_winnt:notice] [pid 2908:tid 444] AH00456: Apache Lounge VC15 Server built: Mar 16 2022 15:48:38
-[Wed Sep 21 01:35:59.672292 2022] [core:notice] [pid 2908:tid 444] AH00094: Command line: 'c:\\xampp\\apache\\bin\\httpd.exe -d C:/xampp/apache'
-[Wed Sep 21 01:35:59.677293 2022] [mpm_winnt:notice] [pid 2908:tid 444] AH00418: Parent: Created child process 10540
-[Wed Sep 21 01:36:00.114392 2022] [ssl:warn] [pid 10540:tid 460] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Wed Sep 21 01:36:00.148398 2022] [ssl:warn] [pid 10540:tid 460] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Wed Sep 21 01:36:00.175405 2022] [mpm_winnt:notice] [pid 10540:tid 460] AH00354: Child: Starting 150 worker threads.
-[Fri Sep 23 03:52:13.553218 2022] [ssl:warn] [pid 5392:tid 440] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Fri Sep 23 03:52:13.606596 2022] [core:warn] [pid 5392:tid 440] AH00098: pid file C:/xampp/apache/logs/httpd.pid overwritten -- Unclean shutdown of previous Apache run?
-[Fri Sep 23 03:52:13.606596 2022] [ssl:warn] [pid 5392:tid 440] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Fri Sep 23 03:52:14.007674 2022] [mpm_winnt:notice] [pid 5392:tid 440] AH00455: Apache/2.4.53 (Win64) OpenSSL/1.1.1n PHP/7.4.29 configured -- resuming normal operations
-[Fri Sep 23 03:52:14.007674 2022] [mpm_winnt:notice] [pid 5392:tid 440] AH00456: Apache Lounge VC15 Server built: Mar 16 2022 15:48:38
-[Fri Sep 23 03:52:14.007674 2022] [core:notice] [pid 5392:tid 440] AH00094: Command line: 'c:\\xampp\\apache\\bin\\httpd.exe -d C:/xampp/apache'
-[Fri Sep 23 03:52:14.023294 2022] [mpm_winnt:notice] [pid 5392:tid 440] AH00418: Parent: Created child process 416
-[Fri Sep 23 03:52:14.624885 2022] [ssl:warn] [pid 416:tid 452] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Fri Sep 23 03:52:14.678262 2022] [ssl:warn] [pid 416:tid 452] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Fri Sep 23 03:52:14.725133 2022] [mpm_winnt:notice] [pid 416:tid 452] AH00354: Child: Starting 150 worker threads.
-[Fri Sep 23 16:59:35.339320 2022] [php7:notice] [pid 416:tid 1848] [client 127.0.0.1:64748] PHP Notice:  Undefined variable: uri in C:\\xampp\\htdocs\\index.php on line 5
-[Fri Sep 23 16:59:43.868525 2022] [php7:notice] [pid 416:tid 1848] [client 127.0.0.1:64749] PHP Notice:  Undefined variable: uri in C:\\xampp\\htdocs\\index.php on line 5
-[Tue Sep 27 07:23:15.601860 2022] [ssl:warn] [pid 11944:tid 464] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Tue Sep 27 07:23:15.670862 2022] [core:warn] [pid 11944:tid 464] AH00098: pid file C:/Users/Cosmic/Documents/GitHub/fullstack-user-system/xampp/apache/logs/httpd.pid overwritten -- Unclean shutdown of previous Apache run?
-[Tue Sep 27 07:23:15.670862 2022] [ssl:warn] [pid 11944:tid 464] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Tue Sep 27 07:23:16.071928 2022] [mpm_winnt:notice] [pid 11944:tid 464] AH00455: Apache/2.4.53 (Win64) OpenSSL/1.1.1n PHP/7.4.29 configured -- resuming normal operations
-[Tue Sep 27 07:23:16.071928 2022] [mpm_winnt:notice] [pid 11944:tid 464] AH00456: Apache Lounge VC15 Server built: Mar 16 2022 15:48:38
-[Tue Sep 27 07:23:16.071928 2022] [core:notice] [pid 11944:tid 464] AH00094: Command line: 'c:\\users\\cosmic\\documents\\github\\fullstack-user-system\\xampp\\apache\\bin\\httpd.exe -d C:/Users/Cosmic/Documents/GitHub/fullstack-user-system/xampp/apache'
-[Tue Sep 27 07:23:16.087538 2022] [mpm_winnt:notice] [pid 11944:tid 464] AH00418: Parent: Created child process 9440
-[Tue Sep 27 07:23:16.720464 2022] [ssl:warn] [pid 9440:tid 452] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Tue Sep 27 07:23:16.773842 2022] [ssl:warn] [pid 9440:tid 452] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
-[Tue Sep 27 07:23:16.820705 2022] [mpm_winnt:notice] [pid 9440:tid 452] AH00354: Child: Starting 150 worker threads.
+[Mon Sep 26 21:07:23.451748 2022] [ssl:warn] [pid 10964:tid 760] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Sep 26 21:07:24.012472 2022] [ssl:warn] [pid 10964:tid 760] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Sep 26 21:07:24.532333 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00455: Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.24 configured -- resuming normal operations
+[Mon Sep 26 21:07:24.532333 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00456: Apache Lounge VC11 Server built: Jul  7 2016 11:13:22
+[Mon Sep 26 21:07:24.532333 2022] [core:notice] [pid 10964:tid 760] AH00094: Command line: 'd:\\xampp\\apache\\bin\\httpd.exe -d D:/xampp/apache'
+[Mon Sep 26 21:07:24.557295 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00418: Parent: Created child process 13420
+[Mon Sep 26 21:07:25.544951 2022] [ssl:warn] [pid 13420:tid 704] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Sep 26 21:07:25.785538 2022] [ssl:warn] [pid 13420:tid 704] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Sep 26 21:07:25.836159 2022] [mpm_winnt:notice] [pid 13420:tid 704] AH00354: Child: Starting 150 worker threads.
+[Mon Sep 26 21:20:18.810519 2022] [:error] [pid 13420:tid 2024] [client 127.0.0.1:53237] script 'D:/xampp/htdocs/register.php' not found or unable to stat
+[Mon Sep 26 21:28:17.500285 2022] [:error] [pid 13420:tid 2024] [client 127.0.0.1:53277] PHP Notice:  Undefined variable: db in D:\\xampp\\htdocs\\index.php on line 92
+[Mon Sep 26 21:28:17.500285 2022] [:error] [pid 13420:tid 2024] [client 127.0.0.1:53277] PHP Warning:  mysqli_close() expects parameter 1 to be mysqli, null given in D:\\xampp\\htdocs\\index.php on line 92
+[Mon Sep 26 21:41:32.275999 2022] [:error] [pid 13420:tid 2020] [client 127.0.0.1:53340] PHP Warning:  mysqli_connect(): (HY000/1045): Access denied for user 'eden_exercise'@'localhost' (using password: YES) in D:\\xampp\\htdocs\\index.php on line 31
+[Mon Sep 26 21:41:32.278156 2022] [:error] [pid 13420:tid 2020] [client 127.0.0.1:53340] PHP Warning:  mysqli_close() expects parameter 1 to be mysqli, boolean given in D:\\xampp\\htdocs\\index.php on line 105
+[Mon Sep 26 21:46:13.174401 2022] [:error] [pid 13420:tid 2020] [client 127.0.0.1:53410] PHP Warning:  mysqli_connect(): (HY000/1045): Access denied for user 'eden_exercise'@'localhost' (using password: YES) in D:\\xampp\\htdocs\\index.php on line 31
+[Mon Sep 26 21:46:13.174401 2022] [:error] [pid 13420:tid 2020] [client 127.0.0.1:53410] PHP Warning:  mysqli_close() expects parameter 1 to be mysqli, boolean given in D:\\xampp\\htdocs\\index.php on line 105
+[Mon Sep 26 21:46:27.675384 2022] [:error] [pid 13420:tid 2020] [client 127.0.0.1:53417] PHP Warning:  mysqli_connect(): (HY000/1045): Access denied for user 'eden_exercise'@'localhost' (using password: YES) in D:\\xampp\\htdocs\\index.php on line 31
+[Mon Sep 26 21:46:27.676029 2022] [:error] [pid 13420:tid 2020] [client 127.0.0.1:53417] PHP Warning:  mysqli_close() expects parameter 1 to be mysqli, boolean given in D:\\xampp\\htdocs\\index.php on line 105
+[Mon Sep 26 21:54:46.919552 2022] [:error] [pid 13420:tid 2004] [client 127.0.0.1:53511] PHP Warning:  mysqli_connect(): (HY000/1045): Access denied for user 'eden_exercise'@'localhost' (using password: YES) in D:\\xampp\\htdocs\\index.php on line 31
+[Mon Sep 26 21:54:46.920552 2022] [:error] [pid 13420:tid 2004] [client 127.0.0.1:53511] PHP Warning:  mysqli_close() expects parameter 1 to be mysqli, boolean given in D:\\xampp\\htdocs\\index.php on line 105
+[Tue Sep 27 00:25:34.961358 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55022] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:25:34.961358 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55022] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:26:14.509419 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55027] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:26:14.509419 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55027] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:26:14.509419 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55027] PHP Catchable fatal error:  Object of class mysqli_result could not be converted to string in D:\\xampp\\htdocs\\include_session.php on line 23
+[Tue Sep 27 00:28:22.848096 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55052] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:28:22.848096 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55052] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:28:22.848096 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55052] PHP Notice:  Array to string conversion in D:\\xampp\\htdocs\\include_session.php on line 24
+[Tue Sep 27 00:31:34.369973 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55073] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:31:34.369973 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55073] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:32:42.533467 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55084] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:32:42.533467 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55084] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:33:09.879194 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55088] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:33:09.879194 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55088] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:33:09.879194 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55088] PHP Notice:  Array to string conversion in D:\\xampp\\htdocs\\include_session.php on line 27
+[Tue Sep 27 00:33:52.007644 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55093] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:33:52.007644 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55093] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:34:57.429029 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55101] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:34:57.429029 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55101] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:35:28.186019 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55107] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:35:28.186019 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55107] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:39:54.785419 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55138] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:39:54.785419 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55138] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:41:07.440825 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55146] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:41:07.440825 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55146] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:41:26.816095 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55150] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:41:26.816095 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55150] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:44:38.952689 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55172] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:44:38.952689 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55172] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:47:58.166872 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55177] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:47:58.166872 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55177] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:48:21.035943 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55199] PHP Notice:  Undefined index: session_user in D:\\xampp\\htdocs\\include_session.php on line 17
+[Tue Sep 27 00:48:21.035943 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55199] PHP Notice:  Undefined index: session_token in D:\\xampp\\htdocs\\include_session.php on line 18
+[Tue Sep 27 00:57:36.594084 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55229] PHP Notice:  Undefined variable: navactive_class in D:\\xampp\\htdocs\\index.php on line 46
+[Tue Sep 27 00:57:36.594084 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55229] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 63
+[Tue Sep 27 00:57:36.594084 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55229] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 64
+[Tue Sep 27 00:57:36.594084 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55229] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 72
+[Tue Sep 27 00:57:36.594084 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55229] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 72
+[Tue Sep 27 00:57:36.594084 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55229] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 77
+[Tue Sep 27 00:57:45.224769 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55231] PHP Notice:  Undefined variable: navactive_class in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/
+[Tue Sep 27 00:57:45.224769 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55231] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 63, referer: https://localhost/
+[Tue Sep 27 00:57:45.224769 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55231] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 64, referer: https://localhost/
+[Tue Sep 27 00:57:45.224769 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55231] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 72, referer: https://localhost/
+[Tue Sep 27 00:57:45.224769 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55231] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 72, referer: https://localhost/
+[Tue Sep 27 00:57:45.224769 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55231] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 77, referer: https://localhost/
+[Tue Sep 27 00:58:34.328801 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/
+[Tue Sep 27 00:58:34.328801 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/
+[Tue Sep 27 00:58:34.328801 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/
+[Tue Sep 27 00:58:34.328801 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/
+[Tue Sep 27 00:58:34.328801 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/
+[Tue Sep 27 00:58:34.328801 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 60, referer: https://localhost/
+[Tue Sep 27 00:58:36.583543 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 00:58:36.583543 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 00:58:36.583543 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 00:58:36.586085 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 00:58:36.586085 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 00:58:36.586085 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 60, referer: https://localhost/index.php
+[Tue Sep 27 00:58:38.582158 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] script 'D:/xampp/htdocs/show_meals_all.php' not found or unable to stat, referer: https://localhost/index.php
+[Tue Sep 27 00:58:40.138544 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 00:58:40.138544 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 00:58:40.138544 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 00:58:40.138544 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 00:58:40.138544 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 00:58:40.138544 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 60, referer: https://localhost/index.php
+[Tue Sep 27 00:58:41.689710 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 00:58:41.689710 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 00:58:41.689710 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 00:58:41.689710 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 00:58:41.689710 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 00:58:41.689710 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 60, referer: https://localhost/index.php
+[Tue Sep 27 00:58:43.399119 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] script 'D:/xampp/htdocs/show_meals_all.php' not found or unable to stat, referer: https://localhost/index.php
+[Tue Sep 27 00:58:44.816992 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 00:58:44.816992 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 00:58:44.816992 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 00:58:44.816992 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 00:58:44.816992 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 00:58:44.816992 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55235] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 60, referer: https://localhost/index.php
+[Tue Sep 27 00:59:56.189681 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55242] script 'D:/xampp/htdocs/show_meals_week.php' not found or unable to stat, referer: https://localhost/index.php
+[Tue Sep 27 00:59:57.961670 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55242] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 00:59:57.961670 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55242] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 00:59:57.961670 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55242] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 00:59:57.961670 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55242] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 00:59:57.961670 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55242] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 00:59:57.961670 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55242] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 60, referer: https://localhost/index.php
+[Tue Sep 27 01:01:25.995828 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55250] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:01:25.995828 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55250] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:01:25.995828 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55250] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:01:25.995828 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55250] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 01:01:25.995828 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55250] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 01:01:25.995828 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55250] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 60, referer: https://localhost/index.php
+[Tue Sep 27 01:01:48.784824 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:01:48.784824 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:01:48.784824 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:01:48.784824 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 50, referer: https://localhost/index.php
+[Tue Sep 27 01:01:48.784824 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 50, referer: https://localhost/index.php
+[Tue Sep 27 01:01:48.784824 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 01:01:53.498036 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] script 'D:/xampp/htdocs/login.php' not found or unable to stat, referer: https://localhost/index.php
+[Tue Sep 27 01:01:55.790589 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:01:55.790589 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:01:55.790589 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:01:55.790589 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 50, referer: https://localhost/index.php
+[Tue Sep 27 01:01:55.790589 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 50, referer: https://localhost/index.php
+[Tue Sep 27 01:01:55.790589 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55254] PHP Notice:  Undefined variable: sessionUsername in D:\\xampp\\htdocs\\index.php on line 55, referer: https://localhost/index.php
+[Tue Sep 27 01:07:58.062046 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55275] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:07:58.062046 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55275] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:07:58.062046 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55275] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:07:58.062046 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55275] PHP Warning:  include_once(admin_header.php): failed to open stream: No such file or directory in D:\\xampp\\htdocs\\index.php on line 50, referer: https://localhost/index.php
+[Tue Sep 27 01:07:58.062046 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55275] PHP Warning:  include_once(): Failed opening 'admin_header.php' for inclusion (include_path='\\xampp\\php\\PEAR') in D:\\xampp\\htdocs\\index.php on line 50, referer: https://localhost/index.php
+[Tue Sep 27 01:08:35.212990 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55279] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:08:35.212990 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55279] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:08:35.212990 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55279] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:13:59.569493 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55301] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:13:59.569493 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55301] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:13:59.569493 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55301] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:16:18.468053 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55310] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:16:18.468053 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55310] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:16:18.468053 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55310] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:16:48.904265 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55315] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:16:48.904265 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55315] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:16:48.904265 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55315] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:17:17.714530 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55318] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:17:17.714530 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55318] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:17:17.714530 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55318] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:17:34.780049 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55323] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:17:34.780049 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55323] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:17:34.780049 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55323] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:19:11.829124 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55330] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:19:11.829124 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55330] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:19:11.829124 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55330] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:21:11.932548 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55340] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:21:11.932548 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55340] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:21:11.932548 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55340] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:21:39.263601 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55343] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:21:39.263601 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55343] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:21:39.263601 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55343] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:22:06.063798 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55350] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:22:06.063798 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55350] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:22:06.063798 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55350] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:22:23.504968 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55354] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:22:23.504968 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55354] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:22:23.504968 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55354] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:22:36.053999 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55359] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:22:36.053999 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55359] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:22:36.053999 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55359] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:22:47.074888 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55363] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:22:47.074888 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55363] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:22:47.074888 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55363] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:23:07.084122 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55367] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:23:07.084122 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55367] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:23:07.084122 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55367] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:24:26.859398 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55371] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:24:26.859398 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55371] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:24:26.859398 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55371] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:25:12.695786 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55374] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:25:12.695786 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55374] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:25:12.695786 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55374] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:25:35.070471 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55377] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:25:35.070471 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55377] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:25:35.070471 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55377] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:25:45.596233 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55380] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:25:45.596233 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55380] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:25:45.596233 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55380] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:26:53.382208 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55385] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:26:53.382208 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55385] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:26:53.382208 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55385] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:28:32.999592 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55392] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:28:32.999592 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55392] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:28:32.999592 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55392] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:28:53.580902 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55397] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:28:53.580902 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55397] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:28:53.580902 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55397] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:29:36.005836 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55402] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:29:36.005836 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55402] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:29:36.005836 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55402] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:29:50.765550 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55407] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:29:50.765550 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55407] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:29:50.765550 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55407] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:30:03.896130 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55410] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:30:03.896130 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55410] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:30:03.896130 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55410] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:30:41.013970 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55416] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:30:41.013970 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55416] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:30:41.013970 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55416] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:31:36.503903 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55421] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:31:36.503903 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55421] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:31:36.503903 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55421] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:32:40.924485 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55433] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:32:40.924485 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55433] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:32:40.924485 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55433] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 48, referer: https://localhost/index.php
+[Tue Sep 27 01:32:43.338947 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55433] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:32:43.338947 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55433] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:32:43.338947 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55433] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 48, referer: https://localhost/index.php
+[Tue Sep 27 01:33:55.511804 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55441] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:33:55.511804 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55441] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:33:55.511804 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55441] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 48, referer: https://localhost/index.php
+[Tue Sep 27 01:35:15.727867 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55450] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:35:15.727867 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55450] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:35:15.727867 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55450] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:39:21.703485 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55470] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:39:21.703485 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55470] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:39:21.703485 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55470] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:42:18.865665 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55475] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:42:18.865665 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55475] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:42:18.865665 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55475] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:42:29.717346 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55480] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:42:29.717346 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55480] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:42:29.717346 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55480] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:43:42.382924 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55483] PHP Notice:  Undefined variable: navactive_home in D:\\xampp\\htdocs\\index.php on line 45, referer: https://localhost/index.php
+[Tue Sep 27 01:43:42.382924 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55483] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\index.php on line 46, referer: https://localhost/index.php
+[Tue Sep 27 01:43:42.382924 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55483] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\index.php on line 47, referer: https://localhost/index.php
+[Tue Sep 27 01:55:33.642584 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55513] PHP Notice:  Undefined variable: navactive_class in D:\\xampp\\htdocs\\include_navbar.php on line 5, referer: https://localhost/index.php
+[Tue Sep 27 01:55:33.642584 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55513] PHP Notice:  Undefined variable: navactive_all in D:\\xampp\\htdocs\\include_navbar.php on line 28, referer: https://localhost/index.php
+[Tue Sep 27 01:55:33.642584 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55513] PHP Notice:  Undefined variable: navactive_veg in D:\\xampp\\htdocs\\include_navbar.php on line 29, referer: https://localhost/index.php
+[Tue Sep 27 02:02:45.792324 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55555] script 'D:/xampp/htdocs/link2.php' not found or unable to stat, referer: https://localhost/index.php
+[Tue Sep 27 02:44:40.488326 2022] [:error] [pid 13420:tid 2016] [client 127.0.0.1:55816] script 'D:/xampp/htdocs/login.php' not found or unable to stat, referer: https://localhost/register.php
+[Tue Sep 27 03:11:16.366229 2022] [ssl:warn] [pid 10964:tid 760] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 03:11:17.182587 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00455: Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.24 configured -- resuming normal operations
+[Tue Sep 27 03:11:17.182587 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00456: Apache Lounge VC11 Server built: Jul  7 2016 11:13:22
+[Tue Sep 27 03:11:17.182587 2022] [core:notice] [pid 10964:tid 760] AH00094: Command line: 'd:\\xampp\\apache\\bin\\httpd.exe -d D:/xampp/apache'
+[Tue Sep 27 03:11:17.198210 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00418: Parent: Created child process 18160
+[Tue Sep 27 03:11:17.986861 2022] [ssl:warn] [pid 18160:tid 712] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 03:11:18.334594 2022] [ssl:warn] [pid 18160:tid 712] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 03:11:18.388083 2022] [mpm_winnt:notice] [pid 18160:tid 712] AH00354: Child: Starting 150 worker threads.
+[Tue Sep 27 03:11:39.191245 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00428: Parent: child process 18160 exited with status 0 -- Restarting.
+[Tue Sep 27 03:11:39.428386 2022] [ssl:warn] [pid 10964:tid 760] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 03:11:39.460387 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00455: Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.24 configured -- resuming normal operations
+[Tue Sep 27 03:11:39.460387 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00456: Apache Lounge VC11 Server built: Jul  7 2016 11:13:22
+[Tue Sep 27 03:11:39.460387 2022] [core:notice] [pid 10964:tid 760] AH00094: Command line: 'd:\\xampp\\apache\\bin\\httpd.exe -d D:/xampp/apache'
+[Tue Sep 27 03:11:39.464353 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00418: Parent: Created child process 10624
+[Tue Sep 27 03:11:40.251120 2022] [ssl:warn] [pid 10624:tid 684] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 03:11:40.437024 2022] [ssl:warn] [pid 10624:tid 684] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 03:11:40.473028 2022] [mpm_winnt:notice] [pid 10624:tid 684] AH00354: Child: Starting 150 worker threads.
+[Tue Sep 27 03:12:18.228939 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00422: Parent: Received shutdown signal -- Shutting down the server.
+[Tue Sep 27 03:12:20.251338 2022] [mpm_winnt:notice] [pid 10624:tid 684] AH00364: Child: All worker threads have exited.
+[Tue Sep 27 03:12:20.282447 2022] [mpm_winnt:notice] [pid 10964:tid 760] AH00430: Parent: Child process 10624 exited successfully.
+[Tue Sep 27 03:16:19.843737 2022] [ssl:warn] [pid 12340:tid 640] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 03:16:20.113199 2022] [ssl:warn] [pid 12340:tid 640] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 03:16:20.144486 2022] [mpm_winnt:notice] [pid 12340:tid 640] AH00455: Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.24 configured -- resuming normal operations
+[Tue Sep 27 03:16:20.144486 2022] [mpm_winnt:notice] [pid 12340:tid 640] AH00456: Apache Lounge VC11 Server built: Jul  7 2016 11:13:22
+[Tue Sep 27 03:16:20.144486 2022] [core:notice] [pid 12340:tid 640] AH00094: Command line: 'd:\\xampp\\apache\\bin\\httpd.exe -d D:/xampp/apache'
+[Tue Sep 27 03:16:20.160074 2022] [mpm_winnt:notice] [pid 12340:tid 640] AH00418: Parent: Created child process 1300
+[Tue Sep 27 03:16:21.077726 2022] [ssl:warn] [pid 1300:tid 664] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 03:16:21.247182 2022] [ssl:warn] [pid 1300:tid 664] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 03:16:21.278428 2022] [mpm_winnt:notice] [pid 1300:tid 664] AH00354: Child: Starting 150 worker threads.
+[Tue Sep 27 06:11:34.850904 2022] [:error] [pid 1300:tid 1976] [client 127.0.0.1:50057] script 'D:/xampp/htdocs/login.php' not found or unable to stat, referer: https://localhost/
+[Tue Sep 27 07:03:10.534045 2022] [:error] [pid 1300:tid 1968] [client 127.0.0.1:50335] script 'D:/xampp/htdocs/login.php' not found or unable to stat, referer: https://localhost/
+[Tue Sep 27 08:03:30.478455 2022] [ssl:warn] [pid 14476:tid 756] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:03:30.641396 2022] [core:warn] [pid 14476:tid 756] AH00098: pid file D:/xampp/apache/logs/httpd.pid overwritten -- Unclean shutdown of previous Apache run?
+[Tue Sep 27 08:03:30.810376 2022] [ssl:warn] [pid 14476:tid 756] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:03:31.258496 2022] [mpm_winnt:notice] [pid 14476:tid 756] AH00455: Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.24 configured -- resuming normal operations
+[Tue Sep 27 08:03:31.258496 2022] [mpm_winnt:notice] [pid 14476:tid 756] AH00456: Apache Lounge VC11 Server built: Jul  7 2016 11:13:22
+[Tue Sep 27 08:03:31.258496 2022] [core:notice] [pid 14476:tid 756] AH00094: Command line: 'd:\\xampp\\apache\\bin\\httpd.exe -d D:/xampp/apache'
+[Tue Sep 27 08:03:31.258496 2022] [mpm_winnt:notice] [pid 14476:tid 756] AH00418: Parent: Created child process 9768
+[Tue Sep 27 08:03:32.031119 2022] [ssl:warn] [pid 9768:tid 664] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:03:32.246944 2022] [ssl:warn] [pid 9768:tid 664] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:03:32.278156 2022] [mpm_winnt:notice] [pid 9768:tid 664] AH00354: Child: Starting 150 worker threads.
+[Tue Sep 27 08:03:33.016172 2022] [mpm_winnt:crit] [pid 9768:tid 664] AH02538: Child: Parent process exited abruptly. Child process is ending
+[Tue Sep 27 08:06:19.351510 2022] [ssl:warn] [pid 6784:tid 648] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:06:19.451804 2022] [core:warn] [pid 6784:tid 648] AH00098: pid file D:/xampp/apache/logs/httpd.pid overwritten -- Unclean shutdown of previous Apache run?
+[Tue Sep 27 08:06:19.605024 2022] [ssl:warn] [pid 6784:tid 648] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:06:19.636268 2022] [mpm_winnt:notice] [pid 6784:tid 648] AH00455: Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.24 configured -- resuming normal operations
+[Tue Sep 27 08:06:19.636268 2022] [mpm_winnt:notice] [pid 6784:tid 648] AH00456: Apache Lounge VC11 Server built: Jul  7 2016 11:13:22
+[Tue Sep 27 08:06:19.636268 2022] [core:notice] [pid 6784:tid 648] AH00094: Command line: 'd:\\xampp\\apache\\bin\\httpd.exe -d D:/xampp/apache'
+[Tue Sep 27 08:06:19.651890 2022] [mpm_winnt:notice] [pid 6784:tid 648] AH00418: Parent: Created child process 10616
+[Tue Sep 27 08:06:20.454484 2022] [ssl:warn] [pid 10616:tid 676] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:06:20.608024 2022] [ssl:warn] [pid 10616:tid 676] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:06:20.639237 2022] [mpm_winnt:notice] [pid 10616:tid 676] AH00354: Child: Starting 150 worker threads.
+[Tue Sep 27 08:06:24.946804 2022] [mpm_winnt:crit] [pid 10616:tid 676] AH02538: Child: Parent process exited abruptly. Child process is ending
+[Tue Sep 27 08:14:05.040992 2022] [ssl:warn] [pid 16008:tid 668] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:14:05.103564 2022] [core:warn] [pid 16008:tid 668] AH00098: pid file D:/xampp/apache/logs/httpd.pid overwritten -- Unclean shutdown of previous Apache run?
+[Tue Sep 27 08:14:05.241522 2022] [ssl:warn] [pid 16008:tid 668] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:14:05.272771 2022] [mpm_winnt:notice] [pid 16008:tid 668] AH00455: Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.24 configured -- resuming normal operations
+[Tue Sep 27 08:14:05.272771 2022] [mpm_winnt:notice] [pid 16008:tid 668] AH00456: Apache Lounge VC11 Server built: Jul  7 2016 11:13:22
+[Tue Sep 27 08:14:05.272771 2022] [core:notice] [pid 16008:tid 668] AH00094: Command line: 'd:\\xampp\\apache\\bin\\httpd.exe -d D:/xampp/apache'
+[Tue Sep 27 08:14:05.288392 2022] [mpm_winnt:notice] [pid 16008:tid 668] AH00418: Parent: Created child process 14716
+[Tue Sep 27 08:14:06.174908 2022] [ssl:warn] [pid 14716:tid 664] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:14:06.344250 2022] [ssl:warn] [pid 14716:tid 664] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Tue Sep 27 08:14:06.375528 2022] [mpm_winnt:notice] [pid 14716:tid 664] AH00354: Child: Starting 150 worker threads.

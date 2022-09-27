@@ -7,13 +7,16 @@
  *    License or the Artistic License, as specified in the README file.
  */
 
+#ifndef UNDER_CE
 #define CHECK_HOST_INTERP
+#endif
 
 #ifndef ___PerlHost_H___
 #define ___PerlHost_H___
 
+#ifndef UNDER_CE
 #include <signal.h>
-#include <wchar.h>
+#endif
 #include "iperlsys.h"
 #include "vmem.h"
 #include "vdir.h"
@@ -23,7 +26,11 @@
 #endif
 
 START_EXTERN_C
-extern char *	g_getlogin(void);
+extern char *		g_win32_get_privlib(const char *pl, STRLEN *const len);
+extern char *		g_win32_get_sitelib(const char *pl, STRLEN *const len);
+extern char *		g_win32_get_vendorlib(const char *pl,
+					      STRLEN *const len);
+extern char *		g_getlogin(void);
 END_EXTERN_C
 
 class CPerlHost
@@ -326,7 +333,7 @@ PerlMemIsLocked(struct IPerlMem* piPerl)
     return IPERL2HOST(piPerl)->IsLocked();
 }
 
-const struct IPerlMem perlMem =
+struct IPerlMem perlMem =
 {
     PerlMemMalloc,
     PerlMemRealloc,
@@ -380,7 +387,7 @@ PerlMemSharedIsLocked(struct IPerlMem* piPerl)
     return IPERL2HOST(piPerl)->IsLockedShared();
 }
 
-const struct IPerlMem perlMemShared =
+struct IPerlMem perlMemShared =
 {
     PerlMemSharedMalloc,
     PerlMemSharedRealloc,
@@ -434,7 +441,7 @@ PerlMemParseIsLocked(struct IPerlMem* piPerl)
     return IPERL2HOST(piPerl)->IsLockedParse();
 }
 
-const struct IPerlMem perlMemParse =
+struct IPerlMem perlMemParse =
 {
     PerlMemParseMalloc,
     PerlMemParseRealloc,
@@ -511,22 +518,22 @@ PerlEnvOsId(struct IPerlEnv* piPerl)
 }
 
 char*
-PerlEnvLibPath(struct IPerlEnv* piPerl, WIN32_NO_REGISTRY_M_(const char *pl) STRLEN *const len)
+PerlEnvLibPath(struct IPerlEnv* piPerl, const char *pl, STRLEN *const len)
 {
-    return win32_get_privlib(WIN32_NO_REGISTRY_M_(pl) len);
+    return g_win32_get_privlib(pl, len);
 }
 
 char*
 PerlEnvSiteLibPath(struct IPerlEnv* piPerl, const char *pl, STRLEN *const len)
 {
-    return win32_get_sitelib(pl, len);
+    return g_win32_get_sitelib(pl, len);
 }
 
 char*
 PerlEnvVendorLibPath(struct IPerlEnv* piPerl, const char *pl,
 		     STRLEN *const len)
 {
-    return win32_get_vendorlib(pl, len);
+    return g_win32_get_vendorlib(pl, len);
 }
 
 void
@@ -535,7 +542,7 @@ PerlEnvGetChildIO(struct IPerlEnv* piPerl, child_IO_table* ptr)
     win32_get_child_IO(ptr);
 }
 
-const struct IPerlEnv perlEnv =
+struct IPerlEnv perlEnv =
 {
     PerlEnvGetenv,
     PerlEnvPutenv,
@@ -826,21 +833,22 @@ PerlStdIOGetOSfhandle(struct IPerlStdIO* piPerl, int filenum)
 FILE*
 PerlStdIOFdupopen(struct IPerlStdIO* piPerl, FILE* pf)
 {
+#ifndef UNDER_CE
     FILE* pfdup;
     fpos_t pos;
     char mode[3];
     int fileno = win32_dup(win32_fileno(pf));
 
     /* open the file in the same mode */
-    if (PERLIO_FILE_flag(pf) & PERLIO_FILE_flag_RD) {
+    if((pf)->_flag & _IOREAD) {
 	mode[0] = 'r';
 	mode[1] = 0;
     }
-    else if (PERLIO_FILE_flag(pf) & PERLIO_FILE_flag_WR) {
+    else if((pf)->_flag & _IOWRT) {
 	mode[0] = 'a';
 	mode[1] = 0;
     }
-    else if (PERLIO_FILE_flag(pf) & PERLIO_FILE_flag_RW) {
+    else if((pf)->_flag & _IORW) {
 	mode[0] = 'r';
 	mode[1] = '+';
 	mode[2] = 0;
@@ -857,9 +865,12 @@ PerlStdIOFdupopen(struct IPerlStdIO* piPerl, FILE* pf)
 	fsetpos(pfdup, &pos);
     }
     return pfdup;
+#else
+    return 0;
+#endif
 }
 
-const struct IPerlStdIO perlStdIO =
+struct IPerlStdIO perlStdIO =
 {
     PerlStdIOStdin,
     PerlStdIOStdout,
@@ -1070,7 +1081,7 @@ PerlLIOWrite(struct IPerlLIO* piPerl, int handle, const void *buffer, unsigned i
     return win32_write(handle, buffer, count);
 }
 
-const struct IPerlLIO perlLIO =
+struct IPerlLIO perlLIO =
 {
     PerlLIOAccess,
     PerlLIOChmod,
@@ -1171,7 +1182,7 @@ PerlDirMapPathW(struct IPerlDir* piPerl, const WCHAR* path)
     return IPERL2HOST(piPerl)->MapPathW(path);
 }
 
-const struct IPerlDir perlDir =
+struct IPerlDir perlDir =
 {
     PerlDirMakedir,
     PerlDirChdir,
@@ -1268,7 +1279,8 @@ PerlSockGethostbyname(struct IPerlSock* piPerl, const char* name)
 struct hostent*
 PerlSockGethostent(struct IPerlSock* piPerl)
 {
-    win32_croak_not_implemented("gethostent");
+    dTHX;
+    Perl_croak(aTHX_ "gethostent not implemented!\n");
     return NULL;
 }
 
@@ -1457,7 +1469,7 @@ PerlSockIoctlsocket(struct IPerlSock* piPerl, SOCKET s, long cmd, u_long *argp)
     return win32_ioctlsocket(s, cmd, argp);
 }
 
-const struct IPerlSock perlSock =
+struct IPerlSock perlSock =
 {
     PerlSockHtonl,
     PerlSockHtons,
@@ -1523,13 +1535,13 @@ PerlProcCrypt(struct IPerlProc* piPerl, const char* clear, const char* salt)
     return win32_crypt(clear, salt);
 }
 
-PERL_CALLCONV_NO_RET void
+void
 PerlProcExit(struct IPerlProc* piPerl, int status)
 {
     exit(status);
 }
 
-PERL_CALLCONV_NO_RET void
+void
 PerlProc_Exit(struct IPerlProc* piPerl, int status)
 {
     _exit(status);
@@ -1598,7 +1610,7 @@ PerlProcKillpg(struct IPerlProc* piPerl, int pid, int sig)
 int
 PerlProcPauseProc(struct IPerlProc* piPerl)
 {
-    return win32_pause();
+    return win32_sleep((32767L << 16) + 32767);
 }
 
 PerlIO*
@@ -1749,10 +1761,8 @@ restart:
 		SvREFCNT_dec(PL_curstash);
 		PL_curstash = (HV *)SvREFCNT_inc(PL_defstash);
 	    }
-	    if (PL_endav && !PL_minus_c) {
-		PERL_SET_PHASE(PERL_PHASE_END);
+	    if (PL_endav && !PL_minus_c)
 		call_list(oldscope, PL_endav);
-	    }
 	    status = STATUS_EXIT;
 	    break;
 	case 3:
@@ -1799,8 +1809,8 @@ restart:
 int
 PerlProcFork(struct IPerlProc* piPerl)
 {
-#ifdef USE_ITHREADS
     dTHX;
+#ifdef USE_ITHREADS
     DWORD id;
     HANDLE handle;
     CPerlHost *h;
@@ -1852,7 +1862,7 @@ PerlProcFork(struct IPerlProc* piPerl)
 #  endif
     return -(int)id;
 #else
-    win32_croak_not_implemented("fork()");
+    Perl_croak(aTHX_ "fork() not implemented!\n");
     return -1;
 #endif /* USE_ITHREADS */
 }
@@ -1884,14 +1894,12 @@ PerlProcSpawnvp(struct IPerlProc* piPerl, int mode, const char *cmdname, const c
 int
 PerlProcLastHost(struct IPerlProc* piPerl)
 {
- /* this dTHX is unused in an optimized build since CPerlHost::num_hosts
-    is a static */
  dTHX;
  CPerlHost *h = (CPerlHost*)w32_internal_host;
  return h->LastHost();
 }
 
-const struct IPerlProc perlProc =
+struct IPerlProc perlProc =
 {
     PerlProcAbort,
     PerlProcCrypt,
@@ -2125,6 +2133,10 @@ lookup(const void *arg1, const void *arg2)
 LPSTR*
 CPerlHost::Lookup(LPCSTR lpStr)
 {
+#ifdef UNDER_CE
+    if (!m_lppEnvList || !m_dwEnvCount)
+	return NULL;
+#endif
     if (!lpStr)
 	return NULL;
     return (LPSTR*)bsearch(&lpStr, m_lppEnvList, m_dwEnvCount, sizeof(LPSTR), lookup);
@@ -2166,11 +2178,18 @@ compare(const void *arg1, const void *arg2)
 void
 CPerlHost::Add(LPCSTR lpStr)
 {
+    dTHX;
+    char szBuffer[1024];
     LPSTR *lpPtr;
-    STRLEN length = strlen(lpStr)+1;
+    int index, length = strlen(lpStr)+1;
+
+    for(index = 0; lpStr[index] != '\0' && lpStr[index] != '='; ++index)
+	szBuffer[index] = lpStr[index];
+
+    szBuffer[index] = '\0';
 
     // replacing ?
-    lpPtr = Lookup(lpStr);
+    lpPtr = Lookup(szBuffer);
     if (lpPtr != NULL) {
 	// must allocate things via host memory allocation functions 
 	// rather than perl's Renew() et al, as the perl interpreter
@@ -2206,12 +2225,14 @@ CPerlHost::CalculateEnvironmentSpace(void)
 void
 CPerlHost::FreeLocalEnvironmentStrings(LPSTR lpStr)
 {
+    dTHX;
     Safefree(lpStr);
 }
 
 char*
 CPerlHost::GetChildDir(void)
 {
+    dTHX;
     char* ptr;
     size_t length;
 
@@ -2228,18 +2249,20 @@ CPerlHost::GetChildDir(void)
 void
 CPerlHost::FreeChildDir(char* pStr)
 {
+    dTHX;
     Safefree(pStr);
 }
 
 LPSTR
 CPerlHost::CreateLocalEnvironmentStrings(VDir &vDir)
 {
+    dTHX;
     LPSTR lpStr, lpPtr, lpEnvPtr, lpTmp, lpLocalEnv, lpAllocPtr;
     DWORD dwSize, dwEnvIndex;
     int nLength, compVal;
 
     // get the process environment strings
-    lpAllocPtr = lpTmp = (LPSTR)win32_getenvironmentstrings();
+    lpAllocPtr = lpTmp = (LPSTR)GetEnvironmentStrings();
 
     // step over current directory stuff
     while(*lpTmp == '=')
@@ -2315,7 +2338,7 @@ CPerlHost::CreateLocalEnvironmentStrings(VDir &vDir)
     }
 
     // release the process environment strings
-    win32_freeenvironmentstrings(lpAllocPtr);
+    FreeEnvironmentStrings(lpAllocPtr);
 
     return lpPtr;
 }
@@ -2323,6 +2346,7 @@ CPerlHost::CreateLocalEnvironmentStrings(VDir &vDir)
 void
 CPerlHost::Reset(void)
 {
+    dTHX;
     if(m_lppEnvList != NULL) {
 	for(DWORD index = 0; index < m_dwEnvCount; ++index) {
 	    Free(m_lppEnvList[index]);
@@ -2337,6 +2361,7 @@ CPerlHost::Reset(void)
 void
 CPerlHost::Clearenv(void)
 {
+    dTHX;
     char ch;
     LPSTR lpPtr, lpStr, lpEnvPtr;
     if (m_lppEnvList != NULL) {
@@ -2350,7 +2375,7 @@ CPerlHost::Clearenv(void)
     }
 
     /* get the process environment strings */
-    lpStr = lpEnvPtr = (LPSTR)win32_getenvironmentstrings();
+    lpStr = lpEnvPtr = (LPSTR)GetEnvironmentStrings();
 
     /* step over current directory stuff */
     while(*lpStr == '=')
@@ -2369,13 +2394,14 @@ CPerlHost::Clearenv(void)
 	lpStr += strlen(lpStr) + 1;
     }
 
-    win32_freeenvironmentstrings(lpEnvPtr);
+    FreeEnvironmentStrings(lpEnvPtr);
 }
 
 
 char*
 CPerlHost::Getenv(const char *varname)
 {
+    dTHX;
     if (!m_bTopLevel) {
 	char *pEnv = Find(varname);
 	if (pEnv && *pEnv)
@@ -2387,6 +2413,7 @@ CPerlHost::Getenv(const char *varname)
 int
 CPerlHost::Putenv(const char *envstring)
 {
+    dTHX;
     Add(envstring);
     if (m_bTopLevel)
 	return win32_putenv(envstring);
@@ -2397,6 +2424,7 @@ CPerlHost::Putenv(const char *envstring)
 int
 CPerlHost::Chdir(const char *dirname)
 {
+    dTHX;
     int ret;
     if (!dirname) {
 	errno = ENOENT;

@@ -1,9 +1,11 @@
 package TAP::Parser::Iterator::Array;
 
 use strict;
-use warnings;
+use vars qw($VERSION @ISA);
 
-use base 'TAP::Parser::Iterator';
+use TAP::Parser::Iterator ();
+
+@ISA = 'TAP::Parser::Iterator';
 
 =head1 NAME
 
@@ -11,11 +13,11 @@ TAP::Parser::Iterator::Array - Iterator for array-based TAP sources
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 SYNOPSIS
 

@@ -1,11 +1,10 @@
 package HTML::PullParser;
 
-use strict;
-
 require HTML::Parser;
-our @ISA = qw(HTML::Parser);
-our $VERSION = '3.75';
+@ISA=qw(HTML::Parser);
+$VERSION = "3.57";
 
+use strict;
 use Carp ();
 
 sub new

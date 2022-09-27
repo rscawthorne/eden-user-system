@@ -14,11 +14,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+
 package jsp2.examples.simpletag;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
@@ -32,8 +33,8 @@ public class EchoAttributesTag
     extends SimpleTagSupport
     implements DynamicAttributes
 {
-    private final List<String> keys = new ArrayList<>();
-    private final List<Object> values = new ArrayList<>();
+    private ArrayList<String> keys = new ArrayList<String>();
+    private ArrayList<Object> values = new ArrayList<Object>();
 
     @Override
     public void doTag() throws JspException, IOException {

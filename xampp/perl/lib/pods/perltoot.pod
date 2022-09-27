@@ -2,14 +2,11 @@
 
 =head1 NAME
 
-perltoot - Links to information on object-oriented programming in Perl
+perltoot - This document has been deleted
 
 =head1 DESCRIPTION
 
 For information on OO programming with Perl, please see L<perlootut>
 and L<perlobj>.
-
-(The above documents supersede the tutorial that was formerly here in
-perltoot.)
 
 =cut

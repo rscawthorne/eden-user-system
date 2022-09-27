@@ -1,15 +1,18 @@
 package Moose::Meta::TypeConstraint::Parameterizable;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::TypeConstraint::Parameterizable::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::TypeConstraint::Parameterizable::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 use metaclass;
 
-use parent 'Moose::Meta::TypeConstraint';
+use base 'Moose::Meta::TypeConstraint';
 use Moose::Meta::TypeConstraint::Parameterized;
 use Moose::Util::TypeConstraints ();
-
-use Moose::Util 'throw_exception';
 
 use Carp 'confess';
 
@@ -53,10 +56,8 @@ sub _can_coerce_constraint_from {
 sub generate_inline_for {
     my ($self, $type, $val) = @_;
 
-    throw_exception( CannotGenerateInlineConstraint => parameterizable_type_object_name => $self->name,
-                                                       type_name                        => $type->name,
-                                                       value                            => $val,
-                   )
+    confess "Can't generate an inline constraint for $type, since none "
+          . "was defined"
         unless $self->has_inline_generator;
 
     return '( do { ' . $self->inline_generator->( $self, $type, $val ) . ' } )';
@@ -78,9 +79,8 @@ sub parameterize {
     if(my $parent = $self->parent) {
         if($parent->can('type_parameter')) {
             unless ( $contained_tc->is_a_type_of($parent->type_parameter) ) {
-                throw_exception( ParameterIsNotSubtypeOfParent => type_parameter => $type_parameter,
-                                                                  type_name      => $self->name,
-                               );
+                require Moose;
+                Moose->throw_error("$type_parameter is not a subtype of ".$parent->type_parameter);
             }
         }
     }
@@ -95,7 +95,8 @@ sub parameterize {
         );
     }
     else {
-        confess("The type parameter must be a Moose meta type");
+        require Moose;
+        Moose->throw_error("The type parameter must be a Moose meta type");
     }
 }
 
@@ -104,11 +105,9 @@ sub parameterize {
 
 # ABSTRACT: Type constraints which can take a parameter (ArrayRef)
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -116,7 +115,7 @@ Moose::Meta::TypeConstraint::Parameterizable - Type constraints which can take a
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -144,57 +143,20 @@ confusing and needs some work.
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+

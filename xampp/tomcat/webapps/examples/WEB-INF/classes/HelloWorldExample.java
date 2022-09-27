@@ -41,12 +41,10 @@ public class HelloWorldExample extends HttpServlet {
         ResourceBundle rb =
             ResourceBundle.getBundle("LocalStrings",request.getLocale());
         response.setContentType("text/html");
-        response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
 
-        out.println("<!DOCTYPE html><html>");
+        out.println("<html>");
         out.println("<head>");
-        out.println("<meta charset=\"UTF-8\" />");
 
         String title = rb.getString("helloworld.title");
 
@@ -56,7 +54,7 @@ public class HelloWorldExample extends HttpServlet {
 
         // note that all links are created to be relative. this
         // ensures that we can move the web application that this
-        // servlet belongs to a different place in the url
+        // servlet belongs to to a different place in the url
         // tree and not have any harmful side effects.
 
         // XXX

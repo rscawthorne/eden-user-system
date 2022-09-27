@@ -12,13 +12,11 @@ package IO::Socket::INET6;
 use strict;
 use warnings;
 
-use 5.008;
-
 our(@ISA, $VERSION);
 
 # Do it so we won't import any symbols from IO::Socket which it does export
 # by default:
-#
+# 
 # <LeoNerd> IO::Socket is stupidstupidstupid beyond belief. Despite being an
 # object class, it has an import method
 # <LeoNerd> So you have to use IO::Socket ();
@@ -43,7 +41,7 @@ use Carp;
 use Errno;
 
 @ISA = qw(IO::Socket);
-$VERSION = "2.72";
+$VERSION = "2.69";
 #Purpose: allow protocol independent protocol and original interface.
 
 my $EINVAL = exists(&Errno::EINVAL) ? Errno::EINVAL() : 1;
@@ -62,12 +60,12 @@ sub new {
     return $class->SUPER::new(@_);
 }
 
-# Parsing analysis:
-# addr,port,and proto may be syntactically related...
+#Parsing analisis:
+# addr,port,and proto may be sintactically related...
 sub _sock_info {
   my($addr,$port,$proto) = @_;
   my $origport = $port;
-  my @proto = ();
+  my @proto = ();  
   my @serv = ();
 
   if (defined $addr) {
@@ -145,7 +143,7 @@ sub configure {
     my $family = $arg->{Domain};
     # in case no local and peer is given we prefer AF_INET6
     # because we are IO::Socket::INET6
-    $family ||= ! $arg->{LocalAddr} && ! $arg->{PeerAddr} && AF_INET6
+    $family ||= ! $arg->{LocalAddr} && ! $arg->{PeerAddr} && AF_INET6 
         || AF_UNSPEC;
 
     # parse Local*
@@ -168,12 +166,12 @@ sub configure {
         } elsif (!$lport) {
             $lport = '';
         }
-    }
+    } 
 
     my $type = $arg->{Type} || $socket_type{(getprotobynumber($proto))[0]};
 
     # parse Peer*
-    my($rport,$raddr);
+    my($rport,$raddr); 
     unless(exists $arg->{Listen}) {
         ($raddr,$rport) = _sock_info(
             $arg->{PeerAddr},
@@ -194,8 +192,8 @@ sub configure {
 
     my @flr;
     if (@rres) {
-        # Collect all combinations with the same family in lres and rres
-        # the order we search should be defined by the order of @rres,
+        # collect all combinations whith the same family in lres and rres
+        # the order we search should be defined by the order of @rres, 
         # not @lres!
         for( my $r=0;$r<@rres;$r+=5 ) {
             for( my $l=0;$l<@lres;$l+=5) {
@@ -276,13 +274,13 @@ sub configure {
                 $rres = pack_sockaddr_in6_all(@sa_in6);
             }
         }
-
+    
         undef $@;
         last if $sock->connect($rres);
 
         return _error($sock, $!, $@ || "Timeout")
             if ! $arg->{MultiHomed};
-
+        
     }
 
     return $sock;
@@ -306,7 +304,7 @@ sub sockdomain
 {
    my $sock = shift;
    $sock->SUPER::sockdomain(@_) || AF_INET6;
-}
+} 
 
 sub accept
 {
@@ -316,12 +314,12 @@ sub accept
 
     return unless defined($new);
 
-    ${*$new}{io_socket_domain} = ${*$sock}{io_socket_domain};
-    ${*$new}{io_socket_type}   = ${*$sock}{io_socket_type};
-    ${*$new}{io_socket_proto}  = ${*$sock}{io_socket_proto};
+    ${*$new}{io_socket_domain} = ${*$sock}{io_socket_domain}; 
+    ${*$new}{io_socket_type}   = ${*$sock}{io_socket_type}; 
+    ${*$new}{io_socket_proto}  = ${*$sock}{io_socket_proto}; 
 
     return wantarray ? ($new, $peer) : $new;
-}
+} 
 
 sub bind {
     @_ == 2 or
@@ -363,7 +361,7 @@ sub sockflow
     @_ == 1 or croak 'usage: $sock->sockflow()';
     my ($sock) = @_;
     return undef unless (my $name = $sock->sockname);
-    ($sock->sockdomain == AF_INET6) ? (unpack_sockaddr_in6_all($name))[1] : 0;
+    ($sock->sockdomain == AF_INET6) ? (unpack_sockaddr_in6_all($name))[1] : 0; 
 }
 
 sub sockscope
@@ -417,7 +415,7 @@ __END__
 
 =head1 NAME
 
-IO::Socket::INET6 - Object interface for AF_INET/AF_INET6 domain sockets
+IO::Socket::INET6 - Object interface for AF_INET|AF_INET6 domain sockets
 
 =head1 SYNOPSIS
 
@@ -448,7 +446,7 @@ C<IO::Socket::INET6> provides.
     PeerHost	Synonym for PeerAddr
     PeerPort	Remote port or service       <service>[(<no>)] | <no>
     PeerFlow    Remote flow information
-    PeerScope   Remote address scope
+    PeerScope   Remote address scope 
     LocalAddr	Local host bind	address      hostname[:port]
     LocalHost	Synonym for LocalAddr
     LocalPort	Local host bind	port         <service>[(<no>)] | <no>
@@ -462,7 +460,7 @@ C<IO::Socket::INET6> provides.
     ReusePort	Set SO_REUSEPORT before binding
     Broadcast	Set SO_BROADCAST before binding
     Timeout	Timeout	value for various operations
-    MultiHomed  Try all addresses for multi-homed hosts
+    MultiHomed  Try all adresses for multi-homed hosts
     Blocking    Determine if connection will be blocking mode
 
 If C<Listen> is defined then a listen socket is created, else if the
@@ -480,11 +478,11 @@ The C<PeerPort> can be a number or a symbolic
 service name.  The service name might be followed by a number in
 parenthesis which is used if the service is not known by the system.
 The C<PeerPort> specification can also be embedded in the C<PeerAddr>
-by preceding it with a ":", and closing the IPv6 address on brackets "[]" if
+by preceding it with a ":", and closing the IPv6 address on bracktes "[]" if
 necessary: "124.678.12.34:23","[2a05:345f::10]:23","any.server.com:23".
 
 If C<Domain> is not given, AF_UNSPEC is assumed, that is, both AF_INET and AF_INET6 will
-be both considered when resolving DNS names. AF_INET6 has priority.
+be both considered when resolving DNS names. AF_INET6 is prioritary.
 If you guess you are in trouble not reaching the peer,(the service is not available via
 AF_INET6 but AF_INET) you can either try Multihomed (try any address/family until reach)
 or concrete your address C<family> (AF_INET, AF_INET6).
@@ -506,7 +504,7 @@ Examples:
                                  PeerPort => 'http(80)',
                                  Proto    => 'tcp');
 
-Suppose either you have no IPv6 connectivity or www.perl.org has no http service on IPv6. Then,
+Suppose either you have no IPv6 connectivity or www.perl.org has no http service on IPv6. Then, 
 
 (Trying all address/families until reach)
 
@@ -534,9 +532,9 @@ Suppose either you have no IPv6 connectivity or www.perl.org has no http service
 
    $sock = IO::Socket::INET6->new(PeerPort  => 9999,
                                  PeerAddr  => Socket6::inet_ntop(AF_INET6,in6addr_broadcast),
-                                 Proto     => udp,
+                                 Proto     => udp,    
                                  LocalAddr => 'localhost',
-                                 Broadcast => 1 )
+                                 Broadcast => 1 ) 
                              or die "Can't bind : $@\n";
 
  NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE
@@ -562,7 +560,7 @@ See L<IO::Socket::INET>.
 
 =item configure ()
 
-This function exists in this module, but I (= Shlomi Fish) don't know what it
+This function exists in this module, but I (= Shlomi Fish) don't know what it 
 does, or understand it. It's also not tested anywhere. I'll be happy to be
 enlightened.
 
@@ -611,7 +609,7 @@ peer host in a text form ("2001:800:40:2a05::10" or "245.245.13.27")
 
 =item peerflow ()
 
-Return the flow information part of the sockaddr structure for the socket
+Return the flow information part of the sockaddr structure for the socket 
 on the peer host
 
 =item peerscope ()

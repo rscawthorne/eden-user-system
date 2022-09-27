@@ -1,4 +1,5 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8" /><title>Source Code</title></head><body><pre>&lt;%--
+<html><body><pre>
+&lt;%--
  Licensed to the Apache Software Foundation (ASF) under one or more
   contributor license agreements.  See the NOTICE file distributed with
   this work for additional information regarding copyright ownership.
@@ -28,9 +29,9 @@
 &lt;ol>
 &lt;%
     String[] items = cart.getItems();
-    for (String item : items) {
+    for (int i=0; i&lt;items.length; i++) {
 %>
-&lt;li> &lt;% out.print(util.HTMLFilter.filter(item)); %>
+&lt;li> &lt;% out.print(util.HTMLFilter.filter(items[i])); %>
 &lt;%
     }
 %>

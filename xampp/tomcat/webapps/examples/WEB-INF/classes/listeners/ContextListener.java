@@ -128,11 +128,10 @@ public final class ContextListener
      */
     private void log(String message) {
 
-        if (context != null) {
+        if (context != null)
             context.log("ContextListener: " + message);
-        } else {
+        else
             System.out.println("ContextListener: " + message);
-        }
 
     }
 

@@ -11,7 +11,7 @@ package Pod::Select;
 use strict;
 
 use vars qw($VERSION @ISA @EXPORT $MAX_HEADING_LEVEL %myData @section_headings @selected_sections);
-$VERSION = '1.63'; ## Current version of this package
+$VERSION = '1.60'; ## Current version of this package
 require  5.005;    ## requires this Perl version or later
 
 #############################################################################
@@ -70,10 +70,6 @@ perl5.005, Pod::Parser, Exporter, Carp
 podselect()
 
 =head1 DESCRIPTION
-
-B<NOTE: This module is considered legacy; modern Perl releases (5.18 and
-higher) are going to remove Pod-Parser from core and use L<Pod-Simple>
-for all things POD.>
 
 B<podselect()> is a function which will extract specified sections of
 pod documentation from an input stream. This ability is provided by the
@@ -535,7 +531,7 @@ implicit first argument.
 
 B<podselect> will print the raw (untranslated) POD paragraphs of all
 POD sections in the given input files specified by C<@filelist>
-according to the options given in C<\%options>.
+according to the given options.
 
 If any argument to B<podselect> is a reference to a hash
 (associative array) then the values with the following keys are
@@ -546,8 +542,7 @@ processed as follows:
 =item B<-output>
 
 A string corresponding to the desired output file (or ">&STDOUT"
-or ">&STDERR"), or a filehandle to write on. The default is to use
-standard output.
+or ">&STDERR"). The default is to use standard output.
 
 =item B<-sections>
 
@@ -570,10 +565,10 @@ are used.
 
 =back
 
-All other arguments are optional and should correspond to filehandles to
-read from or the names of input files containing POD sections. A file name
-of "", "-" or "<&STDIN" will be interpreted to mean standard input (which
-is the default if no arguments are given).
+All other arguments should correspond to the names of input files
+containing POD sections. A file name of "-" or "<&STDIN" will
+be interpreted to mean standard input (which is the default if no
+filenames are given).
 
 =cut 
 
@@ -586,8 +581,8 @@ sub podselect {
     my %opts;
     local $_;
     for (@argv) {
-        my $ref = ref($_);
-        if ($ref && $ref eq 'HASH') {
+        if (ref($_)) {
+        next unless (ref($_) eq 'HASH');
             %opts = (%defaults, %{$_});
 
             ##-------------------------------------------------------------
@@ -617,15 +612,12 @@ sub podselect {
             #!     if ( (defined $opts{'-ranges'})
             #!          && ((ref $opts{'-ranges'}) eq 'ARRAY') );
         }
-        elsif(!$ref || $ref eq 'GLOB') {
+        else {
             $pod_parser->parse_from_file($_, $output);
             ++$num_inputs;
         }
-        else {
-            croak "Input from $ref reference not supported!\n";
-        }
     }
-    $pod_parser->parse_from_file('-') unless ($num_inputs > 0);
+    $pod_parser->parse_from_file('-')  unless ($num_inputs > 0);
 }
 
 #############################################################################
@@ -677,7 +669,7 @@ sub _compile_section_spec {
     ## Parse the regexs for the heading titles
     @regexs = split(/\//, $_, $MAX_HEADING_LEVEL);
 
-    ## Set default regex for omitted levels
+    ## Set default regex for ommitted levels
     for (my $i = 0; $i < $MAX_HEADING_LEVEL; ++$i) {
         $regexs[$i]  = '.*'  unless ((defined $regexs[$i])
                                      && (length $regexs[$i]));

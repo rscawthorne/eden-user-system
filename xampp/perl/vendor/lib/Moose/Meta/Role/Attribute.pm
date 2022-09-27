@@ -1,15 +1,19 @@
 package Moose::Meta::Role::Attribute;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Role::Attribute::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Role::Attribute::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
-use List::Util 1.33 'all';
+use Carp 'confess';
+use List::MoreUtils 'all';
 use Scalar::Util 'blessed', 'weaken';
 
-use parent 'Moose::Meta::Mixin::AttributeCore', 'Class::MOP::Object';
-
-use Moose::Util 'throw_exception';
+use base 'Moose::Meta::Mixin::AttributeCore', 'Class::MOP::Object';
 
 __PACKAGE__->meta->add_attribute(
     'metaclass' => (
@@ -50,9 +54,7 @@ sub new {
     my ( $class, $name, %options ) = @_;
 
     (defined $name)
-        || throw_exception( MustProvideANameForTheAttribute => params => \%options,
-                                                               class  => $class
-                          );
+        || confess "You must provide a name for the attribute";
 
     my $role = delete $options{_original_role};
 
@@ -68,9 +70,8 @@ sub attach_to_role {
     my ( $self, $role ) = @_;
 
     ( blessed($role) && $role->isa('Moose::Meta::Role') )
-        || throw_exception( MustPassAMooseMetaRoleInstanceOrSubclass => class  => $self,
-                                                                        role   => $role
-                          );
+        || confess
+        "You must pass a Moose::Meta::Role instance (or a subclass)";
 
     weaken( $self->{'associated_role'} = $role );
 }
@@ -87,9 +88,7 @@ sub attribute_for_class {
     my $metaclass = $self->original_role->applied_attribute_metaclass;
 
     return $metaclass->interpolate_class_and_new(
-        $self->name    => %{ $self->original_options },
-        role_attribute => $self,
-    );
+        $self->name => %{ $self->original_options } );
 }
 
 sub clone {
@@ -130,11 +129,9 @@ sub is_same_as {
 
 # ABSTRACT: The Moose attribute metaclass for Roles
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -142,7 +139,7 @@ Moose::Meta::Role::Attribute - The Moose attribute metaclass for Roles
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -152,49 +149,55 @@ introspectable, they have very little behavior.
 
 =head1 METHODS
 
-=head2 Moose::Meta::Role::Attribute->new(...)
+This class provides the following methods:
+
+=over 4
+
+=item B<< Moose::Meta::Role::Attribute->new(...) >>
 
 This method accepts all the options that would be passed to the constructor
 for L<Moose::Meta::Attribute>.
 
-=head2 $attr->metaclass
+=item B<< $attr->metaclass >>
 
-=head2 $attr->is
+=item B<< $attr->is >>
 
 Returns the option as passed to the constructor.
 
-=head2 $attr->associated_role
+=item B<< $attr->associated_role >>
 
 Returns the L<Moose::Meta::Role> to which this attribute belongs, if any.
 
-=head2 $attr->original_role
+=item B<< $attr->original_role >>
 
 Returns the L<Moose::Meta::Role> in which this attribute was first
-defined. This may not be the same as the value of C<associated_role()> for
-attributes in a composite role, or when one role consumes other roles.
+defined. This may not be the same as the value C<associated_role()> in the
+case of composite role, or the case where one role consumes other roles.
 
-=head2 $attr->original_options
+=item B<< $attr->original_options >>
 
 Returns a hash reference of options passed to the constructor. This is used
 when creating a L<Moose::Meta::Attribute> object from this object.
 
-=head2 $attr->attach_to_role($role)
+=item B<< $attr->attach_to_role($role) >>
 
 Attaches the attribute to the given L<Moose::Meta::Role>.
 
-=head2 $attr->attribute_for_class($metaclass)
+=item B<< $attr->attribute_for_class($metaclass) >>
 
 Given an attribute metaclass name, this method calls C<<
 $metaclass->interpolate_class_and_new >> to construct an attribute object
 which can be added to a L<Moose::Meta::Class>.
 
-=head2 $attr->clone
+=item B<< $attr->clone >>
 
 Creates a new object identical to the object on which the method is called.
 
-=head2 $attr->is_same_as($other_attr)
+=item B<< $attr->is_same_as($other_attr) >>
 
 Compares two role attributes and returns true if they are identical.
+
+=back
 
 In addition, this class implements all informational predicates implements by
 L<Moose::Meta::Attribute> (and L<Class::MOP::Attribute>).
@@ -203,57 +206,19 @@ L<Moose::Meta::Attribute> (and L<Class::MOP::Attribute>).
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+

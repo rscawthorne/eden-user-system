@@ -17,7 +17,6 @@
 package websocket.drawboard;
 
 import java.io.EOFException;
-import java.io.IOException;
 
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
@@ -154,9 +153,6 @@ public final class DrawboardEndpoint extends Endpoint {
         if (root instanceof EOFException) {
             // Assume this is triggered by the user closing their browser and
             // ignore it.
-        } else if (!session.isOpen() && root instanceof IOException) {
-            // IOException after close. Assume this is a variation of the user
-            // closing their browser (or refreshing very quickly) and ignore it.
         } else {
             log.error("onError: " + t.toString(), t);
         }
@@ -201,7 +197,7 @@ public final class DrawboardEndpoint extends Endpoint {
                                 DrawMessage msg = DrawMessage.parseFromString(
                                         messageContent.substring(indexOfChar + 1));
 
-                                // Don't ignore RuntimeExceptions thrown by
+                                // Don't ingore RuntimeExceptions thrown by
                                 // this method
                                 // TODO: Find a better solution than this variable
                                 dontSwallowException = true;
@@ -212,17 +208,17 @@ public final class DrawboardEndpoint extends Endpoint {
 
                                 break;
                             }
-                        } catch (ParseException e) {
-                            // Client sent invalid data
-                            // Ignore, TODO: maybe close connection
-                        } catch (RuntimeException e) {
+
+                        } catch (RuntimeException ex) {
                             // Client sent invalid data.
                             // Ignore, TODO: maybe close connection
                             if (dontSwallowException) {
-                                throw e;
+                                throw ex;
                             }
+                        } catch (ParseException ex) {
+                            // Client sent invalid data.
+                            // Ignore, TODO: maybe close connection
                         }
-
                     } catch (RuntimeException ex) {
                         log.error("Unexpected exception: " + ex.toString(), ex);
                     }

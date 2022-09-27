@@ -1,6 +1,6 @@
 package DBD::Gofer::Policy::classic;
 
-#   $Id: classic.pm 10087 2007-10-16 12:42:37Z Tim $
+#   $Id: classic.pm 10087 2007-10-16 12:42:37Z timbo $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -10,7 +10,7 @@ package DBD::Gofer::Policy::classic;
 use strict;
 use warnings;
 
-our $VERSION = "0.010088";
+our $VERSION = sprintf("0.%06d", q$Revision: 10087 $ =~ /(\d+)/o);
 
 use base qw(DBD::Gofer::Policy::Base);
 

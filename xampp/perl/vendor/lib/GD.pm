@@ -16,9 +16,7 @@ use GD::Polygon;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $AUTOLOAD);
 
-$VERSION = '2.73';
-our $XS_VERSION = $VERSION;
-$VERSION = eval $VERSION;
+$VERSION = '2.49';
 
 @ISA = qw(Exporter DynaLoader);
 # Items to export into callers namespace by default. Note: do not export
@@ -60,7 +58,18 @@ $VERSION = eval $VERSION;
 	GD_CMP_TRUECOLOR
 );
 
-%EXPORT_TAGS = ('cmp'  => [ @EXPORT_OK ] );
+%EXPORT_TAGS = ('cmp'  => [qw(GD_CMP_IMAGE 
+			      GD_CMP_NUM_COLORS
+			      GD_CMP_COLOR
+			      GD_CMP_SIZE_X
+			      GD_CMP_SIZE_Y
+			      GD_CMP_TRANSPARENT
+			      GD_CMP_BACKGROUND
+			      GD_CMP_INTERLACE
+			      GD_CMP_TRUECOLOR
+			     )
+			  ]
+	       );
 
 # documentation error
 *GD::Polygon::delete = \&GD::Polygon::deletePt;
@@ -72,17 +81,16 @@ sub AUTOLOAD {
 
     my($constname);
     ($constname = $AUTOLOAD) =~ s/.*:://;
-    undef $!;
     my $val = constant($constname);
     if ($! != 0) {
-       if ($! =~ /Invalid/) {
-           $AutoLoader::AUTOLOAD = $AUTOLOAD;
-           goto &AutoLoader::AUTOLOAD;
-       }
-       else {
-           my($pack,$file,$line) = caller;
-           die "Your vendor has not defined GD macro $pack\:\:$constname, used at $file line $line $!.\n";
-       }
+	if ($! =~ /Invalid/) {
+	    $AutoLoader::AUTOLOAD = $AUTOLOAD;
+	    goto &AutoLoader::AUTOLOAD;
+	}
+	else {
+	    my($pack,$file,$line) = caller;
+	    die "Your vendor has not defined GD macro $pack\:\:$constname, used at $file line $line.\n";
+	}
     }
     eval "sub $AUTOLOAD { $val }";
     goto &$AUTOLOAD;
@@ -194,7 +202,7 @@ L<GD::Simple> for a description of these methods.
 
 A Simple Example:
 
-	#!/usr/bin/perl
+	#!/usr/local/bin/perl
 
 	use GD;
 
@@ -311,7 +319,7 @@ by default.  To change this default to create true color images use:
 
 	GD::Image->trueColor(1);
 
-before creating new images.  To switch back to palette
+somewhere before creating new images.  To switch back to palette
 based by default, use:
 
 	GD::Image->trueColor(0);
@@ -379,7 +387,7 @@ Images created by reading JPEG images will always be truecolor.  To
 force the image to be palette-based, pass a value of 0 in the optional
 $truecolor argument.
 
-=item B<$image = GD::Image-E<gt>newFromGif($file, [$truecolor])>
+=item B<$image = GD::Image-E<gt>newFromGif($file)>
 
 =item B<$image = GD::Image-E<gt>newFromGifData($data)>
 
@@ -391,7 +399,7 @@ Images created from GIFs are always 8-bit palette images. To convert
 to truecolor, you must create a truecolor image and then perform a
 copy.
 
-=item B<$image = GD::Image-E<gt>newFromXbm($file, [$truecolor])>
+=item B<$image = GD::Image-E<gt>newFromXbm($file)>
 
 This works in exactly the same way as C<newFromPng>, but reads the
 contents of an X Bitmap (black & white) file:
@@ -401,18 +409,6 @@ contents of an X Bitmap (black & white) file:
 	close XBM;
 
 There is no newFromXbmData() function, because there is no
-corresponding function in the gd library.
-
-=item B<$image = GD::Image-E<gt>newFromWBMP($file, [$truecolor])>
-
-This works in exactly the same way as C<newFromPng>, but reads the
-contents of an Windows BMP Bitmap file:
-
-	open (BMP,"coredump.bmp") || die;
-	$myImage = newFromWBMP GD::Image(\*BMP) || die;
-	close BMP;
-
-There is no newFromWBMPData() function, because there is no
 corresponding function in the gd library.
 
 =item B<$image = GD::Image-E<gt>newFromGd($file)>
@@ -464,31 +460,6 @@ support.
 NOTE: The libgd library is unable to read certain XPM files, returning
 an all-black image instead.
 
-=item B<$bool = GD::supportsFileType($filename, $is_writing)>
-
-This returns a TRUE or FALSE value, if libgd supports reading or when
-the 2nd argument is 1, if libgd supports writing the given filetype,
-depending on the filename extension. Only with libgd versions E<gt>= gd-2.1.1.
-
-Assuming LibGD is compiled with support for these image types, the
-following extensions are supported:
-
-    .gif
-    .gd, .gd2
-    .wbmp
-    .bmp
-    .xbm
-    .tga
-    .png
-    .jpg, .jpeg
-    .tiff, .tif
-    .webp
-    .xpm
-
-Filenames are parsed case-insensitively.
-
-=back
-
 =head1 GD::Image Methods
 
 Once a GD::Image object is created, you can draw with it, copy it, and
@@ -500,8 +471,6 @@ a file.
 
 The following methods convert the internal drawing format into
 standard output file formats.
-
-=over
 
 =item B<$pngdata = $image-E<gt>png([$compression_level])>
 
@@ -611,36 +580,12 @@ This returns the image data in WBMP format, which is a black-and-white
 image format.  Provide the index of the color to become the foreground
 color.  All other pixels will be considered background.
 
-=item B<$success = $image-E<gt>_file($filename)>
-
-Writes an image to a file in the format indicated by the filename, with
-libgd versions E<gt>= gd-2.1.1.
-
-File type is determined by the extension of the file name.  See
-C<supportsFiletype> for an overview of the parsing.
-
-For file types that require extra arguments, C<_file> attempts to
-use sane defaults:
-
-  C<gdImageGd2>	chunk size = 0, compression is enabled.
-  C<gdImageJpeg>	quality = -1 (i.e. the reasonable default)
-  C<gdImageWBMP>	foreground is the darkest available color
-
-Everything else is called with the two-argument function and so will
-use the default values.
-
-C<_file> and the underlying libgd C<gdImageFile> has some rudimentary
-error detection and will return FALSE (0) if a detectable error
-occurred.  However, the image loaders do not normally return their
-error status so a result of TRUE (1) does **not** mean the file was
-saved successfully.
-
 =back
 
 =head2 Color Control
 
 These methods allow you to control and manipulate the GD::Image color
-table for palette, non-truecolor images.
+table.
 
 =over 4
 
@@ -657,8 +602,8 @@ If no colors are allocated, then this function returns -1.
 
 Example:
 
-	$black = $myImage->colorAllocate(0,0,0); #background color
-	$white = $myImage->colorAllocate(255,255,255);
+	$white = $myImage->colorAllocate(0,0,0); #background color
+	$black = $myImage->colorAllocate(255,255,255);
 	$peachpuff = $myImage->colorAllocate(255,218,185);
 
 =item B<$index = $image-E<gt>colorAllocateAlpha(reg,green,blue,alpha)>
@@ -690,16 +635,6 @@ Example:
 
 	$apricot = $myImage->colorClosest(255,200,180);
 
-=item B<$index = $image-E<gt>colorClosestAlpha(red,green,blue,alpha)>
-
-This returns the index of the color closest in the color table to the
-red green blue and alpha components specified.  If no colors have yet been
-allocated, then this call returns -1.
-
-Example:
-
-	$apricot = $myImage->colorClosestAlpha(255,200,180,0);
-
 =item B<$index = $image-E<gt>colorClosestHWB(red,green,blue)>
 
 This also attempts to return the color closest in the color table to the
@@ -707,7 +642,8 @@ red green and blue components specified. It uses a Hue/White/Black
 color representation to make the selected color more likely to match
 human perceptions of similar colors.
 
-If no colors have yet been allocated, then this call returns -1.
+If no colors have yet been
+allocated, then this call returns -1.
 
 Example:
 
@@ -722,15 +658,6 @@ table, this call returns -1.
 	$rosey = $myImage->colorExact(255,100,80);
 	warn "Everything's coming up roses.\n" if $rosey >= 0;
 
-=item B<$index = $image-E<gt>colorExactAlpha(red,green,blue,alpha)>
-
-This returns the index of a color that exactly matches the specified
-red green blue and alpha components.  If such a color is not in the color
-table, this call returns -1.
-
-	$rosey = $myImage->colorExactAlpha(255,100,80,0);
-	warn "Everything's coming up roses.\n" if $rosey >= 0;
-
 =item B<$index = $image-E<gt>colorResolve(red,green,blue)>
 
 This returns the index of a color that exactly matches the specified
@@ -739,16 +666,6 @@ table and there is room, then this method allocates the color in the
 color table and returns its index.
 
 	$rosey = $myImage->colorResolve(255,100,80);
-	warn "Everything's coming up roses.\n" if $rosey >= 0;
-
-=item B<$index = $image-E<gt>colorResolveAlpha(red,green,blue,alpha)>
-
-This returns the index of a color that exactly matches the specified
-red green blue and alpha components.  If such a color is not in the color
-table and there is room, then this method allocates the color in the
-color table and returns its index.
-
-	$rosey = $myImage->colorResolveAlpha(255,100,80,0);
 	warn "Everything's coming up roses.\n" if $rosey >= 0;
 
 =item B<$colorsTotal = $image-E<gt>colorsTotal> I<object method>
@@ -774,16 +691,6 @@ Example:
 
 This returns a list containing the red, green and blue components of
 the specified color index.
-
-Example:
-
-	@RGB = $myImage->rgb($peachy);
-
-
-=item B<($alpha) = $image-E<gt>alpha($index)>
-
-This returns an item containing the alpha component of the specified
-color index.
 
 Example:
 
@@ -824,9 +731,9 @@ module is loaded.
 =item B<$image-E<gt>setBrush($image)>
 
 You can draw lines and shapes using a brush pattern.  Brushes are just
-palette, not TrueColor, images that you can create and manipulate in
-the usual way. When you draw with them, their contents are used for
-the color and shape of the lines.
+images that you can create and manipulate in the usual way. When you
+draw with them, their contents are used for the color and shape of the
+lines.
 
 To make a brushed line, you must create or load the brush first, then
 assign it to the image using setBrush().  You can then draw in that
@@ -938,7 +845,7 @@ clearly against.
 Once turned on, you can turn this feature off by calling
 setAntiAliasedDontBlend() with a second argument of 0:
 
-  $image->setAntiAliasedDontBlend($color,0);
+ $image->setAntiAliasedDontBlend($color,0);
 
 =back
 
@@ -1002,9 +909,8 @@ Example:
 	$myImage->rectangle(10,10,100,100,$rose);
 
 =item B<$image-E<gt>filledRectangle($x1,$y1,$x2,$y2,$color)>
-=item B<$image-E<gt>setTile($otherimage)>
 
-This draws a rectangle filled with the specified color.  You can use a
+This draws a rectangle filed with the specified color.  You can use a
 real color, or the special fill color gdTiled to fill the polygon
 with a pattern.
 
@@ -1083,7 +989,7 @@ This draws arcs and ellipses.  (cx,cy) are the center of the arc, and
 (width,height) specify the width and height, respectively.  The
 portion of the ellipse covered by the arc are controlled by start and
 end, both of which are given in degrees from 0 to 360.  Zero is at the
-right end of the ellipse, and angles increase clockwise.  To specify a
+top of the ellipse, and angles increase clockwise.  To specify a
 complete ellipse, use 0 and 360 as the starting and ending angles.  To
 draw a circle, use the same value for width and height.
 
@@ -1167,7 +1073,9 @@ attempt to find the best match, with varying results.
 
 =over 4
 
-=item B<$image-E<gt>copy($sourceImage,$dstX,$dstY,$srcX,$srcY,$width,$height)>
+=item B<$image-E<gt>copy($sourceImage,$dstX,$dstY,>
+
+B<				$srcX,$srcY,$width,$height)>
 
 This is the simplest of the several copy operations, copying the
 specified region from the source image to the destination image (the
@@ -1280,48 +1188,11 @@ output image instead, which guarantees the highest output quality.
 Both the dithering (0/1, default=0) and maximum number of colors used
 (<=256, default = gdMaxColors) can be specified.
 
-=item B<$image = $sourceImage-E<gt>createPaletteFromTrueColor([$dither], [$colors])>
-
-Creates a new palette image from a truecolor image. Same as above, but
-returns a new image.
-
-Don't use these function -- write real truecolor PNGs and JPEGs. The
-disk space gain of conversion to palette is not great (for small
-images it can be negative) and the quality loss is ugly.
-
-=item B<$error = $image-E<gt>colorMatch($otherimage)>
-
-Bring the palette colors in $otherimage to be closer to truecolor $image.
-A negative return value is a failure.
-
-  -1 image must be True Color
-  -2 otherimage must be indexed
-  -3 the images are meant to be the same dimensions
-  -4 At least 1 color in otherimage must be allocated
-
-This method is only available with libgd >= 2.1.0
-
-=item B<$image = $sourceImage-E<gt>neuQuant($maxcolor=256,$samplefactor=5)>
-
-Creates a new palette image from a truecolor image.
-
-=over 4
-
-=item samplefactor	The quantization precision between 1 (highest quality) and 10 (fastest).
-
-=item maxcolor	The number of desired palette entries.
-
-=back
-
-This is the same as createPaletteFromTrueColor with the
-quantization method GD_QUANT_NEUQUANT. This does not support dithering.
-This method is only available with libgd >= 2.1.0
-
 =back
 
 =head2 Image Transformation Commands
 
-Gd provides these simple image transformations, non-interpolated.
+Gd also provides some common image transformations:
 
 =over 4
 
@@ -1353,129 +1224,6 @@ modify the image in place.
 
 =back
 
-=head2 Image Interpolation Methods
-
-Since libgd 2.1.0 there are better transformation methods, with
-these interpolation methods:
-
-  GD_BELL		 - Bell
-  GD_BESSEL		 - Bessel
-  GD_BILINEAR_FIXED 	 - fixed point bilinear
-  GD_BICUBIC 		 - Bicubic
-  GD_BICUBIC_FIXED 	 - fixed point bicubic integer
-  GD_BLACKMAN		 - Blackman
-  GD_BOX		 - Box
-  GD_BSPLINE		 - BSpline
-  GD_CATMULLROM		 - Catmullrom
-  GD_GAUSSIAN		 - Gaussian
-  GD_GENERALIZED_CUBIC   - Generalized cubic
-  GD_HERMITE		 - Hermite
-  GD_HAMMING		 - Hamming
-  GD_HANNING		 - Hannig
-  GD_MITCHELL		 - Mitchell
-  GD_NEAREST_NEIGHBOUR   - Nearest neighbour interpolation
-  GD_POWER		 - Power
-  GD_QUADRATIC		 - Quadratic
-  GD_SINC		 - Sinc
-  GD_TRIANGLE		 - Triangle
-  GD_WEIGHTED4		 - 4 pixels weighted bilinear interpolation
-  GD_LINEAR              - bilinear interpolation
-
-=over 4
-
-=item B<$image-E<gt>interpolationMethod( [$method] )>
-
-Gets or sets the interpolation methods for all subsequent interpolations.
-See above for the valid values.
-Only available since libgd 2.2.0
-
-=item B<$image-E<gt>copyScaleInterpolated( width, height )>
-
-Returns a copy, using interpolation.
-
-=item B<$image-E<gt>copyRotateInterpolated( angle, bgcolor )>
-
-Returns a copy, using interpolation.
-
-=back
-
-=head2 Image Filter Commands
-
-Gd also provides some common image filters, they modify the image in
-place and return TRUE if modified or FALSE if not.
-Most of them need libgd >= 2.1.0, with older versions those functions are undefined.
-
-=over 4
-
-=item B<$ok = $image-E<gt>scatter($sub, $plus)>
-
-if $sub and $plus are 0, nothing is changed, TRUE is returned.
-if $sub >= $plus, nothing is changed, FALSE is returned.
-else random pixels are changed.
-
-=item B<$ok = $image-E<gt>scatterColor($sub, $plus, @colors)>
-
-Similar to scatter, but using the given array of colors,
-i.e. palette indices.
-
-=item B<$ok = $image-E<gt>pixelate($blocksize, $mode)>
-
-if $blocksize <= 0, nothing is changed, FALSE is returned.
-if $blocksize == 1, nothing is changed, TRUE is returned.
-else the following modes are observed:
-  GD_PIXELATE_UPPERLEFT
-  GD_PIXELATE_AVERAGE
-
-=item B<$ok = $image-E<gt>negate()>
-
-=item B<$ok = $image-E<gt>grayscale()>
-
-=item B<$ok = $image-E<gt>brightness($add)>
-
-$add: -255..255
-
-=item B<$ok = $image-E<gt>contrast($contrast)>
-
-$contrast: a double value. The contrast adjustment value. Negative
-values increase, positive values decrease the contrast. The larger
-the absolute value, the stronger the effect.
-
-=item B<$ok = $image-E<gt>color($red,$green,$blue,$alpha)>
-
-Change channel values of an image.
-
-  $red   - The value to add to the red channel of all pixels.
-  $green - The value to add to the green channel of all pixels.
-  $blue  - The value to add to the blue channel of all pixels.
-  $alpha - The value to add to the alpha channel of all pixels.
-
-=item B<$ok = $image-E<gt>selectiveBlur()>
-
-=item B<$ok = $image-E<gt>edgeDetectQuick()>
-
-=item B<$ok = $image-E<gt>gaussianBlur()>
-
-=item B<$ok = $image-E<gt>emboss()>
-
-=item B<$ok = $image-E<gt>meanRemoval()>
-
-=item B<$ok = $image-E<gt>smooth($weight)>
-
-=item B<$image = $sourceImage-E<gt>copyGaussianBlurred($radius, $sigma)>
-
-$radius: int, the blur radius (*not* diameter--range is 2*radius + 1)
-a radius, not a diameter so a radius of 2 (for example) will blur
-across a region 5 pixels across (2 to the center, 1 for the center
-itself and another 2 to the other edge).
-
-$sigma: the sigma value or a value <= 0.0 to use the computed default.
-represents the "fatness" of the curve (lower == fatter).
-
-The result is always truecolor.
-
-=back
-
-
 =head2 Character and String Drawing
 
 GD allows you to draw characters and strings, either in normal
@@ -1492,7 +1240,7 @@ installed with GD (see the bdf_scripts directory if it wasn't).  The
 format happens to be identical to the old-style MSDOS bitmap ".fnt"
 files, so you can use one of those directly if you happen to have one.
 
-For writing proportional scalable fonts, GD offers the stringFT()
+For writing proportional scaleable fonts, GD offers the stringFT()
 method, which allows you to load and render any TrueType font on your
 system.
 
@@ -1564,11 +1312,6 @@ In case of an error (such as the font not being available, or FT
 support not being available), the method returns an empty list and
 sets $@ to the error message.
 
-The B<fontname> argument is the name of the font, which can be a full
-pathname to a F<.ttf> file, or if not the paths in C<$ENV{GDFONTPATH}>
-will be searched or if empty the libgd compiled DEFAULT_FONTPATH.
-The TrueType extensions .ttf, .pfa, .pfb or .dfont can be omitted.
-
 The string may contain UTF-8 sequences like: "&#192;" 
 
 You may also call this method from the GD::Image class name, in which
@@ -1608,7 +1351,7 @@ default kerning of text.
 
 Example:
 
- $gd->stringFT($black,'/c/windows/Fonts/pala.ttf',40,0,20,90,
+ $gd->stringFT($black,'/dosc/windows/Fonts/pala.ttf',40,0,20,90,
               "hi there\r\nbye now",
 	      {linespacing=>0.6,
 	       charmap  => 'Unicode',
@@ -1633,9 +1376,7 @@ fontconfig font patterns (see stringFT).  Regardless of the value of
 $flag, this method will return a true value if the fontconfig library
 is present, or false otherwise.
 
-This method can also be called as a class method of GD::Image;
-
-=item B<$result = $image-E<gt>stringFTCircle($cx,$cy,$radius,$textRadius,$fillPortion,$font,$points,$top,$bottom,$fgcolor)>
+=item B<$result = $image->stringFTCircle($cx,$cy,$radius,$textRadius,$fillPortion,$font,$points,$top,$bottom,$fgcolor)>
 
 This draws text in a circle. Currently (libgd 2.0.33) this function
 does not work for me, but the interface is provided for completeness.
@@ -1747,7 +1488,7 @@ is true color or not.
 =item B<$flag = $image1-E<gt>compare($image2)>
 
 Compare two images and return a bitmap describing the differences
-found, if any.  The return value must be logically AND'ed with one or
+found, if any.  The return value must be logically ANDed with one or
 more constants in order to determine the differences.  The following
 constants are available:
 
@@ -1802,11 +1543,11 @@ objects:
 
 =over 4
 
-=item $image-E<gt>startGroup([$id,\%style])
+=item $image->startGroup([$id,\%style])
 
-=item $image-E<gt>endGroup()
+=item $image->endGroup()
 
-=item $group = $image-E<gt>newGroup
+=item $group = $image->newGroup
 
 See L<GD::SVG> for information.
 
@@ -2013,26 +1754,10 @@ These return the width and height of the font.
 
 =back
 
-=head1 Helper Functions
-
-=over
-
-=item GD::LIBGD_VERSION
-
-Returns a number of the libgd VERSION, like 2.0204, 2.0033 or 2.01.
-
-=item GD::VERSION_STRING
-
-Returns the string of the libgd VERSION, like "2.2.4".
-
-=item GD::constant
-
-=back
-
 =head1 Obtaining the C-language version of gd
 
 libgd, the C-language version of gd, can be obtained at URL
-http://libgd.org/  Directions for installing and using it
+http://www.boutell.com/gd/.  Directions for installing and using it
 can be found at that site.  Please do not contact me for help with
 libgd.
 
@@ -2047,7 +1772,7 @@ package for details.
 
 The latest versions of GD.pm are available at
 
-  https://github.com/lstein/Perl-GD
+  http://stein.cshl.org/WWW/software/GD
 
 =head1 SEE ALSO
 

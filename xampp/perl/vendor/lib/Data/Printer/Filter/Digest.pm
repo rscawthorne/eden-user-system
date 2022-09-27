@@ -4,7 +4,7 @@ use warnings;
 use Data::Printer::Filter;
 use Term::ANSIColor;
 
-foreach my $digest ( qw(Digest::MD2 Digest::MD4) ) {
+foreach my $digest ( qw( Digest::MD2 Digest::MD4 Digest::Haval256)) {
     filter $digest => \&_print_digest;
 }
 
@@ -102,6 +102,8 @@ hexadecimal format as a string.
 
 =item * L<Digest::Whirlpool>
 
+=item * L<Digest::Haval256>
+
 =back
 
 If you have any suggestions for more modules or better output,
@@ -141,3 +143,5 @@ the hexdigest of a new, empty object of that same class.
 =head1 SEE ALSO
 
 L<Data::Printer>
+
+

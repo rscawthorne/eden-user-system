@@ -1,17 +1,18 @@
 package TAP::Parser::SourceHandler::Perl;
 
 use strict;
-use warnings;
 use Config;
+use vars qw($VERSION @ISA);
 
 use constant IS_WIN32 => ( $^O =~ /^(MS)?Win32$/ );
 use constant IS_VMS => ( $^O eq 'VMS' );
 
+use TAP::Parser::SourceHandler::Executable ();
 use TAP::Parser::IteratorFactory           ();
 use TAP::Parser::Iterator::Process         ();
-use Text::ParseWords qw(shellwords);
+use TAP::Parser::Utils qw( split_shell );
 
-use base 'TAP::Parser::SourceHandler::Executable';
+@ISA = 'TAP::Parser::SourceHandler::Executable';
 
 TAP::Parser::IteratorFactory->register_handler(__PACKAGE__);
 
@@ -21,11 +22,11 @@ TAP::Parser::SourceHandler::Perl - Stream TAP from a Perl executable
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 SYNOPSIS
 
@@ -151,27 +152,18 @@ sub make_iterator {
     $class->_run( $source, $libs, $switches );
 }
 
-
-sub _has_taint_switch {
-    my( $class, $switches ) = @_;
-
-    my $has_taint = grep { $_ eq "-T" || $_ eq "-t" } @{$switches};
-    return $has_taint ? 1 : 0;
-}
-
 sub _mangle_switches {
     my ( $class, $libs, $switches ) = @_;
 
     # Taint mode ignores environment variables so we must retranslate
     # PERL5LIB as -I switches and place PERL5OPT on the command line
     # in order that it be seen.
-    if ( $class->_has_taint_switch($switches) ) {
-        my @perl5lib = defined $ENV{PERL5LIB} ? split /$Config{path_sep}/, $ENV{PERL5LIB} : ();
+    if ( grep { $_ eq "-T" || $_ eq "-t" } @{$switches} ) {
         return (
             $libs,
             [   @{$switches},
-                $class->_libs2switches([@$libs, @perl5lib]),
-                defined $ENV{PERL5OPT} ? shellwords( $ENV{PERL5OPT} ) : ()
+                $class->_libs2switches($libs),
+                split_shell( $ENV{PERL5OPT} )
             ],
         );
     }
@@ -208,10 +200,10 @@ sub _filter_libs {
 }
 
 sub _iterator_hooks {
-    my ( $class, $source, $libs, $switches ) = @_;
+    my ( $class, $source, $libs ) = @_;
 
     my $setup = sub {
-        if ( @{$libs} and !$class->_has_taint_switch($switches) ) {
+        if ( @{$libs} ) {
             $ENV{PERL5LIB} = join(
                 $Config{path_sep}, grep {defined} @{$libs},
                 $ENV{PERL5LIB}
@@ -219,8 +211,8 @@ sub _iterator_hooks {
         }
     };
 
-    # VMS environment variables aren't guaranteed to reset at the end of
-    # the process, so we need to put PERL5LIB back.
+    # Cargo culted from comments seen elsewhere about VMS / environment
+    # variables. I don't know if this is actually necessary.
     my $previous = $ENV{PERL5LIB};
     my $teardown = sub {
         if ( defined $previous ) {
@@ -240,7 +232,7 @@ sub _run {
     my @command = $class->_get_command_for_switches( $source, $switches )
       or $class->_croak("No command found!");
 
-    my ( $setup, $teardown ) = $class->_iterator_hooks( $source, $libs, $switches );
+    my ( $setup, $teardown ) = $class->_iterator_hooks( $source, $libs );
 
     return $class->_create_iterator( $source, \@command, $setup, $teardown );
 }
@@ -341,10 +333,11 @@ Please see L<TAP::Parser/SUBCLASSING> for a subclassing overview.
   package MyPerlSourceHandler;
 
   use strict;
+  use vars '@ISA';
 
   use TAP::Parser::SourceHandler::Perl;
 
-  use base 'TAP::Parser::SourceHandler::Perl';
+  @ISA = qw( TAP::Parser::SourceHandler::Perl );
 
   # use the version of perl from the shebang line in the test file
   sub get_perl {

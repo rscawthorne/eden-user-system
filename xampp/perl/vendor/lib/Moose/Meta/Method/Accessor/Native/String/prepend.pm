@@ -1,12 +1,25 @@
 package Moose::Meta::Method::Accessor::Native::String::prepend;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::String::prepend::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::String::prepend::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Writer';
+with 'Moose::Meta::Method::Accessor::Native::Writer' => {
+    -excludes => [
+        qw(
+            _minimum_arguments
+            _maximum_arguments
+            _inline_optimized_set_new_value
+            )
+    ]
+    };
 
 sub _minimum_arguments { 1 }
 

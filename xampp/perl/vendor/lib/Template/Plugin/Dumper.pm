@@ -24,10 +24,10 @@ use warnings;
 use base 'Template::Plugin';
 use Data::Dumper;
 
-our $VERSION = '3.009';
+our $VERSION = 2.70;
 our $DEBUG   = 0 unless defined $DEBUG;
 our @DUMPER_ARGS = qw( Indent Pad Varname Purity Useqq Terse Freezer
-                       Toaster Deepcopy Quotekeys Bless Maxdepth Sortkeys );
+                       Toaster Deepcopy Quotekeys Bless Maxdepth );
 our $AUTOLOAD;
 
 #==============================================================================

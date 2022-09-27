@@ -6,13 +6,7 @@ use File::Spec ();
 use File::Basename ();
 use Carp ();
 
-=head1 NAME
-
-CPAN::HandleConfig - internal configuration handling for CPAN.pm
-
-=cut 
-
-$VERSION = "5.5011"; # see also CPAN::Config::VERSION at end of file
+$VERSION = "5.5003"; # see also CPAN::Config::VERSION at end of file
 
 %can = (
         commit   => "Commit changes to disk",
@@ -33,8 +27,6 @@ $VERSION = "5.5011"; # see also CPAN::Config::VERSION at end of file
 
 %keys = map { $_ => undef }
     (
-     "allow_installing_module_downgrades",
-     "allow_installing_outdated_dists",
      "applypatch",
      "auto_commit",
      "build_cache",
@@ -44,7 +36,6 @@ $VERSION = "5.5011"; # see also CPAN::Config::VERSION at end of file
      "bzip2",
      "cache_metadata",
      "check_sigs",
-     "cleanup_after_install",
      "colorize_debug",
      "colorize_output",
      "colorize_print",
@@ -91,7 +82,6 @@ $VERSION = "5.5011"; # see also CPAN::Config::VERSION at end of file
      "patch",
      "patches_dir",
      "perl5lib_verbosity",
-     "plugin_list",
      "prefer_external_tar",
      "prefer_installer",
      "prefs_dir",
@@ -99,13 +89,11 @@ $VERSION = "5.5011"; # see also CPAN::Config::VERSION at end of file
      "proxy_pass",
      "proxy_user",
      "randomize_urllist",
-     "recommends_policy",
      "scan_cache",
      "shell",
      "show_unparsable_versions",
      "show_upload_date",
      "show_zero_versions",
-     "suggests_policy",
      "tar",
      "tar_verbosity",
      "term_is_latin",
@@ -114,9 +102,6 @@ $VERSION = "5.5011"; # see also CPAN::Config::VERSION at end of file
      "trust_test_report_history",
      "unzip",
      "urllist",
-     "urllist_ping_verbose",
-     "urllist_ping_external",
-     "use_prompt_default",
      "use_sqlite",
      "username",
      "version_timeout",
@@ -128,8 +113,6 @@ $VERSION = "5.5011"; # see also CPAN::Config::VERSION at end of file
 
 my %prefssupport = map { $_ => 1 }
     (
-     "allow_installing_module_downgrades",
-     "allow_installing_outdated_dists",
      "build_requires_install_policy",
      "check_sigs",
      "make",
@@ -161,7 +144,7 @@ sub edit {
         # one day I used randomize_urllist for a boolean, so we must
         # list them explicitly --ak
         if (0) {
-        } elsif ($o =~ /^(wait_list|urllist|dontload_list|plugin_list)$/) {
+        } elsif ($o =~ /^(wait_list|urllist|dontload_list)$/) {
 
             #
             # ARRAYS
@@ -257,7 +240,7 @@ sub prettyprint {
                     sprintf "\t%-18s => %s\n",
                                "[$_]",
                                         defined $v->{$_} ? "[$v->{$_}]" : "undef"
-                } sort keys %$v;
+                } keys %$v;
         }
         $CPAN::Frontend->myprint(
                                  join(
@@ -391,9 +374,9 @@ sub neatvalue {
         return join "", @m;
     }
     return "$v" unless $t eq 'HASH';
-    my @m;
-    foreach my $key (sort keys %$v) {
-        my $val = $v->{$key};
+    my(@m, $key, $val);
+    while (($key,$val) = each %$v) {
+        last unless defined $key; # cautious programming in case (undef,undef) is true
         push(@m,"q[$key]=>".$self->neatvalue($val)) ;
     }
     return "{ ".join(', ',@m)." }";
@@ -544,8 +527,7 @@ sub cpan_home_dir_candidates {
     push @dirs, $ENV{USERPROFILE} if $ENV{USERPROFILE};
 
     $CPAN::Config->{load_module_verbosity} = $old_v;
-    my $dotcpan = $^O eq 'VMS' ? '_cpan' : '.cpan';
-    @dirs = map { File::Spec->catdir($_, $dotcpan) } grep { defined } @dirs;
+    @dirs = map { "$_/.cpan" } grep { defined } @dirs;
     return wantarray ? @dirs : $dirs[0];
 }
 
@@ -757,7 +739,7 @@ sub prefs_lookup {
         return $distro->prefs->{cpanconfig}{$what};
     } else {
         $CPAN::Frontend->mywarn("Warning: $what not yet officially ".
-                                "supported for distroprefs, doing a normal lookup\n");
+                                "supported for distroprefs, doing a normal lookup");
         return $CPAN::Config->{$what};
     }
 }
@@ -776,7 +758,7 @@ sub prefs_lookup {
 
     use strict;
     use vars qw($AUTOLOAD $VERSION);
-    $VERSION = "5.5011";
+    $VERSION = "5.5001";
 
     # formerly CPAN::HandleConfig was known as CPAN::Config
     sub AUTOLOAD { ## no critic

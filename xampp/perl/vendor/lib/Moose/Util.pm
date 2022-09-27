@@ -1,21 +1,27 @@
 package Moose::Util;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Util::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Util::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
-use Module::Runtime 0.014 'use_package_optimistically', 'module_notional_filename';
+use Class::Load 0.07 qw(load_class load_first_existing_class);
 use Data::OptList;
+use Params::Util qw( _STRING );
 use Sub::Exporter;
 use Scalar::Util 'blessed';
-use List::Util 1.33 qw(first any all);
+use List::Util qw(first);
+use List::MoreUtils qw(any all);
 use overload ();
 use Try::Tiny;
-
+use Class::MOP;
 
 my @exports = qw[
     find_meta
-    is_role
     does_role
     search_class_by_role
     ensure_all_roles
@@ -29,7 +35,6 @@ my @exports = qw[
     english_list
     meta_attribute_alias
     meta_class_alias
-    throw_exception
 ];
 
 Sub::Exporter::setup_exporter({
@@ -37,30 +42,11 @@ Sub::Exporter::setup_exporter({
     groups  => { all => \@exports }
 });
 
-# Things that need to ->import from Moose::Util
-# should be loaded after Moose::Util defines ->import
-require Class::MOP;
-
-sub throw_exception {
-    my ($class_name, @args_to_exception) = @_;
-    my $class = "Moose::Exception::$class_name";
-    _load_user_class( $class );
-    die $class->new( @args_to_exception );
-}
-
 ## some utils for the utils ...
 
 sub find_meta { Class::MOP::class_of(@_) }
 
 ## the functions ...
-
-sub is_role {
-    my $package_or_obj = shift;
-
-    my $meta = find_meta($package_or_obj);
-    return if not $meta;
-    return $meta->isa('Moose::Meta::Role');
-}
 
 sub does_role {
     my ($class_or_obj, $role) = @_;
@@ -119,7 +105,7 @@ sub _apply_all_roles {
 
     unless (@_) {
         require Moose;
-        throw_exception( MustSpecifyAtleastOneRoleToApplicant => applicant => $applicant );
+        Moose->throw_error("Must specify at least one role to apply to $applicant");
     }
 
     # If @_ contains role meta objects, mkopt will think that they're values,
@@ -143,12 +129,15 @@ sub _apply_all_roles {
             $meta = $role->[0];
         }
         else {
-            _load_user_class( $role->[0] , $role->[1] );
+            load_class( $role->[0] , $role->[1] );
             $meta = find_meta( $role->[0] );
         }
 
         unless ($meta && $meta->isa('Moose::Meta::Role') ) {
-            throw_exception( CanOnlyConsumeRole => role_name => $role->[0] );
+            require Moose;
+            Moose->throw_error( "You can only consume roles, "
+                    . $role->[0]
+                    . " is not a Moose role" );
         }
 
         push @role_metas, [ $meta, $role->[1] ];
@@ -160,7 +149,7 @@ sub _apply_all_roles {
 
     return unless @role_metas;
 
-    _load_user_class($applicant)
+    load_class($applicant)
         unless blessed($applicant)
             || Class::MOP::class_of($applicant);
 
@@ -233,24 +222,15 @@ sub _build_alias_package_name {
             $type, $metaclass_name, $options{trait}
         );
 
-        my @possible = ($possible_full_name, $metaclass_name);
-        for my $package (@possible) {
-            use_package_optimistically($package);
-            if ($package->can('register_implementation')) {
-                return $cache{$cache_key}{$metaclass_name} =
-                    $package->register_implementation;
-            }
-            elsif (find_meta($package)) {
-                return $cache{$cache_key}{$metaclass_name} = $package;
-            }
-        }
+        my $loaded_class = load_first_existing_class(
+            $possible_full_name,
+            $metaclass_name
+        );
 
-        throw_exception( CannotLocatePackageInINC => possible_packages => _english_list_or(@possible),
-                                                     INC               => \@INC,
-                                                     type              => $type,
-                                                     metaclass_name    => $metaclass_name,
-                                                     params            => \%options
-                       );
+        return $cache{$cache_key}{$metaclass_name}
+            = $loaded_class->can('register_implementation')
+            ? $loaded_class->register_implementation
+            : $loaded_class;
     }
 }
 
@@ -262,11 +242,11 @@ sub add_method_modifier {
         : find_meta($class_or_obj);
     my $code                = pop @{$args};
     my $add_modifier_method = 'add_' . $modifier_name . '_method_modifier';
-    if ( my $method_modifier_type = ref( $args->[0] ) ) {
+    if ( my $method_modifier_type = ref( @{$args}[0] ) ) {
         if ( $method_modifier_type eq 'Regexp' ) {
             my @all_methods = $meta->get_all_methods;
             my @matched_methods
-                = grep { $_->name =~ $args->[0] } @all_methods;
+                = grep { $_->name =~ @{$args}[0] } @all_methods;
             $meta->$add_modifier_method( $_->name, $code )
                 for @matched_methods;
         }
@@ -274,10 +254,13 @@ sub add_method_modifier {
             $meta->$add_modifier_method( $_, $code ) for @{$args->[0]};
         }
         else {
-            throw_exception( IllegalMethodTypeToAddMethodModifier => class_or_object => $class_or_obj,
-                                                                     modifier_name   => $modifier_name,
-                                                                     params          => $args
-                           );
+            $meta->throw_error(
+                sprintf(
+                    "Methods passed to %s must be provided as a list, arrayref or regex, not %s",
+                    $modifier_name,
+                    $method_modifier_type,
+                )
+            );
         }
     }
     else {
@@ -286,28 +269,14 @@ sub add_method_modifier {
 }
 
 sub english_list {
-    _english_list_and(@_);
-}
-
-sub _english_list_and {
-    _english_list('and', \@_);
-}
-
-sub _english_list_or {
-    _english_list('or', \@_);
-}
-
-sub _english_list {
-    my ($conjunction, $items) = @_;
-
-    my @items = sort @$items;
+    my @items = sort @_;
 
     return $items[0] if @items == 1;
-    return "$items[0] $conjunction $items[1]" if @items == 2;
+    return "$items[0] and $items[1]" if @items == 2;
 
     my $tail = pop @items;
     my $list = join ', ', @items;
-    $list .= ", $conjunction " . $tail;
+    $list .= ', and ' . $tail;
 
     return $list;
 }
@@ -316,7 +285,7 @@ sub _caller_info {
     my $level = @_ ? ($_[0] + 1) : 2;
     my %info;
     @info{qw(package file line)} = caller($level);
-    return %info;
+    return \%info;
 }
 
 sub _create_alias {
@@ -343,19 +312,15 @@ sub meta_class_alias {
     _create_alias('Class', $to, $trait, $from);
 }
 
-sub _load_user_class {
-    my ($class, $opts) = @_;
-    &use_package_optimistically(
-        $class,
-        $opts && $opts->{-version} ? $opts->{-version} : ()
-    );
-}
-
 # XXX - this should be added to Params::Util
 sub _STRINGLIKE0 ($) {
-    return 0 if !defined $_[0];
-    return 1 if !ref $_[0];
-    return 1 if overload::OverloadedStringify($_[0]);
+    return 1 if _STRING( $_[0] );
+    if ( blessed $_[0] ) {
+        return overload::Method( $_[0], q{""} );
+    }
+
+    return 1 if defined $_[0] && $_[0] eq q{};
+
     return 0;
 }
 
@@ -382,24 +347,20 @@ sub _reconcile_roles_for_metaclass {
 
 sub _role_differences {
     my ($class_meta_name, $super_meta_name) = @_;
-    my @super_role_metas = map {
-        $_->isa('Moose::Meta::Role::Composite')
-            ? (@{ $_->get_roles })
-            : ($_)
-    } $super_meta_name->meta->can('_roles_with_inheritance')
-        ? $super_meta_name->meta->_roles_with_inheritance
-    : $super_meta_name->meta->can('roles')
-        ? @{ $super_meta_name->meta->roles }
-    :     ();
-    my @role_metas = map {
-        $_->isa('Moose::Meta::Role::Composite')
-            ? (@{ $_->get_roles })
-            : ($_)
-    } $class_meta_name->meta->can('_roles_with_inheritance')
-        ? $class_meta_name->meta->_roles_with_inheritance
-    : $class_meta_name->meta->can('roles')
-        ? @{ $class_meta_name->meta->roles }
-    :     ();
+    my @super_role_metas
+        = grep { !$_->isa('Moose::Meta::Role::Composite') }
+               $super_meta_name->meta->can('calculate_all_roles_with_inheritance')
+                   ? $super_meta_name->meta->calculate_all_roles_with_inheritance
+                   : $super_meta_name->meta->can('calculate_all_roles')
+                   ? $super_meta_name->meta->calculate_all_roles
+                   : ();
+    my @role_metas
+        = grep { !$_->isa('Moose::Meta::Role::Composite') }
+               $class_meta_name->meta->can('calculate_all_roles_with_inheritance')
+                   ? $class_meta_name->meta->calculate_all_roles_with_inheritance
+                   : $class_meta_name->meta->can('calculate_all_roles')
+                   ? $class_meta_name->meta->calculate_all_roles
+                   : ();
     my @differences;
     for my $role_meta (@role_metas) {
         push @differences, $role_meta
@@ -515,20 +476,13 @@ sub _is_role_only_subclass {
     return 1;
 }
 
-sub _is_package_loaded {
-    my ($package) = @_;
-    defined $INC{module_notional_filename($package)};
-}
-
 1;
 
 # ABSTRACT: Utilities for working with Moose classes
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -536,7 +490,7 @@ Moose::Util - Utilities for working with Moose classes
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 SYNOPSIS
 
@@ -559,17 +513,15 @@ some of them may be useful for use in your own code.
 
 =head1 EXPORTED FUNCTIONS
 
-=head2 find_meta($class_or_obj)
+=over 4
+
+=item B<find_meta($class_or_obj)>
 
 This method takes a class name or object and attempts to find a
 metaclass for the class, if one exists. It will B<not> create one if it
 does not yet exist.
 
-=head2 is_role($package_or_obj)
-
-Returns true if the provided package name or object is a L<Moose::Role>.
-
-=head2 does_role($class_or_obj, $role_or_obj)
+=item B<does_role($class_or_obj, $role_or_obj)>
 
 Returns true if C<$class_or_obj> does the given C<$role_or_obj>. The role can
 be provided as a name or a L<Moose::Meta::Role> object.
@@ -577,7 +529,7 @@ be provided as a name or a L<Moose::Meta::Role> object.
 The class must already have a metaclass for this to work. If it doesn't, this
 function simply returns false.
 
-=head2 search_class_by_role($class_or_obj, $role_or_obj)
+=item B<search_class_by_role($class_or_obj, $role_or_obj)>
 
 Returns the first class in the class's precedence list that does
 C<$role_or_obj>, if any. The role can be either a name or a
@@ -585,9 +537,9 @@ L<Moose::Meta::Role> object.
 
 The class must already have a metaclass for this to work.
 
-=head2 apply_all_roles($applicant, @roles)
+=item B<apply_all_roles($applicant, @roles)>
 
-This function applies one or more roles to the given C<$applicant>. The
+This function applies one or more roles to the given C<$applicant> The
 applicant can be a role name, class name, or object.
 
 The C<$applicant> must already have a metaclass object.
@@ -596,22 +548,22 @@ The list of C<@roles> should a list of names or L<Moose::Meta::Role> objects,
 each of which can be followed by an optional hash reference of options
 (C<-excludes> and C<-alias>).
 
-=head2 ensure_all_roles($applicant, @roles)
+=item B<ensure_all_roles($applicant, @roles)>
 
 This function is similar to C<apply_all_roles>, but only applies roles that
 C<$applicant> does not already consume.
 
-=head2 with_traits($class_name, @role_names)
+=item B<with_traits($class_name, @role_names)>
 
 This function creates a new class from C<$class_name> with each of
 C<@role_names> applied. It returns the name of the new class.
 
-=head2 get_all_attribute_values($meta, $instance)
+=item B<get_all_attribute_values($meta, $instance)>
 
 Returns a hash reference containing all of the C<$instance>'s
 attributes. The keys are attribute names.
 
-=head2 get_all_init_args($meta, $instance)
+=item B<get_all_init_args($meta, $instance)>
 
 Returns a hash reference containing all of the C<init_arg> values for
 the instance's attributes. The values are the associated attribute
@@ -620,9 +572,9 @@ skipped.
 
 This could be useful in cloning an object.
 
-=head2 resolve_metaclass_alias($category, $name, %options)
+=item B<resolve_metaclass_alias($category, $name, %options)>
 
-=head2 resolve_metatrait_alias($category, $name, %options)
+=item B<resolve_metatrait_alias($category, $name, %options)>
 
 Resolves a short name to a full class name. Short names are often used
 when specifying the C<metaclass> or C<traits> option for an attribute:
@@ -634,24 +586,21 @@ when specifying the C<metaclass> or C<traits> option for an attribute:
 The name resolution mechanism is covered in
 L<Moose/Metaclass and Trait Name Resolution>.
 
-=head2 meta_class_alias($to[, $from])
+=item B<meta_class_alias($to[, $from])>
 
-=head2 meta_attribute_alias($to[, $from])
+=item B<meta_attribute_alias($to[, $from])>
 
 Create an alias from the class C<$from> (or the current package, if
 C<$from> is unspecified), so that
 L<Moose/Metaclass and Trait Name Resolution> works properly.
 
-=head2 english_list(@items)
+=item B<english_list(@items)>
 
 Given a list of scalars, turns them into a proper list in English
 ("one and two", "one, two, three, and four"). This is used to help us
 make nicer error messages.
 
-=head2 throw_exception( $class_name, %arguments_to_exception)
-
-Calls die with an object of Moose::Exception::$class_name, with
-%arguments_to_exception passed as arguments.
+=back
 
 =head1 TODO
 
@@ -669,57 +618,20 @@ Here is a list of possible functions to write
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+

@@ -33,9 +33,8 @@ use Scalar::Util 'blessed';
 use constant DOCUMENT         => 'Template::Document';
 use constant EXCEPTION        => 'Template::Exception';
 use constant BADGER_EXCEPTION => 'Badger::Exception';
-use constant MSWin32          => $^O eq 'MSWin32';
 
-our $VERSION = '3.009';
+our $VERSION = 2.98;
 our $DEBUG   = 0 unless defined $DEBUG;
 our $DEBUG_FORMAT = "\n## \$file line \$line : [% \$text %] ##\n";
 our $VIEW_CLASS   = 'Template::View';
@@ -82,7 +81,7 @@ sub template {
 
     $self->debug("template($name)") if $self->{ DEBUG };
 
-    # references to Template::Document (or sub-class) objects, or
+    # references to Template::Document (or sub-class) objects objects, or
     # CODE references are assumed to be pre-compiled templates and are
     # returned intact
     return $name
@@ -109,7 +108,7 @@ sub template {
         
         # now it's time to ask the providers, so we look to see if any 
         # prefix is specified to indicate the desired provider set.
-        if (MSWin32) {
+        if ($^O eq 'MSWin32') {
             # let C:/foo through
             $prefix = $1 if $shortname =~ s/^(\w{2,})://o;
         }
@@ -430,7 +429,7 @@ sub insert {
     FILE: foreach $file (@$files) {
         my $name = $file;
 
-        if (MSWin32) {
+        if ($^O eq 'MSWin32') {
             # let C:/foo through
             $prefix = $1 if $name =~ s/^(\w{2,})://o;
         }
@@ -521,7 +520,7 @@ sub throw {
 # catch($error, \$output)
 #
 # Called by various directives after catching an error thrown via die()
-# from within an eval { } block.  The first parameter contains the error
+# from within an eval { } block.  The first parameter contains the errror
 # which may be a sanitized reference to a Template::Exception object
 # (such as that raised by the throw() method above, a plugin object, 
 # and so on) or an error message thrown via die from somewhere in user
@@ -615,7 +614,7 @@ sub leave {
 # object or as text which is compiled into a template.  Returns a true
 # value (the $block reference or compiled block reference) if
 # successful or undef on failure.  Call error() to retrieve the
-# relevant error message (i.e. compilation failure).
+# relevent error message (i.e. compilation failure).
 #------------------------------------------------------------------------
 
 sub define_block {
@@ -762,25 +761,25 @@ sub debugging {
     my @args = @_;
 
     if (@args) {
-        if ($args[0] eq '1' || lc($args[0]) eq 'on' ) {
+        if ($args[0] =~ /^on|1$/i) {
             $self->{ DEBUG_DIRS } = 1;
             shift(@args);
         }
-        elsif ($args[0] eq '0' || lc($args[0]) eq 'off') {
+        elsif ($args[0] =~ /^off|0$/i) {
             $self->{ DEBUG_DIRS } = 0;
             shift(@args);
         }
     }
 
     if (@args) {
-        if (lc($args[0]) eq 'msg') {
+        if ($args[0] =~ /^msg$/i) {
             return unless $self->{ DEBUG_DIRS };
             my $format = $self->{ DEBUG_FORMAT };
             $format = $DEBUG_FORMAT unless defined $format;
             $format =~ s/\$(\w+)/$hash->{ $1 }/ge;
             return $format;
         }
-        elsif ( lc($args[0]) eq 'format' ) {
+        elsif ($args[0] =~ /^format$/i) {
             $self->{ DEBUG_FORMAT } = $args[1];
         }
         # else ignore
@@ -1529,7 +1528,7 @@ Andy Wardley E<lt>abw@wardley.orgE<gt> L<http://wardley.org/>
 
 =head1 COPYRIGHT
 
-Copyright (C) 1996-2013 Andy Wardley.  All Rights Reserved.
+Copyright (C) 1996-2012 Andy Wardley.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

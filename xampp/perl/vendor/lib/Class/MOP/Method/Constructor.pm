@@ -1,28 +1,31 @@
+
 package Class::MOP::Method::Constructor;
-our $VERSION = '2.2014';
+BEGIN {
+  $Class::MOP::Method::Constructor::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Class::MOP::Method::Constructor::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
+use Carp         'confess';
 use Scalar::Util 'blessed', 'weaken';
 use Try::Tiny;
 
-use parent 'Class::MOP::Method::Inlined';
+use base 'Class::MOP::Method::Inlined';
 
 sub new {
     my $class   = shift;
     my %options = @_;
 
     (blessed $options{metaclass} && $options{metaclass}->isa('Class::MOP::Class'))
-        || $class->_throw_exception( MustSupplyAMetaclass => params => \%options,
-                                                    class  => $class
-                          )
+        || confess "You must pass a metaclass instance if you want to inline"
             if $options{is_inline};
 
     ($options{package_name} && $options{name})
-        || $class->_throw_exception( MustSupplyPackageNameAndName => params => \%options,
-                                                            class  => $class
-                          );
+        || confess "You must supply the package_name and name parameters $Class::MOP::Method::UPGRADE_ERROR_TEXT";
 
     my $self = $class->_new(\%options);
 
@@ -47,7 +50,7 @@ sub _new {
     return bless {
         # inherited from Class::MOP::Method
         body                 => $params->{body},
-        # associated_metaclass => $params->{associated_metaclass}, # overridden
+        # associated_metaclass => $params->{associated_metaclass}, # overriden
         package_name         => $params->{package_name},
         name                 => $params->{name},
         original_method      => $params->{original_method},
@@ -108,10 +111,7 @@ sub _generate_constructor_method_inline {
     }
     catch {
         my $source = join("\n", @source);
-        $self->_throw_exception( CouldNotEvalConstructor => constructor_method => $self,
-                                                    source             => $source,
-                                                    error              => $_
-                       );
+        confess "Could not eval the constructor :\n\n$source\n\nbecause :\n\n$_";
     };
 
     return $code;
@@ -121,11 +121,9 @@ sub _generate_constructor_method_inline {
 
 # ABSTRACT: Method Meta Object for constructors
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -133,7 +131,7 @@ Class::MOP::Method::Constructor - Method Meta Object for constructors
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 SYNOPSIS
 
@@ -151,7 +149,7 @@ version 2.2014
 
 =head1 DESCRIPTION
 
-This is a subclass of L<Class::MOP::Method> which generates
+This is a subclass of C<Class::MOP::Method> which generates
 constructor methods.
 
 =head1 METHODS
@@ -195,57 +193,20 @@ This returns the L<Class::MOP::Class> object for the method.
 
 =back
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+

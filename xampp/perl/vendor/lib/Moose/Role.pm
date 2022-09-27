@@ -1,24 +1,28 @@
+package Moose::Role;
+BEGIN {
+  $Moose::Role::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Role::VERSION = '2.0604';
+}
 use strict;
 use warnings;
-package Moose::Role;
-our $VERSION = '2.2014';
 
-use Scalar::Util ();
-use Carp ();
+use Scalar::Util 'blessed';
+use Carp         'croak';
 use Class::Load  'is_class_loaded';
-use Module::Runtime 'module_notional_filename';
 
 use Sub::Exporter;
 
 use Moose       ();
-use Moose::Util 'throw_exception';
+use Moose::Util ();
 
 use Moose::Exporter;
 use Moose::Meta::Role;
 use Moose::Util::TypeConstraints;
 
 sub extends {
-    throw_exception("RolesDoNotSupportExtends");
+    croak "Roles do not support 'extends' (you can use 'with' to specialize a role)";
 }
 
 sub with {
@@ -27,27 +31,21 @@ sub with {
 
 sub requires {
     my $meta = shift;
-    throw_exception( MustSpecifyAtleastOneMethod => role_name => $meta->name ) unless @_;
+    croak "Must specify at least one method" unless @_;
     $meta->add_required_methods(@_);
 }
 
 sub excludes {
     my $meta = shift;
-    throw_exception( MustSpecifyAtleastOneRole => role_name => $meta->name ) unless @_;
+    croak "Must specify at least one role" unless @_;
     $meta->add_excluded_roles(@_);
 }
 
 sub has {
     my $meta = shift;
     my $name = shift;
-    throw_exception( InvalidHasProvidedInARole => role_name       => $meta->name,
-                                                  attribute_name  => $name,
-                   )
-        if @_ == 1;
-    my %context = Moose::Util::_caller_info;
-    $context{context} = 'has declaration';
-    $context{type} = 'role';
-    my %options = ( definition_context => \%context, @_ );
+    croak 'Usage: has \'name\' => ( key => value, ... )' if @_ == 1;
+    my %options = ( definition_context => Moose::Util::_caller_info(), @_ );
     my $attrs = ( ref($name) eq 'ARRAY' ) ? $name : [ ($name) ];
     $meta->add_attribute( $_, %options ) for @$attrs;
 }
@@ -57,9 +55,8 @@ sub _add_method_modifier {
     my $meta = shift;
 
     if ( ref($_[0]) eq 'Regexp' ) {
-        throw_exception( RolesDoNotSupportRegexReferencesForMethodModifiers => modifier_type => $type,
-                                                                               role_name     => $meta->name,
-                       );
+        croak "Roles do not currently support regex "
+            . " references for $type method modifiers";
     }
 
     Moose::Util::add_method_modifier($meta, $type, \@_);
@@ -84,11 +81,11 @@ sub override {
 }
 
 sub inner {
-    throw_exception("RolesDoNotSupportInner");
+    croak "Roles cannot support 'inner'";
 }
 
 sub augment {
-    throw_exception("RolesDoNotSupportAugment");
+    croak "Roles cannot support 'augment'";
 }
 
 Moose::Exporter->setup_import_methods(
@@ -97,8 +94,8 @@ Moose::Exporter->setup_import_methods(
     ],
     as_is => [
         qw( extends super inner augment ),
-        'Carp::confess',
-        'Scalar::Util::blessed',
+        \&Carp::confess,
+        \&Scalar::Util::blessed,
     ],
 );
 
@@ -110,16 +107,16 @@ sub init_meta {
 
     unless ($role) {
         require Moose;
-        throw_exception( InitMetaRequiresClass => params => \%args );
+        Moose->throw_error("Cannot call init_meta without specifying a for_class");
     }
 
     my $metaclass = $args{metaclass} || "Moose::Meta::Role";
     my $meta_name = exists $args{meta_name} ? $args{meta_name} : 'meta';
 
-    throw_exception( MetaclassNotLoaded => class_name => $metaclass )
+    Moose->throw_error("The Metaclass $metaclass must be loaded. (Perhaps you forgot to 'use $metaclass'?)")
         unless is_class_loaded($metaclass);
 
-    throw_exception( MetaclassMustBeASubclassOfMooseMetaRole => role_name => $metaclass )
+    Moose->throw_error("The Metaclass $metaclass must be a subclass of Moose::Meta::Role.")
         unless $metaclass->isa('Moose::Meta::Role');
 
     # make a subtype for each Moose role
@@ -128,22 +125,16 @@ sub init_meta {
     my $meta;
     if ( $meta = Class::MOP::get_metaclass_by_name($role) ) {
         unless ( $meta->isa("Moose::Meta::Role") ) {
+            my $error_message = "$role already has a metaclass, but it does not inherit $metaclass ($meta).";
             if ( $meta->isa('Moose::Meta::Class') ) {
-                throw_exception( MetaclassIsAClassNotASubclassOfGivenMetaclass => class_name => $role,
-                                                                                  metaclass  => $metaclass,
-                               );
+                Moose->throw_error($error_message . ' You cannot make the same thing a role and a class. Remove either Moose or Moose::Role.');
             } else {
-                throw_exception( MetaclassIsNotASubclassOfGivenMetaclass => class_name => $role,
-                                                                            metaclass  => $metaclass,
-                               );
+                Moose->throw_error($error_message);
             }
         }
     }
     else {
         $meta = $metaclass->initialize($role);
-        my $filename = module_notional_filename($meta->name);
-        $INC{$filename} = '(set by Moose)'
-            unless exists $INC{$filename};
     }
 
     if (defined $meta_name) {
@@ -168,11 +159,9 @@ sub init_meta {
 
 # ABSTRACT: The Moose Role
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -180,7 +169,7 @@ Moose::Role - The Moose Role
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 SYNOPSIS
 
@@ -236,7 +225,9 @@ details).
 
 Moose::Role also offers two role-specific keyword exports:
 
-=head2 requires (@method_names)
+=over 4
+
+=item B<requires (@method_names)>
 
 Roles can require that certain methods are implemented by any class which
 C<does> the role.
@@ -244,13 +235,15 @@ C<does> the role.
 Note that attribute accessors also count as methods for the purposes
 of satisfying the requirements of a role.
 
-=head2 excludes (@role_names)
+=item B<excludes (@role_names)>
 
 Roles can C<exclude> other roles, in effect saying "I can never be combined
 with these C<@role_names>". This is a feature which should not be used
 lightly.
 
-=head2 no Moose::Role
+=back
+
+=head2 B<unimport>
 
 Moose::Role offers a way to remove the keywords it exports, through the
 C<unimport> method. You simply have to say C<no Moose::Role> at the bottom of
@@ -267,9 +260,6 @@ This is very similar to the attribute traits feature. When you do
 this, your class's C<meta> object will have the specified traits
 applied to it. See L<Moose/Metaclass and Trait Name Resolution> for more
 details.
-
-All role metaclasses (note, not the role itself) extend L<Moose::Meta::Role>.
-You can test if a package is a role or not using L<Moose::Util/is_role>.
 
 =head1 APPLYING ROLES
 
@@ -321,57 +311,19 @@ ordering.
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+

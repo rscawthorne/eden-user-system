@@ -1,13 +1,13 @@
 package File::Spec::OS2;
 
 use strict;
-use Cwd ();
+use vars qw(@ISA $VERSION);
 require File::Spec::Unix;
 
-our $VERSION = '3.78';
-$VERSION =~ tr/_//d;
+$VERSION = '3.40';
+$VERSION =~ tr/_//;
 
-our @ISA = qw(File::Spec::Unix);
+@ISA = qw(File::Spec::Unix);
 
 sub devnull {
     return "/dev/nul";
@@ -30,13 +30,16 @@ sub path {
     return @path;
 }
 
+sub _cwd {
+    # In OS/2 the "require Cwd" is unnecessary bloat.
+    return Cwd::sys_cwd();
+}
+
+my $tmpdir;
 sub tmpdir {
-    my $cached = $_[0]->_cached_tmpdir(qw 'TMPDIR TEMP TMP');
-    return $cached if defined $cached;
+    return $tmpdir if defined $tmpdir;
     my @d = @ENV{qw(TMPDIR TEMP TMP)};	# function call could autovivivy
-    $_[0]->_cache_tmpdir(
-	$_[0]->_tmpdir( @d, '/tmp', '/' ), qw 'TMPDIR TEMP TMP'
-    );
+    $tmpdir = $_[0]->_tmpdir( @d, '/tmp', '/'  );
 }
 
 sub catdir {
@@ -143,7 +146,7 @@ sub abs2rel {
 
     # Figure out the effective $base and clean it up.
     if ( !defined( $base ) || $base eq '' ) {
-	$base = Cwd::getcwd();
+	$base = $self->_cwd();
     } elsif ( ! $self->file_name_is_absolute( $base ) ) {
         $base = $self->rel2abs( $base ) ;
     } else {
@@ -200,7 +203,7 @@ sub rel2abs {
     if ( ! $self->file_name_is_absolute( $path ) ) {
 
         if ( !defined( $base ) || $base eq '' ) {
-	    $base = Cwd::getcwd();
+	    $base = $self->_cwd();
         }
         elsif ( ! $self->file_name_is_absolute( $base ) ) {
             $base = $self->rel2abs( $base ) ;

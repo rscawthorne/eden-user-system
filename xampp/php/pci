@@ -1,4 +1,4 @@
-#!\Users\Cosmic\Documents\GitHub\eden-user-system\xampp\php\.\php.exe
+#!\xampp\php\.\php.exe
 <?php
 /**
  * Get the Compatibility info from PHP CLI

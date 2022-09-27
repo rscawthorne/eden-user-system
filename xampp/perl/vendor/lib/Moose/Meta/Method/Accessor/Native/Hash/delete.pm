@@ -1,20 +1,26 @@
 package Moose::Meta::Method::Accessor::Native::Hash::delete;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Hash::delete::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Hash::delete::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Hash::Writer';
+with 'Moose::Meta::Method::Accessor::Native::Hash::Writer' => {
+    -excludes => [
+        qw(
+            _inline_optimized_set_new_value
+            _return_value
+            )
+    ],
+};
 
 sub _adds_members { 0 }
-
-# There are no new members so we don't need to coerce new values (none exist)
-# and we always want to check the new (empty) hash as a whole.
-sub _inline_coerce_new_values { '' }
-
-sub _check_new_members_only { 0 }
 
 sub _potential_value {
     my $self = shift;

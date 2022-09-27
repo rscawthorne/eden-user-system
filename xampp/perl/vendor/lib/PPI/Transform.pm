@@ -21,7 +21,10 @@ use List::Util    ();
 use PPI::Document ();
 use Params::Util  qw{_INSTANCE _CLASS _CODE _SCALAR0};
 
-our $VERSION = '1.270'; # VERSION
+use vars qw{$VERSION};
+BEGIN {
+	$VERSION = '1.215';
+}
 
 
 
@@ -30,8 +33,8 @@ our $VERSION = '1.270'; # VERSION
 #####################################################################
 # Apply Handler Registration
 
-my %HANDLER;
-my @ORDER;
+my %HANDLER = ();
+my @ORDER   = ();
 
 # Yes, you can use this yourself.
 # I'm just leaving it undocumented for now.
@@ -51,7 +54,7 @@ sub register_apply_handler {
 
 # Register the default handlers
 __PACKAGE__->register_apply_handler( 'SCALAR', \&_SCALAR_get, \&_SCALAR_set );
-__PACKAGE__->register_apply_handler( 'PPI::Document', sub { $_[0] }, sub() { 1 } );
+__PACKAGE__->register_apply_handler( 'PPI::Document', sub { $_[0] }, sub { 1 } );
 
 
 
@@ -120,7 +123,7 @@ sub document {
 
 The C<apply> method is used to apply the transform to something. The
 argument must be a L<PPI::Document>, or something which can be turned
-into one and then be written back to again.
+into a one and then be written back to again.
 
 Currently, this list is limited to a C<SCALAR> reference, although a
 handler registration process is available for you to add support for

@@ -1,9 +1,7 @@
 package ExtUtils::CBuilder::Platform::Windows::GCC;
 
-our $VERSION = '0.280235'; # VERSION
-
-use warnings;
-use strict;
+use vars qw($VERSION);
+$VERSION = '0.280206';
 
 sub format_compiler_cmd {
   my ($self, %spec) = @_;

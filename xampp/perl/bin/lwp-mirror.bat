@@ -1,18 +1,31 @@
 @rem = '--*-Perl-*--
-@set "ErrorLevel="
-@if "%OS%" == "Windows_NT" @goto WinNT
-@perl -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
-@set ErrorLevel=%ErrorLevel%
-@goto endofperl
+@echo off
+if "%OS%" == "Windows_NT" goto WinNT
+IF EXIST "%~dp0perl.exe" (
+"%~dp0perl.exe" -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+) ELSE IF EXIST "%~dp0..\..\bin\perl.exe" (
+"%~dp0..\..\bin\perl.exe" -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+) ELSE (
+perl -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+)
+
+goto endofperl
 :WinNT
-@perl -x -S %0 %*
-@set ErrorLevel=%ErrorLevel%
-@if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" @goto endofperl
-@if %ErrorLevel% == 9009 @echo You do not have Perl in your PATH.
-@goto endofperl
+IF EXIST "%~dp0perl.exe" (
+"%~dp0perl.exe" -x -S %0 %*
+) ELSE IF EXIST "%~dp0..\..\bin\perl.exe" (
+"%~dp0..\..\bin\perl.exe" -x -S %0 %*
+) ELSE (
+perl -x -S %0 %*
+)
+
+if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
+if %errorlevel% == 9009 echo You do not have Perl in your PATH.
+if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
+goto endofperl
 @rem ';
-#!/usr/bin/perl
-#line 30
+#!/usr/bin/perl -w
+#line 29
 
 # Simple mirror utility using LWP
 
@@ -27,7 +40,7 @@ lwp-mirror - Simple mirror utility
 =head1 DESCRIPTION
 
 This program can be used to mirror a document from a WWW server.  The
-document is only transferred if the remote copy is newer than the local
+document is only transfered if the remote copy is newer than the local
 copy.  If the local copy is newer nothing happens.
 
 Use the C<-v> option to print the version number of this program.
@@ -51,27 +64,31 @@ Gisle Aas <gisle@aas.no>
 
 =cut
 
-use strict;
-use warnings;
+
 use LWP::Simple qw(mirror is_success status_message $ua);
-use Getopt::Long qw(GetOptions);
+use Getopt::Std;
 use Encode;
 use Encode::Locale;
 
-my $progname = $0;
-$progname =~ s,.*/,,;       # use basename only
-$progname =~ s/\.\w*$//;    #strip extension if any
+$progname = $0;
+$progname =~ s,.*/,,;  # use basename only
+$progname =~ s/\.\w*$//; #strip extension if any
 
-my %opts;
-unless (GetOptions(\%opts, 'h', 'v', 't=i')) {
+$VERSION = "6.00";
+
+$opt_h = undef;  # print usage
+$opt_v = undef;  # print version
+$opt_t = undef;  # timeout
+
+unless (getopts("hvt:")) {
     usage();
 }
 
-if ($opts{v}) {
+if ($opt_v) {
     require LWP;
-    my $DISTNAME = 'libwww-perl-' . $LWP::VERSION;
+    my $DISTNAME = 'libwww-perl-' . LWP::Version();
     die <<"EOT";
-This is lwp-mirror version $LWP::Simple::VERSION ($DISTNAME)
+This is lwp-mirror version $VERSION ($DISTNAME)
 
 Copyright 1995-1999, Gisle Aas.
 
@@ -80,26 +97,23 @@ modify it under the same terms as Perl itself.
 EOT
 }
 
-my $url = decode(locale => shift) or usage();
-my $file = encode(locale_fs => decode(locale => shift)) or usage();
-usage() if $opts{h} or @ARGV;
+$url  = decode(locale => shift) or usage();
+$file = encode(locale_fs => decode(locale => shift)) or usage();
+usage() if $opt_h or @ARGV;
 
-if ($opts{t}) {
-    if ($opts{t} =~ /^(\d+)([smh])?/) {
-        my $timeout = $1;
-        $timeout *= 60   if ($2 eq "m");
-        $timeout *= 3600 if ($2 eq "h");
-        $ua->timeout($timeout);
-    }
-    else {
-        die "$progname: Illegal timeout value!\n";
-    }
+if (defined $opt_t) {
+    $opt_t =~ /^(\d+)([smh])?/;
+    die "$progname: Illegal timeout value!\n" unless defined $1;
+    $timeout = $1;
+    $timeout *= 60   if ($2 eq "m");
+    $timeout *= 3600 if ($2 eq "h");
+    $ua->timeout($timeout);
 }
 
-my $rc = mirror($url, $file);
+$rc = mirror($url, $file);
 
 if ($rc == 304) {
-    print STDERR "$progname: $file is up to date\n";
+    print STDERR "$progname: $file is up to date\n"
 }
 elsif (!is_success($rc)) {
     print STDERR "$progname: $rc ", status_message($rc), "   ($url)\n";
@@ -108,13 +122,14 @@ elsif (!is_success($rc)) {
 exit;
 
 
-sub usage {
+sub usage
+{
     die <<"EOT";
 Usage: $progname [-options] <url> <file>
     -v           print version number of program
     -t <timeout> Set timeout value
 EOT
 }
+
 __END__
 :endofperl
-@set "ErrorLevel=" & @goto _undefined_label_ 2>NUL || @"%COMSPEC%" /d/c @exit %ErrorLevel%

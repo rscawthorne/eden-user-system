@@ -1,5 +1,10 @@
 package Moose::Meta::Method::Accessor::Native::Array::grep;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Array::grep::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Array::grep::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
@@ -8,7 +13,15 @@ use Params::Util ();
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Reader';
+with 'Moose::Meta::Method::Accessor::Native::Reader' => {
+    -excludes => [
+        qw(
+            _minimum_arguments
+            _maximum_arguments
+            _inline_check_arguments
+            )
+    ]
+};
 
 sub _minimum_arguments { 1 }
 
@@ -19,11 +32,8 @@ sub _inline_check_arguments {
 
     return (
         'if (!Params::Util::_CODELIKE($_[0])) {',
-            $self->_inline_throw_exception( InvalidArgumentToMethod =>
-                                            'argument                => $_[0],'.
-                                            'method_name             => "grep",'.
-                                            'type_of_argument        => "code reference",'.
-                                            'type                    => "CodeRef",',
+            $self->_inline_throw_error(
+                '"The argument passed to grep must be a code reference"',
             ) . ';',
         '}',
     );

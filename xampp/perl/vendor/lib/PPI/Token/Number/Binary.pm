@@ -29,9 +29,11 @@ represent base-2 numbers.
 use strict;
 use PPI::Token::Number ();
 
-our $VERSION = '1.270'; # VERSION
-
-our @ISA = "PPI::Token::Number";
+use vars qw{$VERSION @ISA};
+BEGIN {
+	$VERSION = '1.215';
+	@ISA     = 'PPI::Token::Number';
+}
 
 =pod
 
@@ -41,7 +43,9 @@ Returns the base for the number: 2.
 
 =cut
 
-sub base() { 2 }
+sub base {
+	return 2;
+}
 
 =pod
 
@@ -56,7 +60,7 @@ sub literal {
 	return if $self->{_error};
 	my $str = $self->_literal;
 	my $neg = $str =~ s/^\-//;
-	$str =~ s/^0[bB]//;
+	$str =~ s/^0b//;
 	my $val = 0;
 	for my $bit ( $str =~ m/(.)/g ) {
 		$val = $val * 2 + $bit;
@@ -81,7 +85,7 @@ sub __TOKENIZER__on_char {
 
 	if ( $char =~ /[\w\d]/ ) {
 		unless ( $char eq '1' or $char eq '0' ) {
-			# Add a warning if it contains non-binary chars
+			# Add a warning if it contains non-hex chars
 			$t->{token}->{_error} = "Illegal character in binary number '$char'";
 		}
 		return 1;

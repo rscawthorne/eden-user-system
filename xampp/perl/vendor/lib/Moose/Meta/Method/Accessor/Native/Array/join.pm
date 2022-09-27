@@ -1,5 +1,10 @@
 package Moose::Meta::Method::Accessor::Native::Array::join;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Array::join::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Array::join::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
@@ -8,7 +13,15 @@ use Moose::Util ();
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Reader';
+with 'Moose::Meta::Method::Accessor::Native::Reader' => {
+    -excludes => [
+        qw(
+            _minimum_arguments
+            _maximum_arguments
+            _inline_check_arguments
+            )
+    ]
+};
 
 sub _minimum_arguments { 1 }
 
@@ -19,11 +32,8 @@ sub _inline_check_arguments {
 
     return (
         'if (!Moose::Util::_STRINGLIKE0($_[0])) {',
-            $self->_inline_throw_exception( InvalidArgumentToMethod =>
-                                            'argument                => $_[0],'.
-                                            'method_name             => "join",'.
-                                            'type_of_argument        => "string",'.
-                                            'type                    => "Str",',
+            $self->_inline_throw_error(
+                '"The argument passed to join must be a string"',
             ) . ';',
         '}',
     );

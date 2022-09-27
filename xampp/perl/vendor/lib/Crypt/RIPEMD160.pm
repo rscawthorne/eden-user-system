@@ -1,16 +1,21 @@
 package Crypt::RIPEMD160;
 
 use strict;
-use warnings;
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
-use AutoLoader;
-use XSLoader;
+require Exporter;
+require DynaLoader;
+require AutoLoader;
+@ISA = qw(Exporter AutoLoader DynaLoader);
 
-our @ISA = qw(AutoLoader);
+# Items to export into callers namespace by default
+@EXPORT = qw();
 
-our $VERSION = '0.08';
+@EXPORT_OK = qw();
 
-XSLoader::load('Crypt::RIPEMD160', $VERSION);
+$VERSION = '0.05';
+
+bootstrap Crypt::RIPEMD160 $VERSION;
 
 #package RIPEMD160; # Package-Definition like in Crypt::IDEA
 
@@ -50,7 +55,7 @@ sub hash
     if (ref($self)) {
 	$self->reset();
     } else {
-	$self = Crypt::RIPEMD160->new;
+	$self = new Crypt::RIPEMD160;
     }
     $self->add($data);
     $self->digest();
@@ -63,7 +68,7 @@ sub hexhash
     if (ref($self)) {
 	$self->reset();
     } else {
-	$self = Crypt::RIPEMD160->new;
+	$self = new Crypt::RIPEMD160;
     }
     $self->add($data);
     $self->hexdigest();
@@ -81,7 +86,7 @@ Crypt::RIPEMD160 - Perl extension for the RIPEMD-160 Hash function
 
     use Crypt::RIPEMD160;
     
-    $context = Crypt::RIPEMD160->new;
+    $context = new Crypt::RIPEMD160;
     $context->reset();
     
     $context->add(LIST);
@@ -138,7 +143,7 @@ B<hexdigest>.
 
     use Crypt::RIPEMD160;
     
-    $ripemd160 = Crypt::RIPEMD160->new;
+    $ripemd160 = new Crypt::RIPEMD160;
     $ripemd160->add('foo', 'bar');
     $ripemd160->add('baz');
     $digest = $ripemd160->digest();
@@ -155,7 +160,7 @@ Remembering the Perl motto ("There's more than one way to do it"), the
 following should all give the same result:
 
     use Crypt::RIPEMD160;
-    $ripemd160 = Crypt::RIPEMD160->new;
+    $ripemd160 = new Crypt::RIPEMD160;
 
     die "Can't open /etc/passwd ($!)\n" unless open(P, "/etc/passwd");
 

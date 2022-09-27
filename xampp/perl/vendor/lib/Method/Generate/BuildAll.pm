@@ -1,29 +1,23 @@
 package Method::Generate::BuildAll;
 
-use Moo::_strictures;
-use Moo::Object ();
-BEGIN { our @ISA = qw(Moo::Object) }
-use Sub::Quote qw(quote_sub quotify);
-use Moo::_Utils qw(_getglob);
-use Moo::_mro;
+use strictures 1;
+use base qw(Moo::Object);
+use Sub::Quote;
+use Moo::_Utils;
+use B 'perlstring';
 
 sub generate_method {
   my ($self, $into) = @_;
-  quote_sub "${into}::BUILDALL"
-    => join('',
-      $self->_handle_subbuild($into),
-      qq{    my \$self = shift;\n},
-      $self->buildall_body_for($into, '$self', '@_'),
-      qq{    return \$self\n},
-    )
-    => {}
-    => { no_defer => 1 }
-  ;
+  quote_sub "${into}::BUILDALL", join '',
+    $self->_handle_subbuild($into),
+    qq{    my \$self = shift;\n},
+    $self->buildall_body_for($into, '$self', '@_'),
+    qq{    return \$self\n};
 }
 
 sub _handle_subbuild {
   my ($self, $into) = @_;
-  '    if (ref($_[0]) ne '.quotify($into).') {'."\n".
+  '    if (ref($_[0]) ne '.perlstring($into).') {'."\n".
   '      return shift->Moo::Object::BUILDALL(@_)'.";\n".
   '    }'."\n";
 }
@@ -33,10 +27,8 @@ sub buildall_body_for {
   my @builds =
     grep *{_getglob($_)}{CODE},
     map "${_}::BUILD",
-    reverse @{mro::get_linear_isa($into)};
-  '    (('.$args.')[0]->{__no_BUILD__} or ('."\n"
-  .join('', map qq{      ${me}->${_}(${args}),\n}, @builds)
-  ."    )),\n";
+    reverse @{Moo::_Utils::_get_linear_isa($into)};
+  join '', map qq{    ${me}->${_}(${args});\n}, @builds;
 }
 
 1;

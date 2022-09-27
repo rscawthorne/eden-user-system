@@ -3,8 +3,8 @@ use 5.006;
 use Carp;
 use warnings;
 use strict;
-our $AUTOLOAD;
-our $VERSION = '1.01'; # remember to update version in POD!
+use vars qw($VERSION $AUTOLOAD);
+$VERSION = '0.93'; # remember to update version in POD!
 # $DB::single=1;
 
 my %symcache;
@@ -13,16 +13,12 @@ sub findsym {
 	return $symcache{$pkg,$ref} if $symcache{$pkg,$ref};
 	$type ||= ref($ref);
 	no strict 'refs';
-	my $symtab = \%{$pkg."::"};
-	for ( keys %$symtab ) { for my $sym ( $$symtab{$_} ) {
-	    if (ref $sym && $sym == $ref) {
-		return $symcache{$pkg,$ref} = \*{"$pkg:\:$_"};
-	    }
+        foreach my $sym ( values %{$pkg."::"} ) {
 	    use strict;
 	    next unless ref ( \$sym ) eq 'GLOB';
             return $symcache{$pkg,$ref} = \$sym
 		if *{$sym}{$type} && *{$sym}{$type} == $ref;
-	}}
+	}
 }
 
 my %validtype = (
@@ -139,9 +135,7 @@ sub AUTOLOAD {
 	croak "Attribute handler '$2' doesn't handle $1 attributes";
 }
 
-my $builtin = $] ge '5.027000'
-    ? qr/lvalue|method|shared/
-    : qr/lvalue|method|locked|shared|unique/;
+my $builtin = qr/lvalue|method|locked|unique|shared/;
 
 sub _gen_handler_AH_() {
 	return sub {
@@ -272,7 +266,8 @@ Attribute::Handlers - Simpler definition of attribute handlers
 
 =head1 VERSION
 
-This document describes version 1.01 of Attribute::Handlers.
+This document describes version 0.93 of Attribute::Handlers,
+released July 20, 2011.
 
 =head1 SYNOPSIS
 
@@ -371,7 +366,7 @@ Thereafter, any subroutine declared with a C<:Loud> attribute in the class
 LoudDecl:
 
     package LoudDecl;
-
+    
     sub foo: Loud {...}
 
 causes the above handler to be invoked, and passed:
@@ -586,7 +581,7 @@ variables. For example:
 
     use Attribute::Handlers;
     use Tie::Cycle;
-
+    
     sub UNIVERSAL::Cycle : ATTR(SCALAR) {
 	my ($package, $symbol, $referent, $attr, $data, $phase) = @_;
 	$data = [ $data ] unless ref $data eq 'ARRAY';
@@ -596,9 +591,9 @@ variables. For example:
     # and thereafter...
 
     package main;
-
+    
     my $next : Cycle('A'..'Z');     # $next is now a tied variable
-
+    
     while (<>) {
 	print $next;
     }
@@ -660,7 +655,7 @@ If the attribute name is unqualified, the attribute is installed in the
 current package. Otherwise it is installed in the qualifier's package:
 
     package Here;
-
+    
     use Attribute::Handlers autotie => {
          Other::Good => Tie::SecureHash, # tie attr installed in Other::
                  Bad => Tie::Taxes,      # tie attr installed in Here::
@@ -673,7 +668,7 @@ facilitate this, Attribute::Handlers recognizes a special "pseudo-class" --
 C<__CALLER__>, which may be specified as the qualifier of an attribute:
 
     package Tie::Me::Kangaroo:Down::Sport;
-
+    
     use Attribute::Handlers autotie =>
 	 { '__CALLER__::Roo' => __PACKAGE__ };
 
@@ -797,7 +792,7 @@ would cause the following handlers to be invoked:
 
 
     # my %hsh :Good(q/bye) :Omni(q/bus/);
-
+                              
     MyClass::Good:ATTR(HASH)( 'SomeOtherClass',     # class
                               'LEXICAL',            # no typeglob
                               \%hsh,                # referent
@@ -805,7 +800,7 @@ would cause the following handlers to be invoked:
                               'q/bye'               # raw attr data
                               'CHECK',              # compiler phase
                             );
-
+                    
     MyClass::Omni:ATTR(HASH)( 'SomeOtherClass',     # class
                               'LEXICAL',            # no typeglob
                               \%hsh,                # referent
@@ -883,7 +878,7 @@ C<SCALAR>, C<ARRAY>, C<HASH>, C<CODE>, or C<ANY>.
 =item C<Attribute handler %s doesn't handle %s attributes>
 
 A handler for attributes of the specified name I<was> defined, but not
-for the specified type of declaration. Typically encountered when trying
+for the specified type of declaration. Typically encountered whe trying
 to apply a C<VAR> attribute handler to a subroutine, or a C<SCALAR>
 attribute handler to some other type of variable.
 
@@ -936,6 +931,6 @@ Bug reports and other feedback are most welcome.
 
 =head1 COPYRIGHT AND LICENSE
 
-         Copyright (c) 2001-2014, Damian Conway. All Rights Reserved.
+         Copyright (c) 2001-2009, Damian Conway. All Rights Reserved.
        This module is free software. It may be used, redistributed
            and/or modified under the same terms as Perl itself.

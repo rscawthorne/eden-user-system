@@ -9,9 +9,8 @@ use File::Basename ();
 use File::Path ();
 use File::Spec ();
 use CPAN::Mirrors ();
-use CPAN::Version ();
 use vars qw($VERSION $auto_config);
-$VERSION = "5.5315";
+$VERSION = "5.5303";
 
 =head1 NAME
 
@@ -37,34 +36,6 @@ variables are collected.
 my @podpara = split /\n\n/, <<'=back';
 
 =over 2
-
-=item allow_installing_module_downgrades
-
-The CPAN shell can watch the C<blib/> directories that are built up
-before running C<make test> to determine whether the current
-distribution will end up with modules being overwritten with decreasing module version numbers. It
-can then let the build of this distro fail when it discovers a
-downgrade.
-
-Do you want to allow installing distros with decreasing module
-versions compared to what you have installed (yes, no, ask/yes,
-ask/no)?
-
-=item allow_installing_outdated_dists
-
-The CPAN shell can watch the C<blib/> directories that are built up
-before running C<make test> to determine whether the current
-distribution contains modules that are indexed with a distro with a
-higher distro-version number than the current one. It can
-then let the build of this distro fail when it would not represent the
-most up-to-date version of the distro.
-
-Note: choosing anything but 'yes' for this option will need
-CPAN::DistnameInfo being installed for taking effect.
-
-Do you want to allow installing distros that are not indexed as the
-highest distro-version for all contained modules (yes, no, ask/yes,
-ask/no)?
 
 =item auto_commit
 
@@ -153,14 +124,6 @@ checks will be performed at all.
 Always try to check and verify signatures if a SIGNATURE file is in
 the package and Module::Signature is installed (yes/no)?
 
-=item cleanup_after_install
-
-Users who install modules and do not intend to look back, can free
-occupied disk space quickly by letting CPAN.pm cleanup each build
-directory immediately after a successful install.
-
-Remove build directory after a successful install? (yes/no)?
-
 =item colorize_output
 
 When you have Term::ANSIColor installed, you can turn on colorized
@@ -168,9 +131,6 @@ output to have some visual differences between normal CPAN.pm output,
 warnings, debugging output, and the output of the modules being
 installed. Set your favorite colors after some experimenting with the
 Term::ANSIColor module.
-
-Please note that on Windows platforms colorized output also requires
-the Win32::Console::ANSI module.
 
 Do you want to turn on colored output?
 
@@ -221,8 +181,7 @@ How many days shall we keep statistics about downloads?
 =item ftpstats_size
 
 Statistics about downloads are truncated by size and period
-simultaneously. Setting this to zero or negative disables download
-statistics.
+simultaneously.
 
 How many items shall we keep in the statistics about downloads?
 
@@ -236,7 +195,6 @@ alternatives can be configured according to the following table:
     cwd         Cwd::cwd
     getcwd      Cwd::getcwd
     fastcwd     Cwd::fastcwd
-    getdcwd     Cwd::getdcwd
     backtickcwd external command cwd
 
 Preferred method for determining the current working directory?
@@ -245,8 +203,7 @@ Preferred method for determining the current working directory?
 
 Normally, CPAN.pm continues processing the full list of targets and
 dependencies, even if one of them fails.  However, you can specify
-that CPAN should halt after the first failure.  (Note that optional
-recommended or suggested modules that fail will not cause a halt.)
+that CPAN should halt after the first failure.
 
 Do you want to halt on failure (yes/no)?
 
@@ -463,14 +420,6 @@ host should be tried first.
 
 Randomize parameter
 
-=item recommends_policy
-
-(Experimental feature!) Some CPAN modules recommend additional, optional dependencies.  These should
-generally be installed except in resource constrained environments.  When this
-policy is true, recommended modules will be included with required modules.
-
-Include recommended modules?
-
 =item scan_cache
 
 By default, each time the CPAN module is started, cache scanning is
@@ -512,14 +461,6 @@ want this report to be very verbose, say yes to the following
 variable.
 
 Show all individual modules that have a $VERSION of zero?
-
-=item suggests_policy
-
-(Experimental feature!) Some CPAN modules suggest additional, optional dependencies.  These 'suggest'
-dependencies provide enhanced operation.  When this policy is true, suggested
-modules will be included with required modules.
-
-Include suggested modules?
 
 =item tar_verbosity
 
@@ -596,34 +537,6 @@ because of missing dependencies.  Also, tests can be run
 regardless of the history using "force".
 
 Do you want to rely on the test report history (yes/no)?
-
-=item urllist_ping_external
-
-When automatic selection of the nearest cpan mirrors is performed,
-turn on the use of the external ping via Net::Ping::External. This is
-recommended in the case the local network has a transparent proxy.
-
-Do you want to use the external ping command when autoselecting
-mirrors?
-
-=item urllist_ping_verbose
-
-When automatic selection of the nearest cpan mirrors is performed,
-this option can be used to turn on verbosity during the selection
-process.
-
-Do you want to see verbosity turned on when autoselecting mirrors?
-
-=item use_prompt_default
-
-When this is true, CPAN will set PERL_MM_USE_DEFAULT to a true
-value.  This causes ExtUtils::MakeMaker (and compatible) prompts
-to use default values instead of stopping to prompt you to answer
-questions. It also sets NONINTERACTIVE_TESTING to a true value to
-signal more generally that distributions should not try to
-interact with you.
-
-Do you want to use prompt defaults (yes/no)?
 
 =item use_sqlite
 
@@ -830,7 +743,7 @@ sub init {
         }
     } elsif (0 == length $matcher) {
     } elsif (0 && $matcher eq "~") { # extremely buggy, but a nice idea
-        my @unconfigured = sort grep { not exists $CPAN::Config->{$_}
+        my @unconfigured = grep { not exists $CPAN::Config->{$_}
                                       or not defined $CPAN::Config->{$_}
                                           or not length $CPAN::Config->{$_}
                                   } keys %$CPAN::Config;
@@ -936,7 +849,6 @@ sub init {
 
     my_dflt_prompt(index_expire => 1, $matcher);
     my_prompt_loop(scan_cache => 'atstart', $matcher, 'atstart|atexit|never');
-    my_yn_prompt(cleanup_after_install => 0, $matcher);
 
     #
     #= cache_metadata
@@ -953,8 +865,6 @@ sub init {
                    'follow|ask|ignore');
     my_prompt_loop(build_requires_install_policy => 'yes', $matcher,
                    'yes|no|ask/yes|ask/no');
-    my_yn_prompt(recommends_policy => 1, $matcher);
-    my_yn_prompt(suggests_policy => 0, $matcher);
 
     #
     #= Module::Signature
@@ -1119,7 +1029,7 @@ sub init {
         and $^O ne "MSWin32") {
         # as long as Windows needs $self->_build_command, we cannot
         # support sudo on windows :-)
-        my $default = $^O eq 'VMS' ? '@Build.com' : "./Build";
+        my $default = "./Build";
         if ( $CPAN::Config->{install_help} eq 'sudo' ) {
             if ( find_exe('sudo') ) {
                 $default = "sudo $default";
@@ -1134,19 +1044,6 @@ sub init {
     }
 
     my_dflt_prompt(mbuild_install_arg => "", $matcher);
-
-    for my $o (qw(
-        allow_installing_outdated_dists
-        allow_installing_module_downgrades
-        )) {
-        my_prompt_loop($o => 'ask/no', $matcher,
-                       'yes|no|ask/yes|ask/no');
-    }
-
-    #
-    #== use_prompt_default
-    #
-    my_yn_prompt(use_prompt_default => 0, $matcher);
 
     #
     #= Alarm period
@@ -1199,17 +1096,6 @@ sub init {
     }
 
     #
-    #= how plugins work
-    #
-
-    # XXX MISSING: my_array_prompt to be used with plugins. We did something like this near
-    #     git log -p fd68f8f5e33f4cecea4fdb7abc5ee19c12f138f0..test-notest-test-dependency
-    # Need to do similar steps for plugin_list. As long as we do not support it here, people
-    # must use the cpan shell prompt to write something like
-    #     o conf plugin_list push CPAN::Plugin::Specfile=dir,/tmp/foo-20141013,...
-    #     o conf commit
-
-    #
     #= how FTP works
     #
 
@@ -1220,7 +1106,7 @@ sub init {
     #
 
     my_prompt_loop(getcwd => 'cwd', $matcher,
-                   'cwd|getcwd|fastcwd|getdcwd|backtickcwd');
+                   'cwd|getcwd|fastcwd|backtickcwd');
 
     #
     #= the CPAN shell itself (prompt, color)
@@ -1318,12 +1204,6 @@ sub init {
 
     # Allow matching but don't show during manual config
     if ($matcher) {
-        if ("urllist_ping_external" =~ $matcher) {
-            my_yn_prompt(urllist_ping_external => 0, $matcher);
-        }
-        if ("urllist_ping_verbose" =~ $matcher) {
-            my_yn_prompt(urllist_ping_verbose => 0, $matcher);
-        }
         if ("randomize_urllist" =~ $matcher) {
             my_dflt_prompt(randomize_urllist => 0, $matcher);
         }
@@ -1344,7 +1224,10 @@ sub init {
             );
         }
         else {
-            $CPAN::Config->{urllist} = [ 'http://www.cpan.org/' ];
+            $CPAN::Frontend->myprint(
+                "Autoconfigured everything but 'urllist'.\n"
+            );
+            _do_pick_mirrors();
         }
     }
     elsif (!$matcher || "urllist" =~ $matcher) {
@@ -1370,9 +1253,8 @@ sub init {
             $CPAN::Frontend->myprint("\nWriting $configpm for bootstrap...\n");
             delete $CPAN::Config->{install_help}; # temporary only
             CPAN::HandleConfig->commit;
-            my($dist, $locallib);
-            $locallib = CPAN::Shell->expand('Module', 'local::lib');
-            if ( $locallib and $dist = $locallib->distribution ) {
+            my $dist;
+            if ( $dist = CPAN::Shell->expand('Module', 'local::lib')->distribution ) {
                 # this is a hack to force bootstrapping
                 $dist->{prefs}{pl}{commandline} = "$^X Makefile.PL --bootstrap";
                 # Set @INC for this process so we find things as they bootstrap
@@ -1416,18 +1298,16 @@ sub init {
 sub _local_lib_config {
     # Set environment stuff for this process
     require local::lib;
+    my %env = local::lib->build_environment_vars_for(_local_lib_path(), 1);
+    while ( my ($k, $v) = each %env ) {
+        $ENV{$k} = $v;
+    }
 
     # Tell user about environment vars to set
     $CPAN::Frontend->myprint($prompts{local_lib_installed});
     local $ENV{SHELL} = $CPAN::Config->{shell} || $ENV{SHELL};
     my $shellvars = local::lib->environment_vars_string_for(_local_lib_path());
     $CPAN::Frontend->myprint($shellvars);
-
-    # Set %ENV after getting string above
-    my %env = local::lib->build_environment_vars_for(_local_lib_path(), 1);
-    while ( my ($k, $v) = each %env ) {
-        $ENV{$k} = $v;
-    }
 
     # Offer to mangle the shell config
     my $munged_rc;
@@ -1511,10 +1391,8 @@ sub _do_pick_mirrors {
     $CPAN::Frontend->myprint($prompts{urls_intro});
     # Only prompt for auto-pick if Net::Ping is new enough to do timings
     my $_conf = 'n';
-    if ( $CPAN::META->has_usable("Net::Ping") && CPAN::Version->vgt(Net::Ping->VERSION, '2.13')) {
+    if ( $CPAN::META->has_usable("Net::Ping") && Net::Ping->VERSION gt '2.13') {
         $_conf = prompt($prompts{auto_pick}, "yes");
-    } else {
-        prompt("Autoselection disabled due to Net::Ping missing or insufficient. Please press ENTER");
     }
     my @old_list = @{ $CPAN::Config->{urllist} };
     if ( $_conf =~ /^y/i ) {
@@ -1739,6 +1617,7 @@ sub my_yn_prompt {
     my $default;
     defined($default = $CPAN::Config->{$item}) or $default = $dflt;
 
+    # $DB::single = 1;
     if (!$auto_config && (!$m || $item =~ /$m/)) {
         if (my $intro = $prompts{$item . "_intro"}) {
             $CPAN::Frontend->myprint($intro);
@@ -1757,8 +1636,7 @@ sub my_prompt_loop {
     my $ans;
 
     if (!$auto_config && (!$m || $item =~ /$m/)) {
-        my $intro = $prompts{$item . "_intro"};
-        $CPAN::Frontend->myprint($intro) if defined $intro;
+        $CPAN::Frontend->myprint($prompts{$item . "_intro"});
         $CPAN::Frontend->myprint(" <$item>\n");
         do { $ans = prompt($prompts{$item}, $default);
         } until $ans =~ /$ok/;
@@ -1973,28 +1851,21 @@ sub auto_mirrored_by {
     my $local = shift or return;
     local $|=1;
     $CPAN::Frontend->myprint("Looking for CPAN mirrors near you (please be patient)\n");
-    my $mirrors = CPAN::Mirrors->new($local);
+    my $mirrors = CPAN::Mirrors->new;
+    $mirrors->parse_mirrored_by($local);
 
     my $cnt = 0;
-    my $callback_was_active = 0;
     my @best = $mirrors->best_mirrors(
       how_many => 3,
       callback => sub {
-          $callback_was_active++;
           $CPAN::Frontend->myprint(".");
           if ($cnt++>60) { $cnt=0; $CPAN::Frontend->myprint("\n"); }
       },
-      $CPAN::Config->{urllist_ping_external} ? (external_ping => 1) : (),
-      $CPAN::Config->{urllist_ping_verbose} ? (verbose => 1) : (),
     );
 
-    my $urllist = [
-        map { $_->http }
-        grep { $_ && ref $_ && $_->can('http') }
-        @best
-    ];
+    my $urllist = [ map { $_->http } @best ];
     push @$urllist, grep { /^file:/ } @{$CPAN::Config->{urllist}};
-    $CPAN::Frontend->myprint(" done!\n\n") if $callback_was_active;
+    $CPAN::Frontend->myprint(" done!\n\n");
 
     return $urllist
 }

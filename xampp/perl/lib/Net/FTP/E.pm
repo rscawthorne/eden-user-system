@@ -1,13 +1,8 @@
 package Net::FTP::E;
 
-use 5.008001;
+require Net::FTP::I;
 
-use strict;
-use warnings;
-
-use Net::FTP::I;
-
-our @ISA = qw(Net::FTP::I);
-our $VERSION = "3.13";
+@ISA = qw(Net::FTP::I);
+$VERSION = "0.01";
 
 1;

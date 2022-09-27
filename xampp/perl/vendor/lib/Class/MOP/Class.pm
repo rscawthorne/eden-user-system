@@ -1,5 +1,11 @@
+
 package Class::MOP::Class;
-our $VERSION = '2.2014';
+BEGIN {
+  $Class::MOP::Class::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Class::MOP::Class::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
@@ -11,16 +17,15 @@ use Class::MOP::Method::Constructor;
 use Class::MOP::MiniTrait;
 
 use Carp         'confess';
-use Module::Runtime 'use_package_optimistically';
-use Scalar::Util 'blessed';
+use Class::Load  'is_class_loaded', 'load_class';
+use Scalar::Util 'blessed', 'reftype', 'weaken';
 use Sub::Name    'subname';
 use Try::Tiny;
-use List::Util 1.33 'all';
+use List::MoreUtils 'all';
 
-use parent 'Class::MOP::Module',
+use base 'Class::MOP::Module',
          'Class::MOP::Mixin::HasAttributes',
-         'Class::MOP::Mixin::HasMethods',
-         'Class::MOP::Mixin::HasOverloads';
+         'Class::MOP::Mixin::HasMethods';
 
 # Creation
 
@@ -37,7 +42,8 @@ sub initialize {
     }
 
     ($package_name && !ref($package_name))
-        || ($class||__PACKAGE__)->_throw_exception( InitializeTakesUnBlessedPackageName => package_name => $package_name );
+        || confess "You must pass a package name and it cannot be blessed";
+
     return Class::MOP::get_metaclass_by_name($package_name)
         || $class->_construct_class_instance(package => $package_name, @_);
 }
@@ -72,7 +78,7 @@ sub _construct_class_instance {
     my $options      = @_ == 1 ? $_[0] : {@_};
     my $package_name = $options->{package};
     (defined $package_name && $package_name)
-        || $class->_throw_exception("ConstructClassInstanceTakesPackageName");
+        || confess "You must pass a package name";
     # NOTE:
     # return the metaclass if we have it cached,
     # and it is still defined (it has not been
@@ -232,11 +238,10 @@ sub _check_class_metaclass_compatibility {
 
         my $super_meta_type = $super_meta->_real_ref_name;
 
-        $self->_throw_exception( IncompatibleMetaclassOfSuperclass => class_name           => $self->name,
-                                                              class_meta_type      => ref( $self ),
-                                                              superclass_name      => $superclass_name,
-                                                              superclass_meta_type => $super_meta_type
-                       );
+        confess "The metaclass of " . $self->name . " ("
+              . (ref($self)) . ")" .  " is not compatible with "
+              . "the metaclass of its superclass, "
+              . $superclass_name . " (" . ($super_meta_type) . ")";
     }
 }
 
@@ -258,11 +263,15 @@ sub _check_single_metaclass_compatibility {
 
     if (!$self->_single_metaclass_is_compatible($metaclass_type, $superclass_name)) {
         my $super_meta = Class::MOP::get_metaclass_by_name($superclass_name);
-
-        $self->_throw_exception( MetaclassTypeIncompatible => class_name      => $self->name,
-                                                      superclass_name => $superclass_name,
-                                                      metaclass_type  => $metaclass_type
-                       );
+        my $metaclass_type_name = $metaclass_type;
+        $metaclass_type_name =~ s/_(?:meta)?class$//;
+        $metaclass_type_name =~ s/_/ /g;
+        confess "The $metaclass_type_name metaclass for "
+              . $self->name . " (" . ($self->$metaclass_type)
+              . ")" . " is not compatible with the "
+              . "$metaclass_type_name metaclass of its "
+              . "superclass, $superclass_name ("
+              . ($super_meta->$metaclass_type) . ")";
     }
 }
 
@@ -362,9 +371,9 @@ sub _fix_class_metaclass_incompatibility {
 
     if ($self->_class_metaclass_can_be_made_compatible($super_meta)) {
         ($self->is_pristine)
-            || $self->_throw_exception( CannotFixMetaclassCompatibility => class_name => $self->name,
-                                                                   superclass => $super_meta
-                              );
+            || confess "Can't fix metaclass incompatibility for "
+                     . $self->name
+                     . " because it is not pristine.";
 
         my $super_meta_name = $super_meta->_real_ref_name;
 
@@ -378,10 +387,9 @@ sub _fix_single_metaclass_incompatibility {
 
     if ($self->_single_metaclass_can_be_made_compatible($super_meta, $metaclass_type)) {
         ($self->is_pristine)
-            || $self->_throw_exception( CannotFixMetaclassCompatibility => class_name     => $self->name,
-                                                                   superclass     => $super_meta,
-                                                                   metaclass_type => $metaclass_type
-                              );
+            || confess "Can't fix metaclass incompatibility for "
+                     . $self->name
+                     . " because it is not pristine.";
 
         my $new_metaclass = $self->$metaclass_type
             ? $self->$metaclass_type->_get_compatible_metaclass($super_meta->$metaclass_type)
@@ -416,21 +424,15 @@ sub create {
     my %options = @args;
 
     (ref $options{superclasses} eq 'ARRAY')
-        || __PACKAGE__->_throw_exception( CreateMOPClassTakesArrayRefOfSuperclasses => class  => $class,
-                                                                         params => \%options
-                          )
+        || confess "You must pass an ARRAY ref of superclasses"
             if exists $options{superclasses};
 
     (ref $options{attributes} eq 'ARRAY')
-        || __PACKAGE__->_throw_exception( CreateMOPClassTakesArrayRefOfAttributes => class  => $class,
-                                                                       params => \%options
-                          )
+        || confess "You must pass an ARRAY ref of attributes"
             if exists $options{attributes};
 
     (ref $options{methods} eq 'HASH')
-        || __PACKAGE__->_throw_exception( CreateMOPClassTakesHashRefOfMethods => class  => $class,
-                                                                   params => \%options
-                          )
+        || confess "You must pass a HASH ref of methods"
             if exists $options{methods};
 
     my $package      = delete $options{package};
@@ -507,17 +509,14 @@ sub _construct_instance {
     my $instance;
     if (my $instance_class = blessed($params->{__INSTANCE__})) {
         ($instance_class eq $class->name)
-            || $class->_throw_exception( InstanceBlessedIntoWrongClass => class_name => $class->name,
-                                                                 params     => $params,
-                                                                 instance   => $params->{__INSTANCE__}
-                              );
+            || confess "Objects passed as the __INSTANCE__ parameter must "
+                     . "already be blessed into the correct class, but "
+                     . "$params->{__INSTANCE__} is not a " . $class->name;
         $instance = $params->{__INSTANCE__};
     }
     elsif (exists $params->{__INSTANCE__}) {
-        $class->_throw_exception( InstanceMustBeABlessedReference => class_name => $class->name,
-                                                            params     => $params,
-                                                            instance   => $params->{__INSTANCE__}
-                       );
+        confess "The __INSTANCE__ parameter must be a blessed reference, not "
+              . $params->{__INSTANCE__};
     }
     else {
         $instance = $meta_instance->create_instance();
@@ -764,9 +763,8 @@ sub clone_object {
     my $class    = shift;
     my $instance = shift;
     (blessed($instance) && $instance->isa($class->name))
-        || $class->_throw_exception( CloneObjectExpectsAnInstanceOfMetaclass => class_name => $class->name,
-                                                                       instance   => $instance,
-                          );
+        || confess "You must pass an instance of the metaclass (" . (ref $class ? $class->name : $class) . "), not ($instance)";
+
     # NOTE:
     # we need to protect the integrity of the
     # Class::MOP::Class singletons here, they
@@ -778,10 +776,7 @@ sub clone_object {
 sub _clone_instance {
     my ($class, $instance, %params) = @_;
     (blessed($instance))
-        || $class->_throw_exception( OnlyInstancesCanBeCloned => class_name => $class->name,
-                                                        instance   => $instance,
-                                                        params     => \%params
-                          );
+        || confess "You can only clone instances, ($instance) is not a blessed instance";
     my $meta_instance = $class->get_meta_instance();
     my $clone = $meta_instance->clone_instance($instance);
     foreach my $attr ($class->get_all_attributes()) {
@@ -825,11 +820,7 @@ sub rebless_instance {
 
     my $old_class = $old_metaclass ? $old_metaclass->name : blessed($instance);
     $self->name->isa($old_class)
-        || $self->_throw_exception( CanReblessOnlyIntoASubclass => class_name     => $self->name,
-                                                           instance       => $instance,
-                                                           instance_class => blessed( $instance ),
-                                                           params         => \%params,
-                          );
+        || confess "You may rebless only into a subclass of ($old_class), of which (". $self->name .") isn't.";
 
     $self->_force_rebless_instance($_[1], %params);
 
@@ -839,13 +830,14 @@ sub rebless_instance {
 sub rebless_instance_back {
     my ( $self, $instance ) = @_;
     my $old_metaclass = Class::MOP::class_of($instance);
+
     my $old_class
         = $old_metaclass ? $old_metaclass->name : blessed($instance);
     $old_class->isa( $self->name )
-        || $self->_throw_exception( CanReblessOnlyIntoASuperclass => class_name     => $self->name,
-                                                             instance       => $instance,
-                                                             instance_class => blessed( $instance ),
-                          );
+        || confess
+        "You may rebless only into a superclass of ($old_class), of which ("
+        . $self->name
+        . ") isn't.";
 
     $self->_force_rebless_instance($_[1]);
 
@@ -1014,9 +1006,9 @@ sub class_precedence_list {
     unless (Class::MOP::IS_RUNNING_ON_5_10()) {
         # NOTE:
         # We need to check for circular inheritance here
-        # if we are not on 5.10, cause 5.8 detects it late.
-        # This will do nothing if all is well, and blow up
-        # otherwise. Yes, it's an ugly hack, better
+        # if we are are not on 5.10, cause 5.8 detects it
+        # late. This will do nothing if all is well, and
+        # blow up otherwise. Yes, it's an ugly hack, better
         # suggestions are welcome.
         # - SL
         ($name || return)->isa('This is a test for circular inheritance')
@@ -1053,15 +1045,13 @@ sub _method_lookup_order {
         my $wrapped_metaclass = $self->wrapped_method_metaclass;
         # fetch it locally
         my $method = $self->get_method($method_name);
-        # if we don't have local ...
+        # if we dont have local ...
         unless ($method) {
             # try to find the next method
             $method = $self->find_next_method_by_name($method_name);
             # die if it does not exist
             (defined $method)
-                || $self->_throw_exception( MethodNameNotFoundInInheritanceHierarchy => class_name  => $self->name,
-                                                                                method_name => $method_name
-                                  );
+                || confess "The method '$method_name' was not found in the inheritance hierarchy for " . $self->name;
             # and now make sure to wrap it
             # even if it is already wrapped
             # because we need a new sub ref
@@ -1084,7 +1074,7 @@ sub _method_lookup_order {
     sub add_before_method_modifier {
         my ($self, $method_name, $method_modifier) = @_;
         (defined $method_name && length $method_name)
-            || $self->_throw_exception( MethodModifierNeedsMethodName => class_name => $self->name );
+            || confess "You must pass in a method name";
         my $method = $fetch_and_prepare_method->($self, $method_name);
         $method->add_before_modifier(
             subname(':before' => $method_modifier)
@@ -1094,7 +1084,7 @@ sub _method_lookup_order {
     sub add_after_method_modifier {
         my ($self, $method_name, $method_modifier) = @_;
         (defined $method_name && length $method_name)
-            || $self->_throw_exception( MethodModifierNeedsMethodName => class_name => $self->name );
+            || confess "You must pass in a method name";
         my $method = $fetch_and_prepare_method->($self, $method_name);
         $method->add_after_modifier(
             subname(':after' => $method_modifier)
@@ -1104,7 +1094,7 @@ sub _method_lookup_order {
     sub add_around_method_modifier {
         my ($self, $method_name, $method_modifier) = @_;
         (defined $method_name && length $method_name)
-            || $self->_throw_exception( MethodModifierNeedsMethodName => class_name => $self->name );
+            || confess "You must pass in a method name";
         my $method = $fetch_and_prepare_method->($self, $method_name);
         $method->add_around_modifier(
             subname(':around' => $method_modifier)
@@ -1128,7 +1118,7 @@ sub _method_lookup_order {
 sub find_method_by_name {
     my ($self, $method_name) = @_;
     (defined $method_name && length $method_name)
-        || $self->_throw_exception( MethodNameNotGiven => class_name => $self->name );
+        || confess "You must define a method name to find";
     foreach my $class ($self->_method_lookup_order) {
         my $method = Class::MOP::Class->initialize($class)->get_method($method_name);
         return $method if defined $method;
@@ -1157,7 +1147,7 @@ sub get_all_method_names {
 sub find_all_methods_by_name {
     my ($self, $method_name) = @_;
     (defined $method_name && length $method_name)
-        || $self->_throw_exception( MethodNameNotGiven => class_name => $self->name );
+        || confess "You must define a method name to find";
     my @methods;
     foreach my $class ($self->_method_lookup_order) {
         # fetch the meta-class ...
@@ -1174,7 +1164,7 @@ sub find_all_methods_by_name {
 sub find_next_method_by_name {
     my ($self, $method_name) = @_;
     (defined $method_name && length $method_name)
-        || $self->_throw_exception( MethodNameNotGiven => class_name => $self->name );
+        || confess "You must define a method name to find";
     my @cpl = ($self->_method_lookup_order);
     shift @cpl; # discard ourselves
     foreach my $class (@cpl) {
@@ -1335,9 +1325,7 @@ sub _immutable_metaclass {
     }
 
     my $trait = $args{immutable_trait} = $self->immutable_trait
-        || $self->_throw_exception( NoImmutableTraitSpecifiedForClass => class_name => $self->name,
-                                                                 params     => \%args
-                          );
+        || confess "no immutable trait specified for $self";
 
     my $meta      = $self->meta;
     my $meta_attr = $meta->find_attribute_by_name("immutable_trait");
@@ -1355,7 +1343,7 @@ sub _immutable_metaclass {
     }
 
     return $class_name
-        if Class::MOP::does_metaclass_exist($class_name);
+        if is_class_loaded($class_name);
 
     # If the metaclass is a subclass of CMOP::Class which has had
     # metaclass roles applied (via Moose), then we want to make sure
@@ -1445,10 +1433,7 @@ sub _inline_constructor {
 
     my $constructor_class = $args{constructor_class};
 
-    {
-        local $@;
-        use_package_optimistically($constructor_class);
-    }
+    load_class($constructor_class);
 
     my $constructor = $constructor_class->new(
         options      => \%args,
@@ -1473,9 +1458,8 @@ sub _inline_destructor {
     my ( $self, %args ) = @_;
 
     ( exists $args{destructor_class} && defined $args{destructor_class} )
-        || $self->_throw_exception( NoDestructorClassSpecified => class_name => $self->name,
-                                                          params     => \%args,
-                          );
+        || confess "The 'inline_destructor' option is present, but "
+        . "no destructor class was specified";
 
     if ( $self->has_method('DESTROY') && ! $args{replace_destructor} ) {
         my $class = $self->name;
@@ -1486,10 +1470,7 @@ sub _inline_destructor {
 
     my $destructor_class = $args{destructor_class};
 
-    {
-        local $@;
-        use_package_optimistically($destructor_class);
-    }
+    load_class($destructor_class);
 
     return unless $destructor_class->is_needed($self);
 
@@ -1515,11 +1496,9 @@ sub _inline_destructor {
 
 # ABSTRACT: Class Meta Object
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -1527,7 +1506,7 @@ Class::MOP::Class - Class Meta Object
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 SYNOPSIS
 
@@ -1603,7 +1582,6 @@ An optional version number for the newly created package.
 =item * authority
 
 An optional authority for the newly created package.
-See L<Class::MOP::Module/authority> for more details.
 
 =item * superclasses
 
@@ -1650,12 +1628,8 @@ that name is a unique name generated internally by this module.
 It accepts the same C<superclasses>, C<methods>, and C<attributes>
 parameters that C<create> accepts.
 
-It also accepts a C<cache> option. If this is C<true>, then the anonymous class
-will be cached based on its superclasses and roles. If an existing anonymous
-class in the cache has the same superclasses and roles, it will be reused.
-
-Anonymous classes default to C<< weaken => 1 >> if cache is C<false>, although
-this can be overridden.
+Anonymous classes default to C<< weaken => 1 >>, although this can be
+overridden.
 
 =item B<< Class::MOP::Class->initialize($package_name, %options) >>
 
@@ -2003,12 +1977,12 @@ These methods provide an API to the core L<overload> functionality.
 =item B<< $metaclass->is_overloaded >>
 
 Returns true if overloading is enabled for this class. Corresponds to
-L<Devel::OverloadInfo/is_overloaded>.
+L<overload::Overloaded|overload/Public Functions>.
 
 =item B<< $metaclass->get_overloaded_operator($op) >>
 
-Returns the L<Class::MOP::Overload> object corresponding to the operator named
-C<$op>, if one exists for this class.
+Returns the L<Class::MOP::Method::Overload> object corresponding to the
+operator named C<$op>, if one exists for this class.
 
 =item B<< $metaclass->has_overloaded_operator($op) >>
 
@@ -2021,26 +1995,18 @@ L<overload/Overloadable Operations> for the list of valid operator names).
 
 =item B<< $metaclass->get_all_overloaded_operators >>
 
-Returns a list of L<Class::MOP::Overload> objects corresponding to the
+Returns a list of L<Class::MOP::Method::Overload> objects corresponding to the
 operators that have been overloaded.
 
 =item B<< $metaclass->add_overloaded_operator($op, $impl) >>
 
-Overloads the operator C<$op> for this class. The C<$impl> can be a coderef, a
-method name, or a L<Class::MOP::Overload> object. Corresponds to
+Overloads the operator C<$op> for this class, with the implementation C<$impl>.
+C<$impl> can be either a coderef or a method name. Corresponds to
 C<< use overload $op => $impl; >>
 
 =item B<< $metaclass->remove_overloaded_operator($op) >>
 
 Remove overloading for operator C<$op>. Corresponds to C<< no overload $op; >>
-
-=item B<< $metaclass->get_overload_fallback_value >>
-
-Returns the overload C<fallback> setting for the package.
-
-=item B<< $metaclass->set_overload_fallback_value($fallback) >>
-
-Sets the overload C<fallback> setting for the package.
 
 =back
 
@@ -2256,57 +2222,19 @@ metaclass.
 
 =back
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+

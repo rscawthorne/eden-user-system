@@ -1,49 +1,51 @@
 package Time::Seconds;
 use strict;
+use vars qw/@EXPORT @EXPORT_OK @ISA/;
 
-our $VERSION = '1.3401';
+@ISA = 'Exporter';
 
-use Exporter 5.57 'import';
-
-our @EXPORT = qw(
-    ONE_MINUTE
-    ONE_HOUR
-    ONE_DAY
-    ONE_WEEK
+@EXPORT = qw(
+    ONE_MINUTE 
+    ONE_HOUR 
+    ONE_DAY 
+    ONE_WEEK 
     ONE_MONTH
+    ONE_REAL_MONTH
     ONE_YEAR
+    ONE_REAL_YEAR
     ONE_FINANCIAL_MONTH
-    LEAP_YEAR
+    LEAP_YEAR 
     NON_LEAP_YEAR
 );
 
-our @EXPORT_OK = qw(cs_sec cs_mon);
+@EXPORT_OK = qw(cs_sec cs_mon);
 
-use constant {
-    ONE_MINUTE => 60,
-    ONE_HOUR => 3_600,
-    ONE_DAY => 86_400,
-    ONE_WEEK => 604_800,
-    ONE_MONTH => 2_629_744, # ONE_YEAR / 12
-    ONE_YEAR => 31_556_930, # 365.24225 days
-    ONE_FINANCIAL_MONTH => 2_592_000, # 30 days
-    LEAP_YEAR => 31_622_400, # 366 * ONE_DAY
-    NON_LEAP_YEAR => 31_536_000, # 365 * ONE_DAY
-    # hacks to make Time::Piece compile once again
-    cs_sec => 0,
-    cs_mon => 1,
-};
+use constant ONE_MINUTE => 60;
+use constant ONE_HOUR => 3_600;
+use constant ONE_DAY => 86_400;
+use constant ONE_WEEK => 604_800;
+use constant ONE_MONTH => 2_629_744; # ONE_YEAR / 12
+use constant ONE_REAL_MONTH => '1M';
+use constant ONE_YEAR => 31_556_930; # 365.24225 days
+use constant ONE_REAL_YEAR  => '1Y';
+use constant ONE_FINANCIAL_MONTH => 2_592_000; # 30 days
+use constant LEAP_YEAR => 31_622_400; # 366 * ONE_DAY
+use constant NON_LEAP_YEAR => 31_536_000; # 365 * ONE_DAY
 
-use overload
-    'fallback' => 'undef',
-    '0+' => \&seconds,
-    '""' => \&seconds,
-    '<=>' => \&compare,
-    '+' => \&add,
-    '-' => \&subtract,
-    '-=' => \&subtract_from,
-    '+=' => \&add_to,
-    '=' => \&copy;
+# hacks to make Time::Piece compile once again
+use constant cs_sec => 0;
+use constant cs_mon => 1;
+
+use overload 
+                'fallback' => 'undef',
+                '0+' => \&seconds,
+                '""' => \&seconds,
+                '<=>' => \&compare,
+                '+' => \&add,
+                '-' => \&subtract,
+                '-=' => \&subtract_from,
+                '+=' => \&add_to,
+                '=' => \&copy;
 
 sub new {
     my $class = shift;
@@ -145,13 +147,6 @@ sub years {
     $s->days / 365.24225;
 }
 
-sub _counted_objects {
-    my ($n, $counted) = @_;
-    my $number = sprintf("%d", $n); # does a "floor"
-    $counted .= 's' if 1 != $number;
-    return ($number, $counted);
-}
-
 sub pretty {
     my $s = shift;
     my $str = "";
@@ -162,26 +157,24 @@ sub pretty {
     if ($s >= ONE_MINUTE) {
         if ($s >= ONE_HOUR) {
             if ($s >= ONE_DAY) {
-                my ($days, $sd) = _counted_objects($s->days, "day");
-                $str .= "$days $sd, ";
+                my $days = sprintf("%d", $s->days); # does a "floor"
+                $str = $days . " days, ";
                 $s -= ($days * ONE_DAY);
             }
-            my ($hours, $sh) = _counted_objects($s->hours, "hour");
-            $str .= "$hours $sh, ";
+            my $hours = sprintf("%d", $s->hours);
+            $str .= $hours . " hours, ";
             $s -= ($hours * ONE_HOUR);
         }
-        my ($mins, $sm) = _counted_objects($s->minutes, "minute");
-        $str .= "$mins $sm, ";
+        my $mins = sprintf("%d", $s->minutes);
+        $str .= $mins . " minutes, ";
         $s -= ($mins * ONE_MINUTE);
     }
-    $str .= join " ", _counted_objects($s->seconds, "second");
+    $str .= $s->seconds . " seconds";
     return $str;
 }
 
 1;
 __END__
-
-=encoding utf8
 
 =head1 NAME
 
@@ -232,8 +225,8 @@ The following methods are available:
     $val->hours;
     $val->days;
     $val->weeks;
-    $val->months;
-    $val->financial_months; # 30 days
+	$val->months;
+	$val->financial_months; # 30 days
     $val->years;
     $val->pretty; # gives English representation of the delta
 
@@ -249,14 +242,11 @@ Matt Sergeant, matt@sergeant.org
 
 Tobias Brox, tobiasb@tobiasb.funcom.com
 
-Balázs Szabó (dLux), dlux@kapu.hu
+Bal�zs Szab� (dLux), dlux@kapu.hu
 
-=head1 COPYRIGHT AND LICENSE
+=head1 LICENSE
 
-Copyright 2001, Larry Wall.
-
-This module is free software, you may distribute it under the same terms
-as Perl.
+Please see Time::Piece for the license.
 
 =head1 Bugs
 

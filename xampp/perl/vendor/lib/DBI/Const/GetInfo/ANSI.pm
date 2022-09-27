@@ -1,4 +1,4 @@
-# $Id: ANSI.pm 8696 2007-01-24 23:12:38Z Tim $
+# $Id: ANSI.pm 8696 2007-01-24 23:12:38Z timbo $
 #
 # Copyright (c) 2002  Tim Bunce  Ireland
 #
@@ -7,11 +7,8 @@
 #
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
-use strict;
 
 package DBI::Const::GetInfo::ANSI;
-
-our (%InfoTypes,%ReturnTypes,%ReturnValues,);
 
 =head1 NAME
 
@@ -41,7 +38,8 @@ The API for this module is private and subject to change.
 =cut
 
 my
-$VERSION = "2.008697";
+$VERSION = sprintf("2.%06d", q$Revision: 8696 $ =~ /(\d+)/o);
+
 
 %InfoTypes =
 (

@@ -15,8 +15,6 @@ use strict;
 package SOAP::Transport::LOOPBACK::Client;
 use strict;
 
-our $VERSION = '1.27'; # VERSION
-
 use vars qw(@ISA);
 use SOAP::Lite;
 @ISA = qw(SOAP::Client);

@@ -43,9 +43,11 @@ L<PPI::Element> parent classes.
 use strict;
 use PPI::Token ();
 
-our $VERSION = '1.270'; # VERSION
-
-our @ISA = "PPI::Token";
+use vars qw{$VERSION @ISA};
+BEGIN {
+	$VERSION = '1.215';
+	@ISA     = 'PPI::Token';
+}
 
 
 
@@ -55,9 +57,9 @@ our @ISA = "PPI::Token";
 # Tokenizer Methods
 
 ### XS -> PPI/XS.xs:_PPI_Token_End__significant 0.900+
-sub significant() { '' }
+sub significant { '' }
 
-sub __TOKENIZER__on_char() { 1 }
+sub __TOKENIZER__on_char { 1 }
 
 sub __TOKENIZER__on_line_start {
 	my $t = $_[1];

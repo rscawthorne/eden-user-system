@@ -19,7 +19,7 @@ rem ---------------------------------------------------------------------------
 rem NT Service Install/Uninstall script
 rem
 rem Options
-rem install                Install the service using Tomcat as service name.
+rem install                Install the service using Tomcat7 as service name.
 rem                        Service is installed using default settings.
 rem remove                 Remove the service from the System.
 rem
@@ -37,70 +37,48 @@ rem ---------XAMPP-------------------------------------------------------------
 echo.
 echo [XAMPP]: Searching for JDK or JRE HOME with reg query ...
 set JDKKeyName64=HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Java Development Kit
-set JDKKeyName64Short=HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\JDK
-set AdoptOpenJDKKeyName64=HKEY_LOCAL_MACHINE\SOFTWARE\AdoptOpenJDK\JDK
+set JDKKeyName32=HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\JavaSoft\Java Development Kit
 set JREKeyName64=HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Java Runtime Environment
-set JREKeyName64Short=HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\JRE
-set AdoptOpenJDKKeyName64JRE=HKEY_LOCAL_MACHINE\SOFTWARE\AdoptOpenJDK\JRE
+set JREKeyName32=HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment
 
 reg query "%JDKKeyName64%" /s
 if %ERRORLEVEL% EQU 1 (
-    echo . [XAMPP]: Could not find 32 bit or 64 bit JDK
-    echo . [XAMPP]: Looking for 32 bit JDK on 64 bit machine
-    goto FINDJDK64SHORT
+	echo . [XAMPP]: Could not find 32 bit or 64 bit JDK
+	echo . [XAMPP]: Looking for 32 bit JDK on 64 bit machine
+	goto FINDJDK32
 )
 set KeyName=%JDKKeyName64%
 goto JDKRUN
 
-:FINDJDK64SHORT
-reg query "%JDKKeyName64Short%" /s
+:FINDJDK32
+reg query "%JDKKeyName32%" /s
 if %ERRORLEVEL% EQU  1 (
-    echo . [XAMPP]: Could not find 32 bit JDK
-    echo . [XAMPP]: Looking for 32 bit or 64 bit on 64 bit machine with short name
-    goto FINDADOPTOPENJDK64
+	echo . [XAMPP]: Could not find 32 bit JDK
+	echo . [XAMPP]: Looking for 32 bit or 64 bit JRE
+	goto FINDJRE64
 )
-set KeyName=%JDKKeyName64Short%
-goto JDKRUN
-
-:FINDADOPTOPENJDK64
-reg query "%AdoptOpenJDKKeyName64%" /s
-if %ERRORLEVEL% EQU  1 (
-    echo . [XAMPP]: Could not find 32 bit or 64 bit AdoptOpenJDK
-    echo . [XAMPP]: Looking for 32 bit or 64 bit JRE
-    goto FINDJRE64
-)
-set KeyName=%AdoptOpenJDKKeyName64%
+set KeyName=%JDKKeyName32%
 goto JDKRUN
 
 :FINDJRE64
 reg query "%JREKeyName64%" /s
 if %ERRORLEVEL% EQU 1 (
-    echo . [XAMPP]: Could not find 32 bit or 64 bit JRE with long name
-    echo . [XAMPP]: Looking for 32 bit or 64 bit JRE on 64 bit machine with short name
-    goto FINDJRE64SHORT
+	echo . [XAMPP]: Could not find 32 bit or 64 bit JRE 
+	echo . [XAMPP]: Looking for 32 bit JRE on 64 bit machine
+	goto FINDJRE32
 )
 set KeyName=%JREKeyName64%
 goto JRERUN
 
-:FINDJRE64SHORT
-reg query "%JREKeyName64Short%" /s
+:FINDJRE32
+reg query "%JREKeyName32%" /s
 if %ERRORLEVEL% EQU 1 (
-    echo . [XAMPP]: Could not find 32 bit or 64 bit JRE with short name
-    echo . [XAMPP]: Looking for 32 bit or 64 bit AdoptOpenJDK JRE on 64 bit machine
-    goto FINDADOPTOPENJDK64JRE
+	echo . [XAMPP]: Could not find 32 bit JRE
+	echo . [XAMPP]: Could not set JAVA_HOME or JRE_HOME. Aborting
+	goto ENDERROR
 )
-set KeyName=%JREKeyName64Short%
+set KeyName=%JREKeyName32%
 goto JRERUN
-
-:FINDADOPTOPENJDK64JRE
-reg query "%AdoptOpenJDKKeyName64JRE%" /s
-if %ERRORLEVEL% EQU  1 (
-    echo . [XAMPP]: Could not find 32 bit or 64 bit AdoptOpenJDK JRE
-    echo . [XAMPP]: Looking for 32 JRE on 64 bit machine
-    goto ENDERROR
-)
-set KeyName=%AdoptOpenJDKKeyName64JRE%
-goto JDKRUN
 
 :JDKRUN
 echo.
@@ -116,6 +94,7 @@ echo [XAMPP]: Seems fine!
 echo [XAMPP]: Set JAVA_HOME : %JAVA_HOME%
 echo [XAMPP]: Set CATALINA_HOME : %CATALINA_HOME%
 echo.
+
 goto NEXT
 
 :JRERUN
@@ -132,7 +111,6 @@ echo [XAMPP]: Seems fine!
 echo [XAMPP]: Set JRE_HOME : %JRE_HOME%
 echo [XAMPP]: Set CATALINA_HOME : %CATALINA_HOME%
 echo.
-goto NEXT
 
 :ENDERROR
 exit 1
@@ -155,12 +133,12 @@ rem Guess CATALINA_HOME if not defined
 set "CURRENT_DIR=%cd%"
 if not "%CATALINA_HOME%" == "" goto gotHome
 set "CATALINA_HOME=%cd%"
-if exist "%CATALINA_HOME%\bin\tomcat8.exe" goto okHome
+if exist "%CATALINA_HOME%\bin\tomcat7.exe" goto okHome
 rem CD to the upper dir
 cd ..
 set "CATALINA_HOME=%cd%"
 :gotHome
-if exist "%CATALINA_HOME%\bin\tomcat8.exe" goto okHome
+if exist "%CATALINA_HOME%\bin\tomcat7.exe" goto okHome
 echo The tomcat.exe was not found...
 echo The CATALINA_HOME environment variable is not defined correctly.
 echo This environment variable is needed to run this program
@@ -193,11 +171,11 @@ if not "%CATALINA_BASE%" == "" goto gotBase
 set "CATALINA_BASE=%CATALINA_HOME%"
 :gotBase
 
-set "EXECUTABLE=%CATALINA_HOME%\bin\tomcat8.exe"
+set "EXECUTABLE=%CATALINA_HOME%\bin\tomcat7.exe"
 
 rem Set default Service name
-set SERVICE_NAME=Tomcat
-set PR_DISPLAYNAME=Apache Tomcat
+set SERVICE_NAME=Tomcat7
+set PR_DISPLAYNAME=Apache Tomcat 7
 
 if "x%1x" == "xx" goto displayUsage
 set SERVICE_CMD=%1
@@ -249,7 +227,7 @@ echo Using JRE_HOME:         "%JRE_HOME%"
 rem Use the environment variables as an example
 rem Each command line option is prefixed with PR_
 
-set PR_DESCRIPTION=Apache Tomcat Server - http://tomcat.apache.org/
+set PR_DESCRIPTION=Apache Tomcat 7.0.22 Server - http://tomcat.apache.org/
 set "PR_INSTALL=%EXECUTABLE%"
 set "PR_LOGPATH=%CATALINA_BASE%\logs"
 set "PR_CLASSPATH=%CATALINA_HOME%\bin\bootstrap.jar;%CATALINA_BASE%\bin\tomcat-juli.jar;%CATALINA_HOME%\bin\tomcat-juli.jar"

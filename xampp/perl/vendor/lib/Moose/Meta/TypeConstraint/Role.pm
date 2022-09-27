@@ -1,15 +1,20 @@
 package Moose::Meta::TypeConstraint::Role;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::TypeConstraint::Role::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::TypeConstraint::Role::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 use metaclass;
 
 use B;
+use Scalar::Util 'blessed';
 use Moose::Util::TypeConstraints ();
-use Moose::Util ();
 
-use parent 'Moose::Meta::TypeConstraint';
+use base 'Moose::Meta::TypeConstraint';
 
 __PACKAGE__->meta->add_attribute('role' => (
     reader => 'role',
@@ -38,9 +43,18 @@ sub new {
 
     my $self = $class->SUPER::new( \%args );
 
+    $self->_create_hand_optimized_type_constraint;
     $self->compile_type_constraint();
 
     return $self;
+}
+
+sub _create_hand_optimized_type_constraint {
+    my $self = shift;
+    my $role = $self->role;
+    $self->hand_optimized_type_constraint(
+        sub { Moose::Util::does_role($_[0], $role) }
+    );
 }
 
 sub parents {
@@ -84,8 +98,7 @@ sub is_subtype_of {
 
     if ( not ref $type_or_name_or_role ) {
         # it might be a role
-        my $class = Class::MOP::class_of($self->role);
-        return 1 if defined($class) && $class->does_role( $type_or_name_or_role );
+        return 1 if Class::MOP::class_of($self->role)->does_role( $type_or_name_or_role );
     }
 
     my $type = Moose::Util::TypeConstraints::find_type_constraint($type_or_name_or_role);
@@ -95,8 +108,7 @@ sub is_subtype_of {
     if ( $type->isa(__PACKAGE__) ) {
         # if $type_or_name_or_role isn't a role, it might be the TC name of another ::Role type
         # or it could also just be a type object in this branch
-        my $class = Class::MOP::class_of($self->role);
-        return defined($class) && $class->does_role( $type->role );
+        return Class::MOP::class_of($self->role)->does_role( $type->role );
     } else {
         # the only other thing we are a subtype of is Object
         $self->SUPER::is_subtype_of($type);
@@ -112,11 +124,9 @@ sub create_child_type {
 
 # ABSTRACT: Role/TypeConstraint parallel hierarchy
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -124,7 +134,7 @@ Moose::Meta::TypeConstraint::Role - Role/TypeConstraint parallel hierarchy
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -137,7 +147,9 @@ L<Moose::Meta::TypeConstraint>.
 
 =head1 METHODS
 
-=head2 Moose::Meta::TypeConstraint::Role->new(%options)
+=over 4
+
+=item B<< Moose::Meta::TypeConstraint::Role->new(%options) >>
 
 This creates a new role type constraint based on the given
 C<%options>.
@@ -150,16 +162,16 @@ C<Object> type.
 The constructor also overrides the hand optimized type constraint with
 one it creates internally.
 
-=head2 $constraint->role
+=item B<< $constraint->role >>
 
 Returns the role name associated with the constraint.
 
-=head2 $constraint->parents
+=item B<< $constraint->parents >>
 
 Returns all the type's parent types, corresponding to the roles that
 its role does.
 
-=head2 $constraint->is_subtype_of($type_name_or_object)
+=item B<< $constraint->is_subtype_of($type_name_or_object) >>
 
 If the given type is also a role type, then this checks that the
 type's role does the other type's role.
@@ -167,7 +179,7 @@ type's role does the other type's role.
 Otherwise it falls back to the implementation in
 L<Moose::Meta::TypeConstraint>.
 
-=head2 $constraint->create_child_type(%options)
+=item B<< $constraint->create_child_type(%options) >>
 
 This returns a new L<Moose::Meta::TypeConstraint> object with the type
 as its parent.
@@ -175,61 +187,25 @@ as its parent.
 Note that it does I<not> return a C<Moose::Meta::TypeConstraint::Role>
 object!
 
+=back
+
 =head1 BUGS
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+

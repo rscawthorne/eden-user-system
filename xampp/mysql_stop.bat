@@ -1,7 +1,7 @@
 @echo off
 cd /D %~dp0
 echo Mysql shutdowm ...
-cmd.exe /C start "" /MIN call "@@BITROCK_INSTALLDIR@@\killprocess.bat" "mysqld.exe"
+apache\bin\pv -f -k mysqld.exe -q
 
 if not exist mysql\data\%computername%.pid GOTO exit
 echo Delete %computername%.pid ...

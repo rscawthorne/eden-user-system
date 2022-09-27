@@ -1,9 +1,9 @@
 package Imager::Fountain;
-use 5.006;
 use strict;
 use Imager::Color::Float;
+use vars qw($VERSION);
 
-our $VERSION = "1.008";
+$VERSION = "1.007";
 
 =head1 NAME
 

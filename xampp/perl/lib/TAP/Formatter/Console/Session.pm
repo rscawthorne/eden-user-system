@@ -1,9 +1,11 @@
 package TAP::Formatter::Console::Session;
 
 use strict;
-use warnings;
+use TAP::Formatter::Session;
 
-use base 'TAP::Formatter::Session';
+use vars qw($VERSION @ISA);
+
+@ISA = qw(TAP::Formatter::Session);
 
 my @ACCESSOR;
 
@@ -26,11 +28,11 @@ TAP::Formatter::Console::Session - Harness output delegate for default console o
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 DESCRIPTION
 
@@ -185,7 +187,19 @@ sub _closures {
                 $self->_output_test_failure($parser);
             }
             else {
-                my $time_report = $self->time_report($formatter, $parser);
+                my $time_report = '';
+                if ( $formatter->timer ) {
+                    my $start_time = $parser->start_time;
+                    my $end_time   = $parser->end_time;
+                    if ( defined $start_time and defined $end_time ) {
+                        my $elapsed = $end_time - $start_time;
+                        $time_report
+                          = $self->time_is_hires
+                          ? sprintf( ' %8d ms', $elapsed * 1000 )
+                          : sprintf( ' %8s s', $elapsed || '<1' );
+                    }
+                }
+
                 $formatter->_output( $self->_make_ok_line($time_report) );
             }
         },

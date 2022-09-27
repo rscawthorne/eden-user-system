@@ -1,19 +1,22 @@
-package Crypt::RSA::SS::PSS;
-use strict;
-use warnings;
-
+#!/usr/bin/perl -sw
+##
 ## Crypt::RSA::SS:PSS
 ##
 ## Copyright (c) 2001, Vipul Ved Prakash.  All rights reserved.
 ## This code is free software; you can redistribute it and/or modify
 ## it under the same terms as Perl itself.
+##
+## $Id: PSS.pm,v 1.5 2001/06/22 23:27:38 vipul Exp $
 
+package Crypt::RSA::SS::PSS;
+use strict;
 use base 'Crypt::RSA::Errorhandler';
-use Math::Prime::Util qw/random_bytes/;
+use Crypt::Random qw(makerandom_octet);
 use Crypt::RSA::DataFormat qw(octet_len os2ip i2osp octet_xor mgf1);
 use Crypt::RSA::Primitives;
 use Crypt::RSA::Debug qw(debug);
-use Digest::SHA qw(sha1);
+use Digest::SHA1 qw(sha1);
+use Math::Pari qw(floor);
 
 $Crypt::RSA::SS::PSS::VERSION = '1.99';
 
@@ -36,7 +39,7 @@ sub sign {
     return $self->error("No Key parameter", \$M, \%params) unless $key;
     return $self->error("No Message or Plaintext parameter", \$key, \%params) unless $M;
     my $k = octet_len ($key->n);
-    my $salt = random_bytes($self->{hlen});
+    my $salt = makerandom_octet (Length => $self->{hlen});
     my $em = $self->encode ($M, $salt, $k-1);
     my $m = os2ip ($em);
     my $sig = $self->{primitives}->core_sign (Key => $key, Message => $m);

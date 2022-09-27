@@ -9,9 +9,6 @@
 
 package XML::LibXML::SAX::Builder;
 
-use strict;
-use warnings;
-
 use XML::LibXML;
 use XML::NamespaceSupport;
 
@@ -21,7 +18,7 @@ sub CLONE_SKIP {
   return $XML::LibXML::__threads_shared ? 0 : 1;
 }
 
-$VERSION = "2.0206"; # VERSION TEMPLATE: DO NOT CHANGE
+$VERSION = "2.0014"; # VERSION TEMPLATE: DO NOT CHANGE
 
 sub new {
     my $class = shift;
@@ -191,7 +188,7 @@ sub start_element {
                 # ok, the generator does not set namespaces correctly!
                 my $uri = $attr->{Value};
                 $node->setNamespace($uri,
-                                    $attr->{LocalName},
+                                    $attr->{Localname},
                                     $uri eq $el->{NamespaceURI} ? 1 : 0 );
             }
             else {

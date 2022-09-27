@@ -1,12 +1,24 @@
 package Moose::Meta::Method::Accessor::Native::Number::abs;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Number::abs::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Number::abs::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Writer';
+with 'Moose::Meta::Method::Accessor::Native::Writer' => {
+    -excludes => [
+        qw(
+            _maximum_arguments
+            _inline_optimized_set_new_value
+            )
+    ]
+    };
 
 sub _maximum_arguments { 0 }
 

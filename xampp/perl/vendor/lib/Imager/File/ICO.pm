@@ -1,10 +1,10 @@
 package Imager::File::ICO;
-use 5.006;
 use strict;
 use Imager;
+use vars qw($VERSION @ISA);
 
 BEGIN {
-  our $VERSION = "0.07";
+  $VERSION = "0.03";
   
   require XSLoader;
   XSLoader::load('Imager::File::ICO', $VERSION);
@@ -18,11 +18,7 @@ Imager->register_reader
      my ($im, $io, %hsh) = @_;
      my $masked = 
        exists $hsh{ico_masked} ? $hsh{ico_masked} : 1;
-     my $alpha_masked =
-       exists $hsh{ico_alpha_masked} ? $hsh{ico_alpha_masked} : 0;
-
-     $im->{IMG} = i_readico_single($io, $hsh{page} || 0, $masked,
-				   $alpha_masked);
+     $im->{IMG} = i_readico_single($io, $hsh{page} || 0, $masked);
 
      unless ($im->{IMG}) {
        $im->_set_error(Imager->_error_as_msg);
@@ -56,10 +52,7 @@ Imager->register_reader
      my ($im, $io, %hsh) = @_;
      my $masked = 
        exists $hsh{ico_masked} ? $hsh{ico_masked} : 1;
-     my $alpha_masked =
-       exists $hsh{ico_alpha_masked} ? $hsh{ico_alpha_masked} : 0;
-     $im->{IMG} = i_readico_single($io, $hsh{page} || 0, $masked,
-				   $alpha_masked);
+     $im->{IMG} = i_readico_single($io, $hsh{page} || 0, $masked);
 
      unless ($im->{IMG}) {
        $im->_set_error(Imager->_error_as_msg);

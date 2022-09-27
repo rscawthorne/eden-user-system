@@ -6,7 +6,7 @@ use strict;
 
 our($VERSION, @ISA, @EXPORT_OK);
 
-$VERSION = "1.48";
+$VERSION = "1.23";
 
 use Carp;
 use Exporter ();
@@ -65,7 +65,7 @@ sub _init_optags {
 
 	# Split into lines, keep only indented lines
 	my @lines = grep { m/^\s/    } split(/\n/);
-	foreach (@lines) { s/(?:\t|--).*//  } # delete comments
+	foreach (@lines) { s/--.*//  } # delete comments
 	my @ops   = map  { split ' ' } @lines; # get op words
 
 	foreach(@ops) {
@@ -116,13 +116,6 @@ The Opcode module is not usually used directly. See the ops pragma and
 Safe modules for more typical uses.
 
 =head1 WARNING
-
-The Opcode module does not implement an effective sandbox for
-evaluating untrusted code with the perl interpreter.
-
-Bugs in the perl interpreter that could be abused to bypass
-Opcode restrictions are not treated as vulnerabilities. See
-L<perlsecpolicy> for additional information.
 
 The authors make B<no warranty>, implied or otherwise, about the
 suitability of this software for safety or security purposes.
@@ -295,8 +288,8 @@ invert_opset function.
 
 =head1 TO DO (maybe)
 
-    $bool = opset_eq($opset1, $opset2)	true if opsets are logically
-					equivalent
+    $bool = opset_eq($opset1, $opset2)	true if opsets are logically eqiv
+
     $yes = opset_can($opset, @ops)	true if $opset has all @ops set
 
     @diff = opset_diff($opset1, $opset2) => ('foo', '!bar', ...)
@@ -315,28 +308,24 @@ invert_opset function.
 
     rv2sv sassign
 
-    rv2av aassign aelem aelemfast aelemfast_lex aslice kvaslice
-    av2arylen
+    rv2av aassign aelem aelemfast aelemfast_lex aslice av2arylen
 
-    rv2hv helem hslice kvhslice each values keys exists delete
-    aeach akeys avalues multideref argelem argdefelem argcheck
+    rv2hv helem hslice each values keys exists delete aeach akeys avalues
+    boolkeys reach rvalues rkeys
 
-    preinc i_preinc predec i_predec postinc i_postinc
-    postdec i_postdec int hex oct abs pow multiply i_multiply
-    divide i_divide modulo i_modulo add i_add subtract i_subtract
+    preinc i_preinc predec i_predec postinc i_postinc postdec i_postdec
+    int hex oct abs pow multiply i_multiply divide i_divide
+    modulo i_modulo add i_add subtract i_subtract
 
-    left_shift right_shift bit_and bit_xor bit_or nbit_and
-    nbit_xor nbit_or sbit_and sbit_xor sbit_or negate i_negate not
-    complement ncomplement scomplement
+    left_shift right_shift bit_and bit_xor bit_or negate i_negate
+    not complement
 
     lt i_lt gt i_gt le i_le ge i_ge eq i_eq ne i_ne ncmp i_ncmp
     slt sgt sle sge seq sne scmp
-    isa
 
     substr vec stringify study pos length index rindex ord chr
 
-    ucfirst lcfirst uc lc fc quotemeta trans transr chop schop
-    chomp schomp
+    ucfirst lcfirst uc lc fc quotemeta trans transr chop schop chomp schomp
 
     match split qr
 
@@ -346,16 +335,11 @@ invert_opset function.
 
     warn die lineseq nextstate scope enter leave
 
-    rv2cv anoncode prototype coreargs avhvswitch anonconst
+    rv2cv anoncode prototype coreargs
 
-    entersub leavesub leavesublv return method method_named
-    method_super method_redir method_redir_super
-     -- XXX loops via recursion?
+    entersub leavesub leavesublv return method method_named -- XXX loops via recursion?
 
-    cmpchain_and cmpchain_dup
-
-    leaveeval -- needed for Safe to operate, is safe
-		 without entereval
+    leaveeval -- needed for Safe to operate, is safe without entereval
 
 =item :base_mem
 
@@ -363,7 +347,7 @@ These memory related ops are not included in :base_core because they
 can easily be used to implement a resource attack (e.g., consume all
 available memory).
 
-    concat multiconcat repeat join range
+    concat repeat join range
 
     anonlist anonhash
 
@@ -410,16 +394,15 @@ These are a hotchpotch of opcodes still waiting to be considered
 
     gvsv gv gelem
 
-    padsv padav padhv padcv padany padrange introcv clonecv
+    padsv padav padhv padany
 
     once
 
-    rv2gv refgen srefgen ref refassign lvref lvrefslice lvavref
+    rv2gv refgen srefgen ref
 
-    bless -- could be used to change ownership of objects
-	     (reblessing)
+    bless -- could be used to change ownership of objects (reblessing)
 
-     regcmaybe regcreset regcomp subst substcont
+    pushre regcmaybe regcreset regcomp subst substcont
 
     sprintf prtf -- can core dump
 
@@ -431,8 +414,7 @@ These are a hotchpotch of opcodes still waiting to be considered
     sselect select
     pipe_op sockpair
 
-    getppid getpgrp setpgrp getpriority setpriority
-    localtime gmtime
+    getppid getpgrp setpgrp getpriority setpriority localtime gmtime
 
     entertry leavetry -- can be used to 'hide' fatal errors
 
@@ -478,10 +460,9 @@ then you should not rely on the definition of this, or indeed any other, optag!
 
     stat lstat readlink
 
-    ftatime ftblk ftchr ftctime ftdir fteexec fteowned
-    fteread ftewrite ftfile ftis ftlink ftmtime ftpipe
-    ftrexec ftrowned ftrread ftsgid ftsize ftsock ftsuid
-    fttty ftzero ftrwrite ftsvtx
+    ftatime ftblk ftchr ftctime ftdir fteexec fteowned fteread
+    ftewrite ftfile ftis ftlink ftmtime ftpipe ftrexec ftrowned
+    ftrread ftsgid ftsize ftsock ftsuid fttty ftzero ftrwrite ftsvtx
 
     fttext ftbinary
 
@@ -503,7 +484,7 @@ A handy tag name for a I<reasonable> default set of ops beyond the
 :default optag.  Like :default (and indeed all the other optags) its
 current definition is unstable while development continues. It will change.
 
-The :browse tag represents the next step beyond :default. It is a
+The :browse tag represents the next step beyond :default. It it a
 superset of the :default ops and adds :filesys_read the :sys_db.
 The intent being that scripts can access more (possibly sensitive)
 information about your system but not be able to change it.
@@ -525,8 +506,7 @@ information about your system but not be able to change it.
 
     utime chmod chown
 
-    fcntl -- not strictly filesys related, but possibly as
-	     dangerous?
+    fcntl -- not strictly filesys related, but possibly as dangerous?
 
 =item :subprocess
 

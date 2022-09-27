@@ -28,9 +28,9 @@
 <ol>
 <%
     String[] items = cart.getItems();
-    for (String item : items) {
+    for (int i=0; i<items.length; i++) {
 %>
-<li> <% out.print(util.HTMLFilter.filter(item)); %>
+<li> <% out.print(util.HTMLFilter.filter(items[i])); %>
 <%
     }
 %>

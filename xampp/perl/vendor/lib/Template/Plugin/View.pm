@@ -23,7 +23,7 @@ use strict;
 use warnings;
 use base 'Template::Plugin';
 
-our $VERSION = '3.009';
+our $VERSION = 2.68;
 
 use Template::View;
 

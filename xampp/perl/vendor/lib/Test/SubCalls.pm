@@ -1,14 +1,10 @@
-package Test::SubCalls; # git description: d4e5915
+package Test::SubCalls;
 
 =pod
 
 =head1 NAME
 
 Test::SubCalls - Track the number of times subs are called
-
-=head1 VERSION
-
-version 1.10
 
 =head1 SYNOPSIS
 
@@ -53,9 +49,9 @@ use Hook::LexWrap 0.20 ();
 use Exporter           ();
 use Test::Builder      ();
 
-our $VERSION = '1.10';
-use vars qw{@ISA @EXPORT};
+use vars qw{$VERSION @ISA @EXPORT};
 BEGIN {
+	$VERSION = '1.09';
 	@ISA     = 'Exporter';
 	@EXPORT  = qw{sub_track sub_calls sub_reset sub_reset_all};
 }

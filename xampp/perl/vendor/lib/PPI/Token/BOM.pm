@@ -42,11 +42,13 @@ L<PPI::Token> and L<PPI::Element> classes.
 use strict;
 use PPI::Token ();
 
-our $VERSION = '1.270'; # VERSION
+use vars qw{$VERSION @ISA};
+BEGIN {
+	$VERSION = '1.215';
+	@ISA     = 'PPI::Token';
+}
 
-our @ISA = "PPI::Token";
-
-sub significant() { '' }
+sub significant { '' }
 
 
 

@@ -1,8 +1,8 @@
 package Imager::Font::BBox;
-use 5.006;
 use strict;
+use vars qw($VERSION);
 
-our $VERSION = "1.007";
+$VERSION = "1.006";
 
 =head1 NAME
 

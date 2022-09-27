@@ -22,9 +22,7 @@ sub init {
     $key->{version} = 3;
     if ((my $cert = $param{Key}) && (my $sym_key = $param{SymKey})) {
         my $alg = $param{Cipher} || DEFAULT_CIPHER;
-        my $cipher = Crypt::OpenPGP::Cipher->new($alg) or
-            return (ref $key)->error( Crypt::OpenPGP::Cipher->errstr );
-        my $keysize = $cipher->keysize;
+        my $keysize = Crypt::OpenPGP::Cipher->new($alg)->keysize;
         $sym_key = substr $sym_key, 0, $keysize;
         my $pk = $cert->key->public_key;
         my $enc = $key->_encode($sym_key, $alg, $pk->bytesize) or
@@ -61,8 +59,8 @@ sub save {
     $buf->put_bytes($key->{key_id}, 8);
     $buf->put_int8($key->{pk_alg});
     my $c = $key->{C};
-    for my $prop (sort keys %$c) {
-        $buf->put_mp_int($c->{$prop});
+    for my $mp (values %$c) {
+        $buf->put_mp_int($mp);
     }
     $buf->bytes;
 }
@@ -71,9 +69,8 @@ sub display {
     my $key = shift;
     my $str = sprintf ":pubkey enc packet: version %d, algo %d, keyid %s\n",
         $key->{version}, $key->{pk_alg}, uc unpack('H*', $key->{key_id});
-    my $c = $key->{C};
-    for my $prop (sort keys %$c) {
-        $str .= sprintf "        data: [%d bits]\n", bitsize($c->{$prop});
+    for my $mp (values %{ $key->{C} }) {
+        $str .= sprintf "        data: [%d bits]\n", bitsize($mp);
     }
     $str;
 }
@@ -91,12 +88,11 @@ sub decrypt {
 
 sub _encode {
     my $class = shift;
+    require Crypt::Random;
     my($sym_key, $sym_alg, $size) = @_;
     my $padlen = "$size" - length($sym_key) - 2 - 2 - 2;
-    my $pad = "\0";
-    while ($pad =~ tr/\0//) {
-        $pad = Crypt::OpenPGP::Util::get_random_bytes($padlen);
-    }
+    my $pad = Crypt::Random::makerandom_octet( Length => $padlen,
+                                               Skip => chr(0) );
     bin2mp(pack 'na*na*n', 2, $pad, $sym_alg, $sym_key,
         unpack('%16C*', $sym_key));
 }

@@ -35,7 +35,7 @@ use base qw( DBI::DBD::SqlEngine );
 use Carp;
 use vars qw( @ISA $VERSION $drh );
 
-$VERSION = "0.44";
+$VERSION = "0.41";
 
 $drh = undef;		# holds driver handle(s) once initialized
 
@@ -47,7 +47,7 @@ sub driver ($;$)
     # We use a hash here to have one singleton per subclass.
     # (Otherwise DBD::CSV and DBD::DBM, for example, would
     # share the same driver object which would cause problems.)
-    # An alternative would be to not cache the $drh here at all
+    # An alternative would be not not cache the $drh here at all
     # and require that subclasses do that. Subclasses should do
     # their own caching, so caching here just provides extra safety.
     $drh->{$class} and return $drh->{$class};
@@ -85,8 +85,6 @@ use warnings;
 
 use vars qw( @ISA $imp_data_size );
 
-use Carp;
-
 @DBD::File::dr::ISA           = qw( DBI::DBD::SqlEngine::dr );
 $DBD::File::dr::imp_data_size = 0;
 
@@ -101,31 +99,6 @@ sub dsn_quote
 
 # XXX rewrite using TableConfig ...
 sub default_table_source { "DBD::File::TableSource::FileSystem" }
-
-sub connect
-{
-    my ($drh, $dbname, $user, $auth, $attr) = @_;
-
-    # We do not (yet) care about conflicting attributes here
-    # my $dbh = DBI->connect ("dbi:CSV:f_dir=test", undef, undef, { f_dir => "text" });
-    # will test here that both test and text should exist
-    if (my $attr_hash = (DBI->parse_dsn ($dbname))[3]) {
-	if (defined $attr_hash->{f_dir} && ! -d $attr_hash->{f_dir}) {
-	    my $msg = "No such directory '$attr_hash->{f_dir}";
-	    $drh->set_err (2, $msg);
-	    $attr_hash->{RaiseError} and croak $msg;
-	    return;
-	    }
-	}
-    if ($attr and defined $attr->{f_dir} && ! -d $attr->{f_dir}) {
-	my $msg = "No such directory '$attr->{f_dir}";
-	$drh->set_err (2, $msg);
-	$attr->{RaiseError} and croak $msg;
-	return;
-	}
-
-    return $drh->SUPER::connect ($dbname, $user, $auth, $attr);
-    } # connect
 
 sub disconnect_all
 {
@@ -157,8 +130,7 @@ sub data_sources
 {
     my ($dbh, $attr, @other) = @_;
     ref ($attr) eq "HASH" or $attr = {};
-    exists $attr->{f_dir}        or $attr->{f_dir}        = $dbh->{f_dir};
-    exists $attr->{f_dir_search} or $attr->{f_dir_search} = $dbh->{f_dir_search};
+    exists $attr->{f_dir} or $attr->{f_dir} = $dbh->{f_dir};
     return $dbh->SUPER::data_sources ($attr, @other);
     } # data_source
 
@@ -177,7 +149,6 @@ sub init_valid_attributes
     $dbh->{f_valid_attrs} = {
 	f_version        => 1, # DBD::File version
 	f_dir            => 1, # base directory
-	f_dir_search     => 1, # extended search directories
 	f_ext            => 1, # file extension
 	f_schema         => 1, # schema name
 	f_lock           => 1, # Table locking mode
@@ -213,7 +184,7 @@ sub init_default_attributes
     if (0 == $phase) {
 	# f_ext should not be initialized
 	# f_map is deprecated (but might return)
-	$dbh->{f_dir} = Cwd::abs_path (File::Spec->curdir ());
+	$dbh->{f_dir}      = Cwd::abs_path (File::Spec->curdir ());
 
 	push @{$dbh->{sql_init_order}{90}}, "f_meta";
 
@@ -223,7 +194,7 @@ sub init_default_attributes
         if (exists $dbh->{$drv_prefix . "meta"} and !$dbh->{sql_engine_in_gofer}) {
             my $attr = $dbh->{$drv_prefix . "meta"};
             defined $dbh->{f_valid_attrs}{f_meta}
-		and $dbh->{f_valid_attrs}{f_meta} = 1;
+              and $dbh->{f_valid_attrs}{f_meta} = 1;
 
             $dbh->{f_meta} = $dbh->{$attr};
 	    }
@@ -273,7 +244,7 @@ sub get_f_versions
     eval {
 	$dver = IO::File->VERSION ();
 
-	# when we're still alive here, everything went ok - no need to check for $@
+	# when we're still alive here, everthing went ok - no need to check for $@
 	$dtype .= " ($dver)";
 	};
 
@@ -321,39 +292,12 @@ sub FETCH
 
 	    # fill overall_defs unless we know
 	    unless (exists $sth->{f_overall_defs} && ref $sth->{f_overall_defs}) {
-		my $types = $sth->{Database}{Types};
-		unless ($types) { # Fetch types only once per database
-		    if (my $t = $sth->{Database}->type_info_all ()) {
-			foreach my $i (1 .. $#$t) {
-			    $types->{uc $t->[$i][0]}   = $t->[$i][1];
-			    $types->{$t->[$i][1]} ||= uc $t->[$i][0];
-			    }
-			}
-		    # sane defaults
-		    for ([  0, ""		],
-			 [  1, "CHAR"		],
-			 [  4, "INTEGER"	],
-			 [ 12, "VARCHAR"	],
-			 ) {
-			$types->{$_->[0]} ||= $_->[1];
-			$types->{$_->[1]} ||= $_->[0];
-			}
-		    $sth->{Database}{Types} = $types;
-		    }
 		my $all_meta =
 		    $sth->{Database}->func ("*", "table_defs", "get_sql_engine_meta");
-		foreach my $tbl (keys %$all_meta) {
-		    my $meta = $all_meta->{$tbl};
+		while (my ($tbl, $meta) = each %$all_meta) {
 		    exists $meta->{table_defs} && ref $meta->{table_defs} or next;
 		    foreach (keys %{$meta->{table_defs}{columns}}) {
-			my $field_info = $meta->{table_defs}{columns}{$_};
-			if (defined $field_info->{data_type} &&
-				    $field_info->{data_type} !~ m/^[0-9]+$/) {
-			    $field_info->{type_name} = uc $field_info->{data_type};
-			    $field_info->{data_type} = $types->{$field_info->{type_name}} || 0;
-			    }
-			$field_info->{type_name} ||= $types->{$field_info->{data_type}} || "CHAR";
-			$sth->{f_overall_defs}{$_} = $field_info;
+			$sth->{f_overall_defs}{$_} = $meta->{table_defs}{columns}{$_};
 			}
 		    }
 		}
@@ -361,11 +305,7 @@ sub FETCH
 	    my @colnames = $sth->sql_get_colnames ();
 
 	    $attr eq "TYPE"      and
-		return [ map { $sth->{f_overall_defs}{$_}{data_type}   || 12 }
-			    @colnames ];
-
-	    $attr eq "TYPE_NAME" and
-		return [ map { $sth->{f_overall_defs}{$_}{type_name}   || "VARCHAR" }
+		return [ map { $sth->{f_overall_defs}{$_}{data_type}   || "CHAR" }
 			    @colnames ];
 
 	    $attr eq "PRECISION" and
@@ -401,35 +341,25 @@ sub data_sources
 	? $attr->{f_dir}
 	: File::Spec->curdir ();
     defined $dir or return; # Stream-based databases do not have f_dir
-    unless (-d $dir && -r $dir && -x $dir) {
-	$drh->set_err ($DBI::stderr, "Cannot use directory $dir from f_dir");
-	return;
-	}
     my %attrs;
     $attr and %attrs = %$attr;
     delete $attrs{f_dir};
     my $dsn_quote = $drh->{ImplementorClass}->can ("dsn_quote");
     my $dsnextra = join ";", map { $_ . "=" . &{$dsn_quote} ($attrs{$_}) } keys %attrs;
-    my @dir = ($dir);
-    $attr->{f_dir_search} && ref $attr->{f_dir_search} eq "ARRAY" and
-	push @dir, grep { -d $_ } @{$attr->{f_dir_search}};
-    my @dsns;
-    foreach $dir (@dir) {
-	my $dirh = IO::Dir->new ($dir);
-	unless (defined $dirh) {
-	    $drh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
-	    return;
-	    }
+    my $dirh = IO::Dir->new ($dir);
+    unless (defined $dirh) {
+	$drh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
+	return;
+	}
 
-	my ($file, %names, $driver);
-	$driver = $drh->{ImplementorClass} =~ m/^dbd\:\:([^\:]+)\:\:/i ? $1 : "File";
+    my ($file, @dsns, %names, $driver);
+    $driver = $drh->{ImplementorClass} =~ m/^dbd\:\:([^\:]+)\:\:/i ? $1 : "File";
 
-	while (defined ($file = $dirh->read ())) {
-	    my $d = File::Spec->catdir ($dir, $file);
-	    # allow current dir ... it can be a data_source too
-	    $file ne File::Spec->updir () && -d $d and
-		push @dsns, "DBI:$driver:f_dir=" . &{$dsn_quote} ($d) . ($dsnextra ? ";$dsnextra" : "");
-	    }
+    while (defined ($file = $dirh->read ())) {
+	my $d = File::Spec->catdir ($dir, $file);
+	# allow current dir ... it can be a data_source too
+	$file ne File::Spec->updir () && -d $d and
+	    push @dsns, "DBI:$driver:f_dir=" . &{$dsn_quote} ($d) . ($dsnextra ? ";$dsnextra" : "");
 	}
     return @dsns;
     } # data_sources
@@ -438,38 +368,32 @@ sub avail_tables
 {
     my ($self, $dbh) = @_;
 
-    my $dir = $dbh->{f_dir};
+    my $dir    = $dbh->{f_dir};
     defined $dir or return;	# Stream based db's cannot be queried for tables
+    my $dirh = IO::Dir->new ($dir);
 
+    unless (defined $dirh) {
+	$dbh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
+	return;
+	}
+
+    my $class = $dbh->FETCH ("ImplementorClass");
+    $class =~ s/::db$/::Table/;
+    my ($file, %names);
+    my $schema = exists $dbh->{f_schema}
+	? defined $dbh->{f_schema} && $dbh->{f_schema} ne ""
+	    ? $dbh->{f_schema} : undef
+	: eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
     my %seen;
     my @tables;
-    my @dir = ($dir);
-    $dbh->{f_dir_search} && ref $dbh->{f_dir_search} eq "ARRAY" and
-	push @dir, grep { -d $_ } @{$dbh->{f_dir_search}};
-    foreach $dir (@dir) {
-	my $dirh = IO::Dir->new ($dir);
-
-	unless (defined $dirh) {
-	    $dbh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
-	    return;
-	    }
-
-	my $class = $dbh->FETCH ("ImplementorClass");
-	$class =~ s/::db$/::Table/;
-	my ($file, %names);
-	my $schema = exists $dbh->{f_schema}
-	    ? defined $dbh->{f_schema} && $dbh->{f_schema} ne ""
-		? $dbh->{f_schema} : undef
-	    : eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
-	while (defined ($file = $dirh->read ())) {
-	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
-	    # $tbl && $meta && -f $meta->{f_fqfn} or next;
-	    $seen{defined $schema ? $schema : "\0"}{$dir}{$tbl}++ or
-		push @tables, [ undef, $schema, $tbl, "TABLE", "FILE" ];
-	    }
-	$dirh->close () or
-	    $dbh->set_err ($DBI::stderr, "Cannot close directory $dir: $!");
+    while (defined ($file = $dirh->read ())) {
+	my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
+	# $tbl && $meta && -f $meta->{f_fqfn} or next;
+	$seen{defined $schema ? $schema : "\0"}{$tbl}++ or
+	    push @tables, [ undef, $schema, $tbl, "TABLE", "FILE" ];
 	}
+    $dirh->close () or
+	$dbh->set_err ($DBI::stderr, "Cannot close directory $dir: $!");
 
     return @tables;
     } # avail_tables
@@ -593,8 +517,8 @@ sub complete_table_name
 	    }
 	}
 
-    # (my $tbl = $file) =~ s/\Q$ext\E$//i;
-    my ($tbl, $basename, $dir, $fn_ext, $user_spec_file, $searchdir);
+    # (my $tbl = $file) =~ s/$ext$//i;
+    my ($tbl, $basename, $dir, $fn_ext, $user_spec_file);
     if ($file_is_table and defined $meta->{f_file}) {
 	$tbl = $file;
 	($basename, $dir, $fn_ext) = File::Basename::fileparse ($meta->{f_file}, $fn_any_ext_regex);
@@ -602,18 +526,7 @@ sub complete_table_name
 	$user_spec_file = 1;
 	}
     else {
-	($basename, $dir, undef) = File::Basename::fileparse ($file, qr{\Q$ext\E});
-	# $dir is returned with trailing (back)slash. We just need to check
-	# if it is ".", "./", or ".\" or "[]" (VMS)
-	if ($dir =~ m{^(?:[.][/\\]?|\[\])$} && ref $meta->{f_dir_search} eq "ARRAY") {
-	    foreach my $d ($meta->{f_dir}, @{$meta->{f_dir_search}}) {
-		my $f = File::Spec->catdir ($d, $file);
-		-f $f or next;
-		$searchdir = Cwd::abs_path ($d);
-		$dir = "";
-		last;
-		}
-	    }
+	($basename, $dir, undef) = File::Basename::fileparse ($file, $ext);
 	$file = $tbl = $basename;
 	$user_spec_file = 0;
 	}
@@ -627,11 +540,9 @@ sub complete_table_name
         $tbl = lc $tbl;
 	}
 
-    unless (defined $searchdir) {
-	$searchdir = File::Spec->file_name_is_absolute ($dir)
-	    ? ($dir =~ s{/$}{}, $dir)
-	    : Cwd::abs_path (File::Spec->catdir ($meta->{f_dir}, $dir));
-	}
+    my $searchdir = File::Spec->file_name_is_absolute ($dir)
+	? ($dir =~ s{/$}{}, $dir)
+	: Cwd::abs_path (File::Spec->catdir ($meta->{f_dir}, $dir));
     -d $searchdir or
 	croak "-d $searchdir: $!";
 
@@ -673,12 +584,12 @@ sub complete_table_name
 	    }
 	@f > 0 && @f <= 2 and $file = $f[0];
 	!$respect_case && $meta->{sql_identifier_case} == 4 and # XXX SQL_IC_MIXED
-	    ($tbl = $file) =~ s/\Q$ext\E$//i;
+	    ($tbl = $file) =~ s/$ext$//i;
 
 	my $tmpfn = $file;
 	if ($ext && $req) {
             # File extension required
-            $tmpfn =~ s/\Q$ext\E$//i or return;
+            $tmpfn =~ s/$ext$//i or return;
             }
 	}
 
@@ -842,13 +753,12 @@ sub bootstrap_table_meta
 
     $self->SUPER::bootstrap_table_meta ($dbh, $meta, $table, @other);
 
-    exists  $meta->{f_dir}        or $meta->{f_dir}        = $dbh->{f_dir};
-    exists  $meta->{f_dir_search} or $meta->{f_dir_search} = $dbh->{f_dir_search};
-    defined $meta->{f_ext}        or $meta->{f_ext}        = $dbh->{f_ext};
-    defined $meta->{f_encoding}   or $meta->{f_encoding}   = $dbh->{f_encoding};
-    exists  $meta->{f_lock}       or $meta->{f_lock}       = $dbh->{f_lock};
-    exists  $meta->{f_lockfile}   or $meta->{f_lockfile}   = $dbh->{f_lockfile};
-    defined $meta->{f_schema}     or $meta->{f_schema}     = $dbh->{f_schema};
+    exists  $meta->{f_dir}	or $meta->{f_dir}	= $dbh->{f_dir};
+    defined $meta->{f_ext}	or $meta->{f_ext}	= $dbh->{f_ext};
+    defined $meta->{f_encoding}	or $meta->{f_encoding}	= $dbh->{f_encoding};
+    exists  $meta->{f_lock}	or $meta->{f_lock}	= $dbh->{f_lock};
+    exists  $meta->{f_lockfile}	or $meta->{f_lockfile}	= $dbh->{f_lockfile};
+    defined $meta->{f_schema}	or $meta->{f_schema}	= $dbh->{f_schema};
 
     defined $meta->{f_open_file_needed} or
 	$meta->{f_open_file_needed} = $self->can ("open_file") != DBD::File::Table->can ("open_file");
@@ -871,11 +781,10 @@ sub get_table_meta ($$$$;$)
     } # get_table_meta
 
 my %reset_on_modify = (
-    f_file       => [ "f_fqfn", "sql_data_source" ],
-    f_dir        =>   "f_fqfn",
-    f_dir_search => [],
-    f_ext        =>   "f_fqfn",
-    f_lockfile   =>   "f_fqfn", # forces new file2table call
+    f_file     => [ "f_fqfn", "sql_data_source" ],
+    f_dir      =>   "f_fqfn",
+    f_ext      =>   "f_fqfn",
+    f_lockfile =>   "f_fqfn", # forces new file2table call
     );
 
 __PACKAGE__->register_reset_on_modify (\%reset_on_modify);
@@ -956,8 +865,6 @@ sub DESTROY
     $meta->{lockfh} and $meta->{lockfh}->close ();
     undef $meta->{fh};
     undef $meta->{lockfh};
-
-    $self->SUPER::DESTROY();
     } # DESTROY
 
 1;
@@ -1056,16 +963,7 @@ When the value for C<f_dir> is a relative path, it is converted into
 the appropriate absolute path name (based on the current working
 directory) when the dbh attribute is set.
 
-  f_dir => "/data/foo/csv",
-
 See L<KNOWN BUGS AND LIMITATIONS>.
-
-=head4 f_dir_search
-
-This optional attribute can be set to pass a list of folders to also
-find existing tables. It will B<not> be used to create new files.
-
-  f_dir_search => [ "/data/bar/csv", "/dump/blargh/data" ],
 
 =head4 f_ext
 
@@ -1075,8 +973,6 @@ This attribute is used for setting the file extension. The format is:
 
 where the /flag is optional and the extension is case-insensitive.
 C<f_ext> allows you to specify an extension which:
-
-  f_ext => ".csv/r",
 
 =over
 
@@ -1357,8 +1253,6 @@ evaluated instead of driver globals:
 =item f_ext
 
 =item f_dir
-
-=item f_dir_search
 
 =item f_lock
 

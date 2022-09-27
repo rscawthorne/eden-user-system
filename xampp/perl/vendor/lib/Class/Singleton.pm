@@ -9,23 +9,17 @@
 #
 # Written by Andy Wardley <abw@wardley.org>
 #
+# Copyright (C) 1998-2008 Andy Wardley.  All Rights Reserved.
 # Copyright (C) 1998 Canon Research Centre Europe Ltd.
-# Copyright (C) 1998-2008 Andy Wardley.  All rights reserved.
-# Copyright (C) 2014 Steve Hay.  All rights reserved.
-#
-# This module is free software; you can redistribute it and/or modify it under
-# the same terms as Perl itself, i.e. under the terms of either the GNU General
-# Public License or the Artistic License, as specified in the F<LICENCE> file.
 #
 #============================================================================
 
 package Class::Singleton;
-use 5.008001;
+require 5.004;
 use strict;
 use warnings;
 
-our $VERSION = 1.6;
-my %_INSTANCES = ();
+our $VERSION = 1.4;
 
 
 #========================================================================
@@ -34,14 +28,16 @@ my %_INSTANCES = ();
 #
 # Module constructor.  Creates an Class::Singleton (or derived) instance 
 # if one doesn't already exist.  The instance reference is stored in the
-# %_INSTANCES hash of the Class::Singleton package.  The impact of this is
+# _instance variable of the $class package.  This means that classes 
+# derived from Class::Singleton will have the variables defined in *THEIR*
+# package, rather than the Class::Singleton package.  The impact of this is
 # that you can create any number of classes derived from Class::Singleton
-# and create a single instance of each one.  If the instance reference
-# was stored in a scalar $_INSTANCE variable, you could only instantiate 
+# and create a single instance of each one.  If the _instance variable
+# was stored in the Class::Singleton package, you could only instantiate 
 # *ONE* object of *ANY* class derived from Class::Singleton.  The first
 # time the instance is created, the _new_instance() constructor is called 
 # which simply returns a reference to a blessed hash.  This can be 
-# overloaded for custom constructors.  Any additional parameters passed to 
+# overloaded for custom constructors.  Any addtional parameters passed to 
 # instance() are forwarded to _new_instance().
 #
 # Returns a reference to the existing, or a newly created Class::Singleton
@@ -56,12 +52,12 @@ sub instance {
     # already got an object
     return $class if ref $class;
 
-    # we store the instance against the $class key of %_INSTANCES
-    my $instance = $_INSTANCES{$class};
-    unless(defined $instance) {
-        $_INSTANCES{$class} = $instance = $class->_new_instance(@_);
-    }
-    return $instance;
+    # we store the instance in the _instance variable in the $class package.
+    no strict 'refs';
+    my $instance = \${ "$class\::_instance" };
+    defined $$instance
+        ? $$instance
+        : ($$instance = $class->_new_instance(@_));
 }
 
 
@@ -74,7 +70,8 @@ sub instance {
 sub has_instance {
     my $class = shift;
     $class = ref $class || $class;
-    return $_INSTANCES{$class};
+    no strict 'refs';
+    return ${"$class\::_instance"};
 }
 
 
@@ -92,19 +89,6 @@ sub _new_instance {
     bless { %args }, $class;
 }
 
-
-#========================================================================
-# END()
-#
-# END block to explicitly destroy all Class::Singleton objects since
-# destruction order at program exit is not predictable. See CPAN RT
-# bugs #23568 and #68526 for examples of what can go wrong without this.
-#========================================================================
-
-END {
-    # dereferences and causes orderly destruction of all instances
-    undef(%_INSTANCES);
-}
 
 
 1;
@@ -136,7 +120,62 @@ specific functionality is required.
 For a description and discussion of the Singleton class, see 
 "Design Patterns", Gamma et al, Addison-Wesley, 1995, ISBN 0-201-63361-2.
 
-=head2 Using the Class::Singleton Module
+=head1 PREREQUISITES
+
+C<Class::Singleton> requires Perl version 5.004 or later. If you have an older
+version of Perl, please upgrade to latest version, available from your nearest
+CPAN site (see L<INSTALLATION> below).
+
+=head1 INSTALLATION
+
+The C<Class::Singleton> module is available from CPAN. As the 'perlmod' man
+page explains:
+
+    CPAN stands for the Comprehensive Perl Archive Network.
+    This is a globally replicated collection of all known Perl
+    materials, including hundreds of unbunded modules.
+    
+    [...]
+    
+    For an up-to-date listing of CPAN sites, see
+    http://www.perl.com/perl/ or ftp://ftp.perl.com/perl/ .
+
+The module is available in the following directories:
+
+    /modules/by-module/Class/Class-Singleton-<version>.tar.gz
+    /authors/id/ABW/Class-Singleton-<version>.tar.gz
+
+C<Class::Singleton> is distributed as a single gzipped tar archive file:
+
+    Class-Singleton-<version>.tar.gz
+
+Note that "<version>" represents the current version number, of the 
+form "C<1.23>".  See L<VERSION> below to determine the current version 
+number for C<Class::Singleton>.
+
+Unpack the archive to create an installation directory:
+
+    gunzip Class-Singleton-<version>.tar.gz
+    tar xvf Class-Singleton-<version>.tar
+
+'cd' into that directory, make, test and install the module:
+
+    cd Class-Singleton-<version>
+    perl Makefile.PL
+    make
+    make test
+    make install
+
+The 'C<make install>' will install the module on your system.  You may need 
+root access to perform this task.  If you install the module in a local 
+directory (for example, by executing "C<perl Makefile.PL LIB=~/lib>" in the 
+above - see C<perldoc MakeMaker> for full details), you will need to ensure 
+that the C<PERL5LIB> environment variable is set to include the location, or 
+add a line to your scripts explicitly naming the library location:
+
+    use lib '/local/path/to/lib';
+
+=head1 USING THE CLASS::SINGLETON MODULE
 
 To import and use the C<Class::Singleton> module the following line should 
 appear in your Perl program:
@@ -158,7 +197,7 @@ to it. Future invocations of L<instance()> will return the same reference.
 In the above example, both C<$highlander> and C<$macleod> contain the same
 reference to a C<Class::Singleton> instance.  There can be only one.
 
-=head2 Deriving Singleton Classes
+=head1 DERIVING SINGLETON CLASSES
 
 A module class may be derived from C<Class::Singleton> and will inherit the 
 L<instance()> method that correctly instantiates only one object.
@@ -257,13 +296,19 @@ Some time later on in a module far, far away...
         }, $class;
     }
 
-The C<Class::Singleton> L<instance()> method uses a private hash to store
-a reference to any existing instance of the object, keyed against the derived
-class package name.
+The C<Class::Singleton> L<instance()> method uses a package variable to store
+a reference to any existing instance of the object. This variable,
+"C<_instance>", is coerced into the derived class package rather than the base
+class package.
+
+Thus, in the C<MyApp::Database> example above, the instance variable would
+be:
+
+    $MyApp::Database::_instance;
 
 This allows different classes to be derived from C<Class::Singleton> that can
 co-exist in the same system, while still allowing only one instance of any one
-class to exist. For example, it would be possible to derive both
+class to exists. For example, it would be possible to derive both
 'C<PrintSpooler>' and 'C<MyApp::Database>' from C<Class::Singleton> and have a
 single instance of I<each> in a system, rather than a single instance of
 I<either>.
@@ -275,16 +320,14 @@ C<undef> if none is currently defined.
     my $instance = MyApp::Database->has_instance()
         || warn "No instance is defined yet";
 
-=head2 Methods
+=head1 METHODS
 
-=over 4
-
-=item instance()
+=head2 instance()
 
 This method is called to return a current object instance or create a new
 one by calling L<_new_instance()>.
 
-=item has_instance()
+=head2 has_instance()
 
 This method returns a reference to any existing instance or C<undef> if none
 is defined.
@@ -292,7 +335,7 @@ is defined.
     my $testing = MySingleton1->has_instance()
         || warn "No instance defined for MySingleton1";
 
-=item _new_instance()
+=head2 _new_instance()
 
 This "private" method is called by L<instance()> to create a new object
 instance if one doesn't already exist. It is not intended to be called
@@ -313,91 +356,22 @@ the I<_new_instance()> method once, so any arguments you pass may be silently
 ignored if an instance already exists. You can use the L<has_instance()>
 method to determine if an instance is already defined.
 
-=back
-
-=head1 EXPORTS
-
-I<None>.
-
-=head1 KNOWN BUGS
-
-I<None>.
-
-=head1 FEEDBACK
-
-Patches, bug reports, suggestions or any other feedback is welcome.
-
-Patches can be sent as GitHub pull requests at
-L<https://github.com/steve-m-hay/Class-Singleton/pulls>.
-
-Bug reports and suggestions can be made on the CPAN Request Tracker at
-L<https://rt.cpan.org/Public/Bug/Report.html?Queue=Class-Singleton>.
-
-Currently active requests on the CPAN Request Tracker can be viewed at
-L<https://rt.cpan.org/Public/Dist/Display.html?Status=Active;Queue=Class-Singleton>.
-
-Please test this distribution.  See CPAN Testers Reports at
-L<https://www.cpantesters.org/> for details of how to get involved.
-
-Previous test results on CPAN Testers Reports can be viewed at
-L<https://www.cpantesters.org/distro/C/Class-Singleton.html>.
-
-Please rate this distribution on CPAN Ratings at
-L<https://cpanratings.perl.org/rate/?distribution=Class-Singleton>.
-
-=head1 AVAILABILITY
-
-The latest version of this module is available from CPAN (see
-L<perlmodlib/"CPAN"> for details) at
-
-L<https://metacpan.org/release/Class-Singleton> or
-
-L<https://www.cpan.org/authors/id/S/SH/SHAY/> or
-
-L<https://www.cpan.org/modules/by-module/Class/>.
-
-The latest source code is available from GitHub at
-L<https://github.com/steve-m-hay/Class-Singleton>.
-
-=head1 INSTALLATION
-
-See the F<INSTALL> file.
-
 =head1 AUTHOR
 
-Andy Wardley E<lt>L<abw@wardley.org|mailto:abw@wardley.org>E<gt>
-L<http://wardley.org/>.
+Andy Wardley E<lt>abw@wardley.orgE<gt> L<http://wardley.org/>
 
 Thanks to Andreas Koenig for providing some significant speedup patches and
 other ideas.
 
-Steve Hay E<lt>L<shay@cpan.org|mailto:shay@cpan.org>E<gt> is now maintaining
-Class::Singleton as of version 1.5.
+=head1 VERSION
+
+This is version 1.4, released September 2007
 
 =head1 COPYRIGHT
 
-Copyright (C) 1998 Canon Research Centre Europe Ltd.
+Copyright Andy Wardley 1998-2007.  All Rights Reserved.
 
-Copyright (C) 1998-2008 Andy Wardley.  All rights reserved.
-
-Copyright (C) 2014, 2020 Steve Hay.  All rights reserved.
-
-=head1 LICENCE
-
-This module is free software; you can redistribute it and/or modify it under the
-same terms as Perl itself, i.e. under the terms of either the GNU General Public
-License or the Artistic License, as specified in the F<LICENCE> file.
-
-=head1 VERSION
-
-Version 1.6
-
-=head1 DATE
-
-02 Dec 2020
-
-=head1 HISTORY
-
-See the F<Changes> file.
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
 
 =cut

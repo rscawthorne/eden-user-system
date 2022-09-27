@@ -2,8 +2,7 @@ package Crypt::SSLeay;
 
 use strict;
 use vars '$VERSION';
-$VERSION = '0.72';
-$VERSION = eval $VERSION;
+$VERSION = '0.64';
 
 eval {
     require XSLoader;
@@ -34,7 +33,7 @@ use vars qw(%CIPHERS);
 
 use Crypt::SSLeay::X509;
 
-# A xsupp bug made this necessary
+# A xsupp bug made this nessesary
 sub Crypt::SSLeay::CTX::DESTROY  { shift->free; }
 sub Crypt::SSLeay::Conn::DESTROY { shift->free; }
 sub Crypt::SSLeay::X509::DESTROY { shift->free; }
@@ -47,31 +46,23 @@ __END__
 
 Crypt::SSLeay - OpenSSL support for LWP
 
-=head1 HEARTBLEED WARNING
-
-C<perl Makefile.PL> will display a warning if it thinks your OpenSSL might be vulnerable to the  L<Heartbleed Bug|https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2014-0160>. You can, of course, go ahead and install the module, but you should be aware that your system might be exposed to an extremely serious vulnerability. This is just a heuristic based on the version reported by OpenSSL. It is entirely possible that your distrbution actually pushed a patched library, so if you have concerns, you should investigate further.
-
 =head1 SYNOPSIS
 
-    use Net::SSL;
+    lwp-request https://www.example.com
+
     use LWP::UserAgent;
-
-    my $ua  = LWP::UserAgent->new(
-        ssl_opts => { verify_hostname => 0 },
-    );
-
+    my $ua  = LWP::UserAgent->new;
     my $response = $ua->get('https://www.example.com/');
     print $response->content, "\n";
 
 =head1 DESCRIPTION
 
-This Perl module provides support for the HTTPS protocol under L<LWP>, to
-allow an L<LWP::UserAgent> object to perform GET, HEAD, and POST requests
-over encrypted socket connections. Please see L<LWP> for more information
-on POST requests.
+This Perl module provides support for the HTTPS protocol under LWP,
+to allow an C<LWP::UserAgent> object to perform GET, HEAD and POST
+requests. Please see LWP for more information on POST requests.
 
-The C<Crypt::SSLeay> package provides C<Net::SSL>, which, if requested, is
-loaded by C<LWP::Protocol::https> for https requests and provides the
+The C<Crypt::SSLeay> package provides C<Net::SSL>, which is loaded
+by C<LWP::Protocol::https> for https requests and provides the
 necessary SSL glue.
 
 This distribution also makes following deprecated modules available:
@@ -80,202 +71,152 @@ This distribution also makes following deprecated modules available:
     Crypt::SSLeay::Conn
     Crypt::SSLeay::X509
 
-=head1 DO YOU NEED Crypt::SSLeay?
-
-Starting with version 6.02 of L<LWP>, C<https> support was unbundled into
-L<LWP::Protocol::https>. This module specifies as one of its prerequisites
-L<IO::Socket::SSL> which is automatically used by L<LWP::UserAgent> unless
-this preference is overridden separately. C<IO::Socket::SSL> is a more
-complete implementation, and, crucially, it allows hostname verification.
-C<Crypt::SSLeay> does not support this. At this point, C<Crypt::SSLeay> is
-maintained to support existing software that already depends on it.
-However, it is possible that your software does not really depend on
-C<Crypt::SSLeay>, only on the ability of C<LWP::UserAgent> class to
-communicate with sites over SSL/TLS.
-
-If are using version C<LWP> 6.02 or later, and therefore have installed
-C<LWP::Protocol::https> and its dependencies, and do not explicitly C<use>
-C<Net::SSL> before loading C<LWP::UserAgent>, or override the default socket
-class, you are probably using C<IO::Socket::SSL> and do not really need
-C<Crypt::SSLeay>.
-
-If you have both C<Crypt::SSLeay> and C<IO::Socket::SSL> installed, and
-would like to force C<LWP::UserAgent> to use C<Crypt::SSLeay>, you can
-use:
-
-    use Net::HTTPS;
-    $Net::HTTPS::SSL_SOCKET_CLASS = 'Net::SSL';
-    use LWP::UserAgent;
-
-or
-
-    local $ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS} = 'Net::SSL';
-    use LWP::UserAgent;
-
-or
-
-    use Net::SSL;
-    use LWP::UserAgent;
+Work on Crypt::SSLeay has been continued only to provide https
+support for the LWP (libwww-perl) libraries.
 
 =head1 ENVIRONMENT VARIABLES
 
-=over 4
+The following environment variables change the way
+C<Crypt::SSLeay> and C<Net::SSL> behave.
 
-=item Specify SSL Socket Class
-
-C<$ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS}> can be used to instruct
-C<LWP::UserAgent> to use C<Net::SSL> for HTTPS support rather than
-C<IO::Socket::SSL>.
-
-=item Proxy Support
+=head2 Proxy Support
 
     $ENV{HTTPS_PROXY} = 'http://proxy_hostname_or_ip:port';
 
-=item Proxy Basic Authentication
+=head2 Proxy Basic Authentication
 
     $ENV{HTTPS_PROXY_USERNAME} = 'username';
     $ENV{HTTPS_PROXY_PASSWORD} = 'password';
 
-=item SSL diagnostics and Debugging
+=head2 SSL diagnostics and Debugging
 
     $ENV{HTTPS_DEBUG} = 1;
 
-=item Default SSL Version
+=head2 Default SSL Version
 
     $ENV{HTTPS_VERSION} = '3';
 
-=item Client Certificate Support
+=head2 Client Certificate Support
 
     $ENV{HTTPS_CERT_FILE} = 'certs/notacacert.pem';
     $ENV{HTTPS_KEY_FILE}  = 'certs/notacakeynopass.pem';
 
-=item CA cert Peer Verification
+=head2 CA cert Peer Verification
 
     $ENV{HTTPS_CA_FILE}   = 'certs/ca-bundle.crt';
     $ENV{HTTPS_CA_DIR}    = 'certs/';
 
-=item Client PKCS12 cert support
+=head2 Client PKCS12 cert support
 
     $ENV{HTTPS_PKCS12_FILE}     = 'certs/pkcs12.pkcs12';
     $ENV{HTTPS_PKCS12_PASSWORD} = 'PKCS12_PASSWORD';
-
-=back
 
 =head1 INSTALL
 
 =head2 OpenSSL
 
 You must have OpenSSL installed before compiling this module. You can get
-the latest OpenSSL package from L<https://www.openssl.org/source/>. We no
-longer support pre-2000 versions of OpenSSL.
+the latest OpenSSL package from L<http://www.openssl.org/>. We no longer
+support pre-2000 versions of OpenSSL.
 
 If you are building OpenSSL from source, please follow the directions
-included in the source package.
+included in the package.
 
-=head2 Crypt::SSLeay via Makefile.PL
+If you are going to use an OpenSSL library which you built from source or
+whose header and library files are not in a place searched by your compiler
+by default, make sure you set appropriate environment variables before
+trying to build C<Crypt::SSLeay>.
 
-C<Makefile.PL> accepts the following command line arguments:
+For example, if you are using ActiveState Perl and MinGW installed using
+ppm, and you installed OpenSSL in C<C:\opt\openssl-1.0.1c>, then you would
+issue the following commands to build C<Crypt::SSLeay>:
 
-=over 4
+    C:\...\> set LIBRARY_PATH=C:\opt\openssl-1.0.1c\lib;%LIBRARY_PATH%
+    C:\...\> set CPATH=C:\opt\openssl-1.0.1c\include;%CPATH%
+    C:\...\> perl Makefile.PL --live-tests
+    C:\...\> dmake test
 
-=item C<incpath>
+On Linux/BSD/Solaris/GNU etc systems, you would use make rather than dmake,
+but you would need to set the same variables if your OpenSSL library is in a
+custom location. If everything builds OK, but you get failures when during
+tests, ensure that C<LD_LIBRARY_PATH> points to the location where the
+correct shared libraries are located.
 
-Path to OpenSSL headers. Can also be specified via C<$ENV{OPENSSL_INCLUDE}>.
-If the command line argument is provided, it overrides any value specified
-via the environment variable. Of course, you can ignore both the command
-line argument and the environment variable, and just add the path to your
-compiler specific environment variable such as C<CPATH> or C<INCLUDE> etc.
+If you are using a Microsoft compiler (keep in mind that perl and OpenSSL
+need to have been built using the same compiler as well), you would use:
 
-=item C<libpath>
+    C:\...\> set LIB=C:\opt\openssl-1.0.1c\lib;%LIB%
+    C:\...\> set INCLUDE=C:\opt\openssl-1.0.1c\include;%INCLUDE%
+    C:\...\> perl Makefile.PL --live-tests
+    C:\...\> nmake test
 
-Path to OpenSSL libraries. Can also be specified via C<$ENV{OPENSSL_LIB}>.
-If the command line argument is provided, it overrides any value specified
-by the environment variable. Of course, you can ignore both the command line
-argument and the environment variable and just add the path to your compiler
-specific environment variable such as C<LIBRARY_PATH> or C<LIB> etc.
-
-=item C<live-tests>
-
-Use C<--live-tests> to request tests that try to connect to an external web
-site, and C<--no-live_tests> to prevent such tests from running. If you run
-C<Makefile.PL> interactively, and this argument is not specified on the
-command line, you will be prompted for a value.
-
-Default is false.
-
-=item C<static>
-
-Boolean. Default is false. B<TODO>: Does it work?
-
-=item C<verbose>
-
-Boolean. Default is false. If you pass C<--verbose> on the command line,
-both C<Devel::CheckLib> and C<ExtUtils::CBuilder> instances will be
-configured to echo what they are doing.
-
-=back
-
-If everything builds OK, but you get failures when during tests, ensure that
-C<LD_LIBRARY_PATH> points to the location where the correct shared libraries
-are located.
-
-If you are using a custom OpenSSL build, please keep in mind that
-C<Crypt::SSLeay> must be built using the same compiler and build tools used
-to build C<perl> and OpenSSL. This can be more of an issue on Windows. If
-you are using Active State Perl, install the MinGW package distributed by
-them, and build OpenSSL using that before trying to build this module. If
-you have built your own Perl using Microsoft SDK tools or IDEs, make sure
-you build OpenSSL using the same tools.
-
-Depending on your OS, pre-built OpenSSL packages may be available. To get
-the require headers and import libraries, you may need to install a
-development version of your operating system's OpenSSL library package. The
-key is that C<Crypt::SSLeay> makes calls to the OpenSSL library, and how to
-do so is specified in the C header files that come with the library. Some
-systems break out the header files into a separate package from that of the
-libraries. Once the program has been built, you don't need the headers any
-more.
+Depending on your OS, pre-built OpenSSL packages may be available. You may
+need to install a development version of your operating system's OpenSSL
+library package. The key is that C<Crypt::SSLeay> makes calls to the OpenSSL
+library, and how to do so is specified in the C header files that come
+with the library. Some systems break out the header files into a separate
+package from that of the libraries. Once the program has been built, you
+don't need the headers any more.
 
 =head2 Crypt::SSLeay
 
-The latest Crypt::SSLeay can be found at your nearest CPAN mirror, as well
-as L<https://metacpan.org/pod/Crypt::SSLeay>.
+The latest Crypt::SSLeay can be found at your nearest CPAN, as well as
+L<http://search.cpan.org/dist/Crypt-SSLeay/>.
 
 Once you have downloaded it, C<Crypt::SSLeay> installs easily using the
 standard build process:
 
-    $ perl Makefile.PL
-    $ make
-    $ make test
-    $ make install
+    perl Makefile.PL
+    make
+    make test
+    make install
 
-or
+On Windows systems, both Strawberry Perl and ActiveState (as a separate
+download via ppm) projects include a MingW based compiler distribution and
+dmake which can be used to build both OpenSSL and C<Crypt::SSLeay>. If you
+have such a set up, use dmake above.
 
-    $ cpanm Crypt::SSLeay
+F<Makefile.PL> takes two optional arguments:
 
-If you have OpenSSL headers and libraries in nonstandard locations, you can
-use
+=over 4
 
-    $ perl Makefile.PL --incpath=... --libpath=...
+=item C<--live-tests>
 
-If you would like to use C<cpanm> with such custom locations, you can do
+Boolean. Specifies whether we should try to connect to an HTTPS URL during
+testing. Default is false.
 
-    $ OPENSSL_INCLUDE=... OPENSSL_LIB=... cpanm Crypt::SSLeay
+To skip live tests, you can use
 
-or, on Windows,
+    perl Makefile.PL --no-live-tests
 
-    > set OPENSSL_INCLUDE=...
-    > set OPENSSL_LIB=...
-    > cpanm Crypt::SSLeay
+and to force live tests, you can use
 
-If you are on Windows, and using a MinGW distribution bundled with
-ActiveState Perl or Strawberry Perl, you would use C<dmake> rather than
-C<make>. If you are using Microsoft's build tools, you would use C<nmake>.
+    perl Makefile.PL --live-tests
+
+=item C<--static>
+
+Boolean. Default is false. (B<TODO>: Does it work?)
+
+=back
 
 For unattended (batch) installations, to be absolutely certain that
 F<Makefile.PL> does not prompt for questions on STDIN, set the environment
 variable C<PERL_MM_USE_DEFAULT=1> as with any CPAN module built using
 L<ExtUtils::MakeMaker>.
+
+=head3 Windows
+
+C<Crypt::SSLeay> builds correctly with Strawberry Perl and ActiveState Perl
+using the bundled MinGW.
+
+For ActiveState Perl users, the ActiveState company does not have a permit
+from the Canadian Federal Government to distribute cryptographic software.
+This prevents C<Crypt::SSLeay> from being distributed as a PPM package from
+their repository.
+
+See L<http://docs.activestate.com/activeperl/5.16/faq/ActivePerl-faq2.html#crypto_packages>
+for more information on this issue. You may be able to download a PPM for
+C<Crypt::SSLeay> from an alternative repository (see L<PPM::Repositories>).
 
 =head3 VMS
 
@@ -398,8 +339,9 @@ certificate settings described.
 =head1 SSL versions
 
 C<Crypt::SSLeay> tries very hard to connect to I<any> SSL web server
-accommodating servers that are buggy, old or simply not standards-compliant.
-To this effect, this module will try SSL connections in this order:
+accomodating servers that are buggy, old or simply not
+standards-compliant. To this effect, this module will try SSL
+connections in this order:
 
 =over 4
 
@@ -423,9 +365,9 @@ Net::SSL:
 
     $ENV{HTTPS_VERSION} = 3;
 
-to force a version 3 SSL connection first. At this time only a version 2 SSL
-connection will be tried after this, as the connection attempt order remains
-unchanged by this setting.
+to force a version 3 SSL connection first. At this time only a
+version 2 SSL connection will be tried after this, as the connection
+attempt order remains unchanged by this setting.
 
 =head1 ACKNOWLEDGEMENTS
 
@@ -475,10 +417,6 @@ improvements.
 and I<many others> who provided bug reports, suggestions, fixes and
 patches.
 
-If you have reported a bug or provided feedback, and you would like to be
-mentioned by name in this section, please file request on
-L<rt.cpan.org|http://rt.cpan.org/NoAuth/Bugs.html?Dist=Crypt-SSLeay>.
-
 =head1 SEE ALSO
 
 =over 4
@@ -492,18 +430,18 @@ this distribution).
 =item Net::SSLeay
 
 L<Net::SSLeay> provides access to the OpenSSL API directly
-from Perl. See L<https://metacpan.org/pod/Net::SSLeay/>.
+from Perl. See L<http://search.cpan.org/dist/Net-SSLeay/>.
 
-=item Building OpenSSL on 64-bit Windows 8.1 Pro using SDK tools
+=item OpenSSL binary packages for Windows
 
-My blog post L<http://blog.nu42.com/2014/04/building-openssl-101g-on-64-bit-windows.html> might be helpful.
+See L<http://www.openssl.org/related/binaries.html>.
 
 =back
 
 =head1 SUPPORT
 
-For issues related to using of C<Crypt::SSLeay> & C<Net::SSL> with Perl's
-L<LWP>, please send email to C<libwww@perl.org>.
+For use of C<Crypt::SSLeay> & C<Net::SSL> with Perl's L<LWP>, please
+send email to C<libwww@perl.org>.
 
 For OpenSSL or general SSL support, including issues associated with
 building and installing OpenSSL on your system, please email the OpenSSL
@@ -521,7 +459,7 @@ maintained by Joshua Chamas, David Landgren, brian d foy and Sinan Unur.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2010-2014 A. Sinan Unur
+Copyright (c) 2010-2012 A. Sinan Unur
 
 Copyright (c) 2006-2007 David Landgren
 

@@ -1,10 +1,10 @@
 package Imager::File::JPEG;
-use 5.006;
 use strict;
 use Imager;
+use vars qw($VERSION @ISA);
 
 BEGIN {
-  our $VERSION = "0.94";
+  $VERSION = "0.85";
 
   require XSLoader;
   XSLoader::load('Imager::File::JPEG', $VERSION);

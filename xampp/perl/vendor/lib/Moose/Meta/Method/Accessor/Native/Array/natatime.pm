@@ -1,14 +1,29 @@
 package Moose::Meta::Method::Accessor::Native::Array::natatime;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Array::natatime::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Array::natatime::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
+use List::MoreUtils ();
 use Params::Util ();
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Reader';
+with 'Moose::Meta::Method::Accessor::Native::Reader' => {
+    -excludes => [
+        qw(
+            _minimum_arguments
+            _maximum_arguments
+            _inline_check_arguments
+            _inline_return_value
+            )
+    ]
+};
 
 sub _minimum_arguments { 1 }
 
@@ -19,21 +34,14 @@ sub _inline_check_arguments {
 
     return (
         'if (!defined($_[0]) || $_[0] !~ /^\d+$/) {',
-            $self->_inline_throw_exception( InvalidArgumentToMethod =>
-                                            'argument                => $_[0],'.
-                                            'method_name             => "natatime",'.
-                                            'type_of_argument        => "integer",'.
-                                            'type                    => "Int",'.
-                                            'argument_noun           => "n value"',
+            $self->_inline_throw_error(
+                '"The n value passed to natatime must be an integer"',
             ) . ';',
         '}',
         'if (@_ == 2 && !Params::Util::_CODELIKE($_[1])) {',
-            $self->_inline_throw_exception( InvalidArgumentToMethod =>
-                                            'argument                => $_[1],'.
-                                            'method_name             => "natatime",'.
-                                            'type_of_argument        => "code reference",'.
-                                            'type                    => "CodeRef",'.
-                                            'ordinal                 => "second"',
+            $self->_inline_throw_error(
+                '"The second argument passed to natatime must be a code '
+              . 'reference"',
             ) . ';',
         '}',
     );
@@ -44,9 +52,7 @@ sub _inline_return_value {
     my ($slot_access) = @_;
 
     return (
-        'my $step = $_[0];',
-        'my @values = @{ (' . $slot_access . ') };',
-        'my $iter = sub { splice @values, 0, $step };',
+        'my $iter = List::MoreUtils::natatime($_[0], @{ (' . $slot_access . ') });',
         'if ($_[1]) {',
             'while (my @vals = $iter->()) {',
                 '$_[1]->(@vals);',

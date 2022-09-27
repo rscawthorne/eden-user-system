@@ -1,5 +1,10 @@
 package Moose::Meta::Class::Immutable::Trait;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Class::Immutable::Trait::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Class::Immutable::Trait::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
@@ -7,9 +12,7 @@ use warnings;
 use Class::MOP;
 use Scalar::Util qw( blessed );
 
-use parent 'Class::MOP::Class::Immutable::Trait';
-
-use Moose::Util 'throw_exception';
+use base 'Class::MOP::Class::Immutable::Trait';
 
 sub add_role { $_[1]->_immutable_cannot_call }
 
@@ -31,7 +34,7 @@ sub does_role {
     my $role = shift;
 
     (defined $role)
-        || throw_exception( RoleNameRequired => class_name => $self->name );
+        || $self->throw_error("You must supply a role name to look for");
 
     $self->{__immutable}{does_role} ||= { map { $_->name => 1 } $self->calculate_all_roles_with_inheritance };
 
@@ -44,11 +47,9 @@ sub does_role {
 
 # ABSTRACT: Implements immutability for metaclass objects
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -56,7 +57,7 @@ Moose::Meta::Class::Immutable::Trait - Implements immutability for metaclass obj
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -67,57 +68,20 @@ is deep guts.
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+

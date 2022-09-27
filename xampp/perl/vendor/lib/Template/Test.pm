@@ -26,9 +26,7 @@ use warnings;
 use Template qw( :template );
 use Exporter;
 
-use constant MSWin32 => $^O eq 'MSWin32';
-
-our $VERSION = '3.009';
+our $VERSION = 2.75;
 our $DEBUG   = 0;
 our @ISA     = qw( Exporter );
 our @EXPORT  = qw( ntests ok is match flush skip_all test_expect callsign banner );
@@ -46,7 +44,7 @@ our ($loaded, %callsign);
 
 # always set binmode on Win32 machines so that any output generated
 # is true to what we expect 
-$Template::BINMODE = (MSWin32) ? 1 : 0;
+$Template::BINMODE = ($^O eq 'MSWin32') ? 1 : 0;
 
 my @results = ();
 my ($ntests, $ok_count);
@@ -278,12 +276,6 @@ sub test_expect {
             $name = "template text $count";
         }
 
-        # Configure a test as TODO
-        my $todo = '';
-        if ($input =~ s/^\s*-- todo:? (.*?) --\s*\n//im) {
-            $todo = ( $1 eq '' ) ? 'No reason given' : $1;
-        }
-        
         # split input by a line like "-- expect --"
         ($input, $expect) = 
             split(/^\s*--\s*expect\s*--\s*\n/im, $input);
@@ -356,13 +348,8 @@ sub test_expect {
             printf(" input: [%s]\nexpect: [%s]\noutput: [%s]\n", 
                    $copyi, $copye, $copyo);
         }
-
-        my $testprefix = $name;
-        if ( $todo ) {
-            $testprefix = "# TODO $todo - $name";
-        }
-
-        ok($match, $match ? "$testprefix matched expected" : "$testprefix did not match expected");
+        
+        ok($match, $match ? "$name matched expected" : "$name did not match expected");
     };
 }
 

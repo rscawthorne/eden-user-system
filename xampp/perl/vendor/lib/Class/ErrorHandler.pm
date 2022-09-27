@@ -4,7 +4,7 @@ package Class::ErrorHandler;
 use strict;
 
 use vars qw( $VERSION $ERROR );
-$VERSION = '0.04';
+$VERSION = '0.01';
 
 sub error {
     my $msg = $_[1] || '';
@@ -22,8 +22,6 @@ sub errstr {
 
 1;
 __END__
-
-=for stopwords errstr
 
 =head1 NAME
 
@@ -91,7 +89,8 @@ object I<$object>, respectively, and returns that error message.
 
 =head1 LICENSE
 
-This library is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+I<Class::ErrorHandler> is free software; you may redistribute it and/or modify
+it under the same terms as Perl itself.
 
 =head1 AUTHOR & COPYRIGHT
 

@@ -1,9 +1,10 @@
 package LWP::ConnCache;
 
 use strict;
+use vars qw($VERSION $DEBUG);
 
-our $VERSION = '6.52';
-our $DEBUG;
+$VERSION = "6.02";
+
 
 sub new {
     my($class, %cnf) = @_;
@@ -168,8 +169,6 @@ sub _looks_like_number {
 
 __END__
 
-=pod
-
 =head1 NAME
 
 LWP::ConnCache - Connection cache manager
@@ -189,58 +188,32 @@ change in the future.
 =head1 DESCRIPTION
 
 The C<LWP::ConnCache> class is the standard connection cache manager
-for L<LWP::UserAgent>.
-
-=head1 METHODS
+for LWP::UserAgent.
 
 The following basic methods are provided:
 
-=head2 new
+=over
 
-    my $cache = LWP::ConnCache->new( %options )
+=item $cache = LWP::ConnCache->new( %options )
 
-This method constructs a new L<LWP::ConnCache> object.  The only
-option currently accepted is C<total_capacity>.  If specified it
-initializes the L<LWP::ConnCache/total_capacity> option. It defaults to C<1>.
+This method constructs a new C<LWP::ConnCache> object.  The only
+option currently accepted is 'total_capacity'.  If specified it
+initialize the total_capacity option.  It defaults to the value 1.
 
-=head2 total_capacity
-
-    my $cap = $cache->total_capacity;
-    $cache->total_capacity(0); # drop all immediately
-    $cache->total_capacity(undef); # no limit
-    $cache->total_capacity($number);
+=item $cache->total_capacity( [$num_connections] )
 
 Get/sets the number of connection that will be cached.  Connections
 will start to be dropped when this limit is reached.  If set to C<0>,
 then all connections are immediately dropped.  If set to C<undef>,
 then there is no limit.
 
-=head2 capacity
-
-    my $http_capacity = $cache->capacity('http');
-    $cache->capacity('http', 2 );
+=item $cache->capacity($type, [$num_connections] )
 
 Get/set a limit for the number of connections of the specified type
-that can be cached.  The first parameter is a short string like
+that can be cached.  The $type will typically be a short string like
 "http" or "ftp".
 
-=head2 drop
-
-    $cache->drop(); # Drop ALL connections
-    # which is just a synonym for:
-    $cache->drop(sub{1}); # Drop ALL connections
-    # drop all connections older than 22 seconds and add a reason for it!
-    $cache->drop(22, "Older than 22 secs dropped");
-    # which is just a synonym for:
-    $cache->drop(sub {
-        my ($conn, $type, $key, $deposit_time) = @_;
-        if ($deposit_time < 22) {
-            # true values drop the connection
-            return 1;
-        }
-        # false values don't drop the connection
-        return 0;
-    }, "Older than 22 secs dropped" );
+=item $cache->drop( [$checker, [$reason]] )
 
 Drop connections by some criteria.  The $checker argument is a
 subroutine that is called for each connection.  If the routine returns
@@ -253,49 +226,41 @@ connections untouched that the given number of seconds or more are
 dropped.  If $checker is a string then all connections of the given
 type are dropped.
 
-The C<reason> is passed on to the L<LWP::ConnCache/dropped> method.
+The $reason argument is passed on to the dropped() method.
 
-=head2 prune
-
-    $cache->prune();
+=item $cache->prune
 
 Calling this method will drop all connections that are dead.  This is
-tested by calling the L<LWP::ConnCache/ping> method on the connections. If
-the L<LWP::ConnCache/ping> method exists and returns a false value, then the
-connection is dropped.
+tested by calling the ping() method on the connections.  If the ping()
+method exists and returns a FALSE value, then the connection is
+dropped.
 
-=head2 get_types
+=item $cache->get_types
 
-    my @types = $cache->get_types();
-
-This returns all the C<type> fields used for the currently cached
+This returns all the 'type' fields used for the currently cached
 connections.
 
-=head2 get_connections
-
-    my @conns = $cache->get_connections(); # all connections
-    my @conns = $cache->get_connections('http'); # connections for http
+=item $cache->get_connections( [$type] )
 
 This returns all connection objects of the specified type.  If no type
 is specified then all connections are returned.  In scalar context the
 number of cached connections of the specified type is returned.
 
-=head1 PROTOCOL METHODS
+=back
+
 
 The following methods are called by low-level protocol modules to
 try to save away connections and to get them back.
 
-=head2 deposit
+=over
 
-    $cache->deposit($type, $key, $conn);
+=item $cache->deposit($type, $key, $conn)
 
-This method adds a new connection to the cache.  As a result, other
+This method adds a new connection to the cache.  As a result other
 already cached connections might be dropped.  Multiple connections with
-the same type/key might be added.
+the same $type/$key might added.
 
-=head2 withdraw
-
-    my $conn = $cache->withdraw($type, $key);
+=item $conn = $cache->withdraw($type, $key)
 
 This method tries to fetch back a connection that was previously
 deposited.  If no cached connection with the specified $type/$key is
@@ -303,35 +268,35 @@ found, then C<undef> is returned.  There is not guarantee that a
 deposited connection can be withdrawn, as the cache manger is free to
 drop connections at any time.
 
-=head1 INTERNAL METHODS
+=back
 
 The following methods are called internally.  Subclasses might want to
 override them.
 
-=head2 enforce_limits
+=over
 
-    $conn->enforce_limits([$type])
+=item $conn->enforce_limits([$type])
 
 This method is called with after a new connection is added (deposited)
 in the cache or capacity limits are adjusted.  The default
 implementation drops connections until the specified capacity limits
 are not exceeded.
 
-=head2 dropping
-
-    $conn->dropping($conn_record, $reason)
+=item $conn->dropping($conn_record, $reason)
 
 This method is called when a connection is dropped.  The record
 belonging to the dropped connection is passed as the first argument
 and a string describing the reason for the drop is passed as the
 second argument.  The default implementation makes some noise if the
-C<$LWP::ConnCache::DEBUG> variable is set and nothing more.
+$LWP::ConnCache::DEBUG variable is set and nothing more.
+
+=back
 
 =head1 SUBCLASSING
 
 For specialized cache policy it makes sense to subclass
-C<LWP::ConnCache> and perhaps override the L<LWP::ConnCache/deposit>,
-L<LWP::ConnCache/enforce_limits>, and L<LWP::ConnCache/dropping> methods.
+C<LWP::ConnCache> and perhaps override the deposit(), enforce_limits()
+and dropping() methods.
 
 The object itself is a hash.  Keys prefixed with C<cc_> are reserved
 for the base class.
@@ -346,5 +311,3 @@ Copyright 2001 Gisle Aas.
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
-
-=cut

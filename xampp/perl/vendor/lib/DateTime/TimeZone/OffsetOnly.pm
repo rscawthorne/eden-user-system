@@ -1,45 +1,36 @@
 package DateTime::TimeZone::OffsetOnly;
+{
+  $DateTime::TimeZone::OffsetOnly::VERSION = '1.57';
+}
 
 use strict;
 use warnings;
-use namespace::autoclean;
-
-our $VERSION = '2.46';
 
 use parent 'DateTime::TimeZone';
 
 use DateTime::TimeZone::UTC;
-use Params::ValidationCompiler 0.13 qw( validation_for );
-use Specio::Library::String;
+use Params::Validate qw( validate SCALAR );
 
-{
-    my $validator = validation_for(
-        name             => '_check_new_params',
-        name_is_optional => 1,
-        params           => {
-            offset => {
-                type => t('NonEmptyStr'),
-            },
-        },
+sub new {
+    my $class = shift;
+    my %p     = validate(
+        @_, {
+            offset => { type => SCALAR },
+        }
     );
 
-    sub new {
-        my $class = shift;
-        my %p     = $validator->(@_);
+    my $offset = DateTime::TimeZone::offset_as_seconds( $p{offset} );
 
-        my $offset = DateTime::TimeZone::offset_as_seconds( $p{offset} );
+    die "Invalid offset: $p{offset}\n" unless defined $offset;
 
-        die "Invalid offset: $p{offset}\n" unless defined $offset;
+    return DateTime::TimeZone::UTC->new unless $offset;
 
-        return DateTime::TimeZone::UTC->new unless $offset;
+    my $self = {
+        name   => DateTime::TimeZone::offset_as_string($offset),
+        offset => $offset,
+    };
 
-        my $self = {
-            name   => DateTime::TimeZone::offset_as_string($offset),
-            offset => $offset,
-        };
-
-        return bless $self, $class;
-    }
+    return bless $self, $class;
 }
 
 sub is_dst_for_datetime {0}
@@ -60,8 +51,8 @@ sub STORABLE_freeze {
 }
 
 sub STORABLE_thaw {
-    my $self = shift;
-    shift;
+    my $self       = shift;
+    my $cloning    = shift;
     my $serialized = shift;
 
     my $class = ref $self || $self;
@@ -87,15 +78,13 @@ __END__
 
 =pod
 
-=encoding UTF-8
-
 =head1 NAME
 
 DateTime::TimeZone::OffsetOnly - A DateTime::TimeZone object that just contains an offset
 
 =head1 VERSION
 
-version 2.46
+version 1.57
 
 =head1 SYNOPSIS
 
@@ -130,28 +119,15 @@ is always used.
 
 Both of these methods return the offset in string form.
 
-=head1 SUPPORT
-
-Bugs may be submitted at L<https://github.com/houseabsolute/DateTime-TimeZone/issues>.
-
-I am also usually active on IRC as 'autarch' on C<irc://irc.perl.org>.
-
-=head1 SOURCE
-
-The source code repository for DateTime-TimeZone can be found at L<https://github.com/houseabsolute/DateTime-TimeZone>.
-
 =head1 AUTHOR
 
 Dave Rolsky <autarch@urth.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2020 by Dave Rolsky.
+This software is copyright (c) 2013 by Dave Rolsky.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
-
-The full text of the license can be found in the
-F<LICENSE> file included with this distribution.
 
 =cut

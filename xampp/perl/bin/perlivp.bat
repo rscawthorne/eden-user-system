@@ -26,12 +26,10 @@ goto endofperl
 @rem ';
 #!perl
 #line 29
-    eval 'exec \Users\Cosmic\Documents\GitHub\eden-user-system\xampp\perl\bin\perl.exe -S $0 ${1+"$@"}'
+    eval 'exec \xampp\perl\bin\perl.exe -S $0 ${1+"$@"}'
         if $running_under_some_shell;
 
-# perlivp v5.32.1
-
-BEGIN { pop @INC if $INC[-1] eq '.' }
+# perlivp v5.16.3
 
 sub usage {
     warn "@_\n" if @_;
@@ -72,7 +70,7 @@ my $pass__total = 0;
 my $error_total = 0;
 my $tests_total = 0;
 
-my $perlpath = '\Users\Cosmic\Documents\GitHub\eden-user-system\xampp\perl\bin\perl.exe';
+my $perlpath = '\xampp\perl\bin\perl.exe';
 my $useithreads = 'define';
 
 print "## Checking Perl binary via variable '\$perlpath' = $perlpath.\n" if $opt{'p'};
@@ -94,7 +92,7 @@ $tests_total++;
 
 print "## Checking Perl version via variable '\$]'.\n" if $opt{'p'};
 
-my $ivp_VERSION = "5.032001";
+my $ivp_VERSION = "5.016003";
 
 
 $label = 'Perl version correct';
@@ -135,7 +133,7 @@ foreach (@INC) {
     $INC_total++;
 }
 
-$label = '@INC directories exist';
+$label = '@INC directoreis exist';
 if ($INC_total == $INC_there) {
     print "ok 3 $label\n";
     $pass__total++;
@@ -201,7 +199,7 @@ if (defined($Config{'extensions'})) {
         next if $_ eq 'XS/APItest';
         next if $_ eq 'XS/Typemap';
            # VMS$ perl  -e "eval ""require \""Devel/DProf.pm\"";"" print $@"
-           # \NT> perl  -e "eval \"require './Devel/DProf.pm'\"; print $@"
+           # \NT> perl  -e "eval \"require 'Devel/DProf.pm'\"; print $@"
            # DProf: run perl with -d to use DProf.
            # Compilation failed in require at (eval 1) line 1.
         eval " require \"$_.pm\"; ";

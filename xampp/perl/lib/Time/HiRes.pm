@@ -4,53 +4,26 @@ package Time::HiRes;
 use strict;
 
 require Exporter;
-use XSLoader ();
+require DynaLoader;
 
-our @ISA = qw(Exporter);
+our @ISA = qw(Exporter DynaLoader);
 
 our @EXPORT = qw( );
-# More or less this same list is in Makefile.PL.  Should unify.
 our @EXPORT_OK = qw (usleep sleep ualarm alarm gettimeofday time tv_interval
-                 getitimer setitimer nanosleep clock_gettime clock_getres
-                 clock clock_nanosleep
-                 CLOCKS_PER_SEC
-                 CLOCK_BOOTTIME
-                 CLOCK_HIGHRES
-                 CLOCK_MONOTONIC
-                 CLOCK_MONOTONIC_COARSE
-                 CLOCK_MONOTONIC_FAST
-                 CLOCK_MONOTONIC_PRECISE
-                 CLOCK_MONOTONIC_RAW
-                 CLOCK_PROCESS_CPUTIME_ID
-                 CLOCK_PROF
-                 CLOCK_REALTIME
-                 CLOCK_REALTIME_COARSE
-                 CLOCK_REALTIME_FAST
-                 CLOCK_REALTIME_PRECISE
-                 CLOCK_REALTIME_RAW
-                 CLOCK_SECOND
-                 CLOCK_SOFTTIME
-                 CLOCK_THREAD_CPUTIME_ID
-                 CLOCK_TIMEOFDAY
-                 CLOCK_UPTIME
-                 CLOCK_UPTIME_COARSE
-                 CLOCK_UPTIME_FAST
-                 CLOCK_UPTIME_PRECISE
-                 CLOCK_UPTIME_RAW
-                 CLOCK_VIRTUAL
-                 ITIMER_PROF
-                 ITIMER_REAL
-                 ITIMER_REALPROF
-                 ITIMER_VIRTUAL
-                 TIMER_ABSTIME
-                 d_usleep d_ualarm d_gettimeofday d_getitimer d_setitimer
-                 d_nanosleep d_clock_gettime d_clock_getres
-                 d_clock d_clock_nanosleep d_hires_stat
-                 d_futimens d_utimensat d_hires_utime
-                 stat lstat utime
-                );
+		 getitimer setitimer nanosleep clock_gettime clock_getres
+		 clock clock_nanosleep
+		 CLOCK_HIGHRES CLOCK_MONOTONIC CLOCK_PROCESS_CPUTIME_ID
+		 CLOCK_REALTIME CLOCK_SOFTTIME CLOCK_THREAD_CPUTIME_ID
+		 CLOCK_TIMEOFDAY CLOCKS_PER_SEC
+		 ITIMER_REAL ITIMER_VIRTUAL ITIMER_PROF ITIMER_REALPROF
+		 TIMER_ABSTIME
+		 d_usleep d_ualarm d_gettimeofday d_getitimer d_setitimer
+		 d_nanosleep d_clock_gettime d_clock_getres
+		 d_clock d_clock_nanosleep
+		 stat
+		);
 
-our $VERSION = '1.9764';
+our $VERSION = '1.9725';
 our $XS_VERSION = $VERSION;
 $VERSION = eval $VERSION;
 
@@ -67,8 +40,8 @@ sub AUTOLOAD {
         die "$error at $file line $line.\n";
     }
     {
-        no strict 'refs';
-        *$AUTOLOAD = sub { $val };
+	no strict 'refs';
+	*$AUTOLOAD = sub { $val };
     }
     goto &$AUTOLOAD;
 }
@@ -76,22 +49,21 @@ sub AUTOLOAD {
 sub import {
     my $this = shift;
     for my $i (@_) {
-        if (($i eq 'clock_getres'    && !&d_clock_getres)    ||
-            ($i eq 'clock_gettime'   && !&d_clock_gettime)   ||
-            ($i eq 'clock_nanosleep' && !&d_clock_nanosleep) ||
-            ($i eq 'clock'           && !&d_clock)           ||
-            ($i eq 'nanosleep'       && !&d_nanosleep)       ||
-            ($i eq 'usleep'          && !&d_usleep)          ||
-            ($i eq 'utime'           && !&d_hires_utime)     ||
-            ($i eq 'ualarm'          && !&d_ualarm)) {
-            require Carp;
-            Carp::croak("Time::HiRes::$i(): unimplemented in this platform");
-        }
+	if (($i eq 'clock_getres'    && !&d_clock_getres)    ||
+	    ($i eq 'clock_gettime'   && !&d_clock_gettime)   ||
+	    ($i eq 'clock_nanosleep' && !&d_clock_nanosleep) ||
+	    ($i eq 'clock'           && !&d_clock)           ||
+	    ($i eq 'nanosleep'       && !&d_nanosleep)       ||
+	    ($i eq 'usleep'          && !&d_usleep)          ||
+	    ($i eq 'ualarm'          && !&d_ualarm)) {
+	    require Carp;
+	    Carp::croak("Time::HiRes::$i(): unimplemented in this platform");
+	}
     }
     Time::HiRes->export_to_level(1, $this, @_);
 }
 
-XSLoader::load( 'Time::HiRes', $XS_VERSION );
+bootstrap Time::HiRes;
 
 # Preloaded methods go here.
 
@@ -114,8 +86,8 @@ Time::HiRes - High resolution alarm, sleep, gettimeofday, interval timers
 =head1 SYNOPSIS
 
   use Time::HiRes qw( usleep ualarm gettimeofday tv_interval nanosleep
-                      clock_gettime clock_getres clock_nanosleep clock
-                      stat lstat utime);
+		      clock_gettime clock_getres clock_nanosleep clock
+                      stat );
 
   usleep ($microseconds);
   nanosleep ($nanoseconds);
@@ -143,8 +115,7 @@ Time::HiRes - High resolution alarm, sleep, gettimeofday, interval timers
   getitimer ($which);
 
   use Time::HiRes qw( clock_gettime clock_getres clock_nanosleep
-                      ITIMER_REAL ITIMER_VIRTUAL ITIMER_PROF
-                      ITIMER_REALPROF );
+		      ITIMER_REAL ITIMER_VIRTUAL ITIMER_PROF ITIMER_REALPROF );
 
   $realtime   = clock_gettime(CLOCK_REALTIME);
   $resolution = clock_getres(CLOCK_REALTIME);
@@ -154,14 +125,10 @@ Time::HiRes - High resolution alarm, sleep, gettimeofday, interval timers
 
   my $ticktock = clock();
 
-  use Time::HiRes qw( stat lstat );
+  use Time::HiRes qw( stat );
 
   my @stat = stat("file");
   my @stat = stat(FH);
-  my @stat = lstat("file");
-
-  use Time::HiRes qw( utime );
-  utime $floating_seconds, $floating_seconds, file...;
 
 =head1 DESCRIPTION
 
@@ -201,7 +168,7 @@ any clocks and timers will be imprecise, especially so if you are working
 in a pre-emptive multiuser system.  Understand the difference between
 I<wallclock time> and process time (in UNIX-like systems the sum of
 I<user> and I<system> times).  Any attempt to sleep for X seconds will
-most probably end up sleeping B<more> than that, but don't be surprised
+most probably end up sleeping B<more> than that, but don't be surpised
 if you end up sleeping slightly B<less>.
 
 The following functions can be imported from this module.
@@ -221,8 +188,8 @@ Sleeps for the number of microseconds (millionths of a second)
 specified.  Returns the number of microseconds actually slept.
 Can sleep for more than one second, unlike the C<usleep> system call.
 Can also sleep for zero seconds, which often works like a I<thread yield>.
-See also L<C<Time::HiRes::sleep()>|/sleep ( $floating_seconds )>, and
-L<C<clock_nanosleep()>|/clock_nanosleep ( $which, $nanoseconds, $flags = 0)>.
+See also C<Time::HiRes::usleep()>, C<Time::HiRes::sleep()>, and
+C<Time::HiRes::clock_nanosleep()>.
 
 Do not expect usleep() to be exact down to one microsecond.
 
@@ -232,10 +199,8 @@ Sleeps for the number of nanoseconds (1e9ths of a second) specified.
 Returns the number of nanoseconds actually slept (accurate only to
 microseconds, the nearest thousand of them).  Can sleep for more than
 one second.  Can also sleep for zero seconds, which often works like
-a I<thread yield>.  See also
-L<C<Time::HiRes::sleep()>|/sleep ( $floating_seconds )>,
-L<C<Time::HiRes::usleep()>|/usleep ( $useconds )>, and
-L<C<clock_nanosleep()>|/clock_nanosleep ( $which, $nanoseconds, $flags = 0)>.
+a I<thread yield>.  See also C<Time::HiRes::sleep()>,
+C<Time::HiRes::usleep()>, and C<Time::HiRes::clock_nanosleep()>.
 
 Do not expect nanosleep() to be exact down to one nanosecond.
 Getting even accuracy of one thousand nanoseconds is good.
@@ -252,7 +217,7 @@ ualarm(0) will cancel an outstanding ualarm().
 
 Note that the interaction between alarms and sleeps is unspecified.
 
-=item tv_interval
+=item tv_interval 
 
 tv_interval ( $ref_to_gettimeofday [, $ref_to_later_gettimeofday] )
 
@@ -337,7 +302,7 @@ C<$which> can be C<ITIMER_REAL>, C<ITIMER_VIRTUAL>, C<ITIMER_PROF>, or
 C<ITIMER_REALPROF>.  Note that which ones are available depends: true
 UNIX platforms usually have the first three, but only Solaris seems to
 have C<ITIMER_REALPROF> (which is used to profile multithreaded programs).
-Win32 unfortunately does not have interval timers.
+Win32 unfortunately does not haveinterval timers.
 
 C<ITIMER_REAL> results in C<alarm()>-like behaviour.  Time is counted in
 I<real time>; that is, wallclock time.  C<SIGALRM> is delivered when
@@ -358,7 +323,7 @@ delivered when the timer expires.  C<SIGPROF> can interrupt system calls.
 The semantics of interval timers for multithreaded programs are
 system-specific, and some systems may support additional interval
 timers.  For example, it is unspecified which thread gets the signals.
-See your L<C<setitimer(2)>> documentation.
+See your C<setitimer()> documentation.
 
 =item getitimer ( $which )
 
@@ -390,13 +355,6 @@ specified by C<$which>.  All implementations that support POSIX high
 resolution timers are supposed to support at least the C<$which> value
 of C<CLOCK_REALTIME>, see L</clock_gettime>.
 
-B<NOTE>: the resolution returned may be highly optimistic.  Even if
-the resolution is high (a small number), all it means is that you'll
-be able to specify the arguments to clock_gettime() and clock_nanosleep()
-with that resolution.  The system might not actually be able to measure
-events at that resolution, and the various overheads and the overall system
-load are certain to affect any timings.
-
 =item clock_nanosleep ( $which, $nanoseconds, $flags = 0)
 
 Sleeps for the number of nanoseconds (1e9ths of a second) specified.
@@ -406,10 +364,8 @@ default to zero but C<TIMER_ABSTIME> can specified (must be exported
 explicitly) which means that C<$nanoseconds> is not a time interval
 (as is the default) but instead an absolute time.  Can sleep for more
 than one second.  Can also sleep for zero seconds, which often works
-like a I<thread yield>.  See also
-L<C<Time::HiRes::sleep()>|/sleep ( $floating_seconds )>,
-L<C<Time::HiRes::usleep()>|/usleep ( $useconds )>, and
-L<C<Time::HiRes::nanosleep()>|/nanosleep ( $nanoseconds )>.
+like a I<thread yield>.  See also C<Time::HiRes::sleep()>,
+C<Time::HiRes::usleep()>, and C<Time::HiRes::nanosleep()>.
 
 Do not expect clock_nanosleep() to be exact down to one nanosecond.
 Getting even accuracy of one thousand nanoseconds is good.
@@ -436,14 +392,7 @@ compatibility limitations the returned value may wrap around at about
 
 =item stat EXPR
 
-=item lstat
-
-=item lstat FH
-
-=item lstat EXPR
-
-As L<perlfunc/stat> or L<perlfunc/lstat>
-but with the access/modify/change file timestamps
+As L<perlfunc/stat> but with the access/modify/change file timestamps
 in subsecond resolution, if the operating system and the filesystem
 both support such timestamps.  To override the standard stat():
 
@@ -457,8 +406,7 @@ UNIX filesystems often do; NTFS does; FAT doesn't (FAT timestamp
 granularity is B<two> seconds).
 
 A zero return value of &Time::HiRes::d_hires_stat means that
-Time::HiRes::stat is a no-op passthrough for CORE::stat()
-(and likewise for lstat),
+Time::HiRes::stat is a no-op passthrough for CORE::stat(),
 and therefore the timestamps will stay integers.  The same
 thing will happen if the filesystem does not do subsecond timestamps,
 even if the &Time::HiRes::d_hires_stat is non-zero.
@@ -475,32 +423,6 @@ if the operations are
 
 the access time stamp from t2 need not be greater-than the modify
 time stamp from t1: it may be equal or I<less>.
-
-=item utime LIST
-
-As L<perlfunc/utime>
-but with the ability to set the access/modify file timestamps
-in subsecond resolution, if the operating system and the filesystem,
-and the mount options of the filesystem, all support such timestamps.
-
-To override the standard utime():
-
-    use Time::HiRes qw(utime);
-
-Test for the value of &Time::HiRes::d_hires_utime to find out whether
-the operating system supports setting subsecond file timestamps.
-
-As with CORE::utime(), passing undef as both the atime and mtime will
-call the syscall with a NULL argument.
-
-The actual achievable subsecond resolution depends on the combination
-of the operating system and the filesystem.
-
-Modifying the timestamps may not be possible at all: for example, the
-C<noatime> filesystem mount option may prohibit you from changing the
-access time timestamp.
-
-Returns the number of files successfully changed.
 
 =back
 
@@ -519,7 +441,7 @@ Returns the number of files successfully changed.
   # get seconds and microseconds since the epoch
   ($s, $usec) = gettimeofday();
 
-  # measure elapsed time
+  # measure elapsed time 
   # (could also do by subtracting 2 gettimeofday return values)
   $t0 = [gettimeofday];
   # do bunch of stuff here
@@ -528,7 +450,7 @@ Returns the number of files successfully changed.
   $t0_t1 = tv_interval $t0, $t1;
 
   $elapsed = tv_interval ($t0, [gettimeofday]);
-  $elapsed = tv_interval ($t0); # equivalent code
+  $elapsed = tv_interval ($t0);	# equivalent code
 
   #
   # replacements for time, alarm and sleep that know about
@@ -554,7 +476,7 @@ Returns the number of files successfully changed.
 
   use Time::HiRes qw( clock_gettime clock_getres CLOCK_REALTIME );
   # Read the POSIX high resolution timer.
-  my $high = clock_gettime(CLOCK_REALTIME);
+  my $high = clock_getres(CLOCK_REALTIME);
   # But how accurate we can be, really?
   my $reso = clock_getres(CLOCK_REALTIME);
 
@@ -579,7 +501,7 @@ modglobal hash:
 
   name             C prototype
   ---------------  ----------------------
-  Time::NVtime     NV (*)()
+  Time::NVtime     double (*)()
   Time::U2time     void (*)(pTHX_ UV ret[2])
 
 Both functions return equivalent information (like C<gettimeofday>)
@@ -590,12 +512,12 @@ VMS have emulations for it.)
 
 Here is an example of using C<NVtime> from C:
 
-  NV (*myNVtime)(); /* Returns -1 on failure. */
-  SV **svp = hv_fetchs(PL_modglobal, "Time::NVtime", 0);
+  double (*myNVtime)(); /* Returns -1 on failure. */
+  SV **svp = hv_fetch(PL_modglobal, "Time::NVtime", 12, 0);
   if (!svp)         croak("Time::HiRes is required");
   if (!SvIOK(*svp)) croak("Time::NVtime isn't a function pointer");
-  myNVtime = INT2PTR(NV(*)(), SvIV(*svp));
-  printf("The current time is: %" NVff "\n", (*myNVtime)());
+  myNVtime = INT2PTR(double(*)(), SvIV(*svp));
+  printf("The current time is: %f\n", (*myNVtime)());
 
 =head1 DIAGNOSTICS
 
@@ -642,22 +564,13 @@ might help in this (in case your system supports CLOCK_MONOTONIC).
 Some systems have APIs but not implementations: for example QNX and Haiku
 have the interval timer APIs but not the functionality.
 
-In pre-Sierra macOS (pre-10.12, OS X) clock_getres(), clock_gettime()
-and clock_nanosleep() are emulated using the Mach timers; as a side
-effect of being emulated the CLOCK_REALTIME and CLOCK_MONOTONIC are
-the same timer.
-
-gnukfreebsd seems to have non-functional futimens() and utimensat()
-(at least as of 10.1): therefore the hires utime() does not work.
-
 =head1 SEE ALSO
 
 Perl modules L<BSD::Resource>, L<Time::TAI64>.
 
-Your system documentation for L<C<clock(3)>>, L<C<clock_gettime(2)>>,
-L<C<clock_getres(3)>>, L<C<clock_nanosleep(3)>>, L<C<clock_settime(2)>>,
-L<C<getitimer(2)>>, L<C<gettimeofday(2)>>, L<C<setitimer(2)>>, L<C<sleep(3)>>,
-L<C<stat(2)>>, L<C<ualarm(3)>>.
+Your system documentation for C<clock>, C<clock_gettime>,
+C<clock_getres>, C<clock_nanosleep>, C<clock_settime>, C<getitimer>,
+C<gettimeofday>, C<setitimer>, C<sleep>, C<stat>, C<ualarm>.
 
 =head1 AUTHORS
 
@@ -673,7 +586,7 @@ Copyright (c) 1996-2002 Douglas E. Wegscheid.  All rights reserved.
 Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008 Jarkko Hietaniemi.
 All rights reserved.
 
-Copyright (C) 2011, 2012, 2013 Andrew Main (Zefram) <zefram@fysh.org>
+Copyright (C) 2011, 2012 Andrew Main (Zefram) <zefram@fysh.org>
 
 This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

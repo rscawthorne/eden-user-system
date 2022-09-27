@@ -51,14 +51,16 @@ L<PPI::Element> objects also apply to C<PPI::Node> objects.
 use strict;
 use Carp            ();
 use Scalar::Util    qw{refaddr};
-use List::Util      ();
-use Params::Util    qw{_INSTANCE _CLASS _CODELIKE _NUMBER};
+use List::MoreUtils ();
+use Params::Util    qw{_INSTANCE _CLASS _CODELIKE};
 use PPI::Element    ();
-use PPI::Singletons '%_PARENT';
 
-our $VERSION = '1.270'; # VERSION
-
-our @ISA = "PPI::Element";
+use vars qw{$VERSION @ISA *_PARENT};
+BEGIN {
+	$VERSION = '1.215';
+	@ISA     = 'PPI::Element';
+	*_PARENT = *PPI::Element::_PARENT;
+}
 
 
 
@@ -89,7 +91,7 @@ boundary, or false if it does not.
 =cut
 
 ### XS -> PPI/XS.xs:_PPI_Node__scope 0.903+
-sub scope() { '' }
+sub scope { '' }
 
 =pod
 
@@ -245,10 +247,7 @@ element at that node.
 =cut
 
 sub child {
-	my ( $self, $index ) = @_;
-	PPI::Exception->throw( "method child() needs an index" )
-	  if not defined _NUMBER $index;
-	$self->{children}->[$index];
+	$_[0]->{children}->[$_[1]];
 }
 
 =pod
@@ -330,7 +329,7 @@ class name (full or shortened), or a C<CODE>/function reference.
   # The same thing with a shortened class name
   $Document->find('Quote::Single');
   
-  # Anything more elaborate, we go with the sub
+  # Anything more elaborate, we so with the sub
   $Document->find( sub {
   	# At the top level of the file...
   	$_[1]->parent == $_[0]
@@ -374,9 +373,9 @@ sub find {
 	my $wanted = $self->_wanted(shift) or return undef;
 
 	# Use a queue based search, rather than a recursive one
-	my @found;
+	my @found = ();
 	my @queue = @{$self->{children}};
-	my $ok = eval {
+	eval {
 		while ( @queue ) {
 			my $Element = shift @queue;
 			my $rv      = &$wanted( $self, $Element );
@@ -398,9 +397,8 @@ sub find {
 				unshift @queue, @{$Element->{children}};
 			}
 		}
-		1;
 	};
-	if ( !$ok ) {
+	if ( $@ ) {
 		# Caught exception thrown from the wanted function
 		return undef;
 	}
@@ -413,7 +411,7 @@ sub find {
 =head2 find_first $class | \&wanted
 
 If the normal C<find> method is like a grep, then C<find_first> is
-equivalent to the L<List::Util> C<first> function.
+equivalent to the L<Scalar::Util> C<first> function.
 
 Given an element class or a wanted function, it will search depth-first
 through a tree until it finds something that matches the condition,
@@ -433,22 +431,18 @@ sub find_first {
 
 	# Use the same queue-based search as for ->find
 	my @queue = @{$self->{children}};
-	my $rv;
-	my $ok = eval {
+	my $rv    = eval {
 		# The defined() here prevents a ton of calls to PPI::Util::TRUE
 		while ( @queue ) {
 			my $Element = shift @queue;
-			my $element_rv = $wanted->( $self, $Element );
-			if ( $element_rv ) {
-				$rv = $Element;
-				last;
-			}
+			my $rv      = &$wanted( $self, $Element );
+			return $Element if $rv;
 
 			# Support "don't descend on undef return"
-			next if !defined $element_rv;
+			next unless defined $rv;
 
 			# Skip if the Element doesn't have any children
-			next if !$Element->isa('PPI::Node');
+			next unless $Element->isa('PPI::Node');
 
 			# Depth-first keeps the queue size down and provides a
 			# better logical order.
@@ -460,9 +454,8 @@ sub find_first {
 				unshift @queue, @{$Element->{children}};
 			}
 		}
-		1;
 	};
-	if ( !$ok ) {
+	if ( $@ ) {
 		# Caught exception thrown from the wanted function
 		return undef;
 	}
@@ -510,9 +503,9 @@ sub remove_child {
 
 	# Find the position of the child
 	my $key = refaddr $child;
-	my $p   = List::Util::first {
-		refaddr $self->{children}[$_] == $key
-	} 0..$#{$self->{children}};
+	my $p   = List::MoreUtils::firstidx {
+		refaddr $_ == $key
+	} @{$self->{children}};
 	return undef unless defined $p;
 
 	# Splice it out, and remove the child's parent entry
@@ -537,6 +530,34 @@ and were removed, B<non-recursively>. This might also be zero, so avoid a
 simple true/false test on the return false of the C<prune> method. It
 returns C<undef> on error, which you probably B<should> test for.
 
+=begin testing prune 2
+
+# Avoids a bug in old Perls relating to the detection of scripts
+# Known to occur in ActivePerl 5.6.1 and at least one 5.6.2 install.
+my $hashbang = reverse 'lrep/nib/rsu/!#'; 
+my $document = PPI::Document->new( \<<"END_PERL" );
+$hashbang
+
+use strict;
+
+sub one { 1 }
+sub two { 2 }
+sub three { 3 }
+
+print one;
+print "\n";
+print three;
+print "\n";
+
+exit;
+END_PERL
+
+isa_ok( $document, 'PPI::Document' );
+ok( defined($document->prune ('PPI::Statement::Sub')),
+	'Pruned multiple subs ok' );
+
+=end testing
+
 =cut
 
 sub prune {
@@ -546,7 +567,7 @@ sub prune {
 	# Use a depth-first queue search
 	my $pruned = 0;
 	my @queue  = $self->children;
-	my $ok = eval {
+	eval {
 		while ( my $element = shift @queue ) {
 			my $rv = &$wanted( $self, $element );
 			if ( $rv ) {
@@ -564,9 +585,8 @@ sub prune {
 				unshift @queue, $element->children;
 			}
 		}
-		1;
 	};
-	if ( !$ok ) {
+	if ( $@ ) {
 		# Caught exception thrown from the wanted function
 		return undef;		
 	}
@@ -574,8 +594,8 @@ sub prune {
 	$pruned;
 }
 
-# This method is likely to be very heavily used, so take
-# it slowly and carefully.
+# This method is likely to be very heavily used, to take
+# it slowly and carefuly.
 ### NOTE: Renaming this function or changing either to self will probably
 ###       break File::Find::Rule::PPI
 sub _wanted {
@@ -692,16 +712,16 @@ sub DESTROY {
 # Find the position of a child
 sub __position {
 	my $key = refaddr $_[1];
-	List::Util::first { refaddr $_[0]{children}[$_] == $key } 0..$#{$_[0]{children}};
+	List::MoreUtils::firstidx { refaddr $_ == $key } @{$_[0]->{children}};
 }
 
 # Insert one or more elements before a child
 sub __insert_before_child {
 	my $self = shift;
 	my $key  = refaddr shift;
-	my $p    = List::Util::first {
-	         refaddr $self->{children}[$_] == $key
-	         } 0..$#{$self->{children}};
+	my $p    = List::MoreUtils::firstidx {
+	         refaddr $_ == $key
+	         } @{$self->{children}};
 	foreach ( @_ ) {
 		Scalar::Util::weaken(
 			$_PARENT{refaddr $_} = $self
@@ -715,9 +735,9 @@ sub __insert_before_child {
 sub __insert_after_child {
 	my $self = shift;
 	my $key  = refaddr shift;
-	my $p    = List::Util::first {
-	         refaddr $self->{children}[$_] == $key
-	         } 0..$#{$self->{children}};
+	my $p    = List::MoreUtils::firstidx {
+	         refaddr $_ == $key
+	         } @{$self->{children}};
 	foreach ( @_ ) {
 		Scalar::Util::weaken(
 			$_PARENT{refaddr $_} = $self
@@ -731,9 +751,9 @@ sub __insert_after_child {
 sub __replace_child {
 	my $self = shift;
 	my $key  = refaddr shift;
-	my $p    = List::Util::first {
-	         refaddr $self->{children}[$_] == $key
-	         } 0..$#{$self->{children}};
+	my $p    = List::MoreUtils::firstidx {
+	         refaddr $_ == $key
+	         } @{$self->{children}};
 	foreach ( @_ ) {
 		Scalar::Util::weaken(
 			$_PARENT{refaddr $_} = $self

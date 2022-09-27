@@ -1,9 +1,12 @@
-use strict;
-use warnings;
 package Moose::Meta::Attribute::Native;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Attribute::Native::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Attribute::Native::VERSION = '2.0604';
+}
 
-use Module::Runtime 'require_module';
+use Class::Load qw(load_class);
 
 my @trait_names = qw(Bool Counter Number String Array Hash Code);
 
@@ -12,16 +15,17 @@ for my $trait_name (@trait_names) {
     my $meta = Class::MOP::Class->initialize(
         "Moose::Meta::Attribute::Custom::Trait::$trait_name"
     );
-
     if ($meta->find_method_by_name('register_implementation')) {
         my $class = $meta->name->register_implementation;
-        die "An implementation for $trait_name already exists " .
+        Moose->throw_error(
+            "An implementation for $trait_name already exists " .
             "(found '$class' when trying to register '$trait_class')"
+        );
     }
     $meta->add_method(register_implementation => sub {
         # resolve_metatrait_alias will load classes anyway, but throws away
         # their error message; we WANT to die if there's a problem
-        require_module($trait_class);
+        load_class($trait_class);
         return $trait_class;
     });
 }
@@ -30,11 +34,9 @@ for my $trait_name (@trait_names) {
 
 # ABSTRACT: Delegate to native Perl types
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -42,7 +44,7 @@ Moose::Meta::Attribute::Native - Delegate to native Perl types
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 SYNOPSIS
 
@@ -113,14 +115,24 @@ delegation.
 
 See the docs for each native trait for details on what methods are available.
 
-=head1 TRAITS FOR NATIVE DELEGATIONS
+=head2 is
 
-Below are some simple examples of each native trait. More features are
-available than what is shown here; this is just a quick synopsis.
+Some traits provide a default C<is> for historical reasons. This behavior is
+deprecated, and you are strongly encouraged to provide a value. If you don't
+plan to read and write the attribute value directly, not passing the C<is>
+option will prevent standard accessor generation.
+
+=head2 default or builder
+
+Some traits provide a default C<default> for historical reasons. This behavior
+is deprecated, and you are strongly encouraged to provide a default value or
+make the attribute required.
+
+=head1 TRAITS FOR NATIVE DELEGATIONS
 
 =over
 
-=item Array (L<Moose::Meta::Attribute::Native::Trait::Array>)
+=item L<Array|Moose::Meta::Attribute::Native::Trait::Array>
 
     has 'queue' => (
         traits  => ['Array'],
@@ -134,7 +146,7 @@ available than what is shown here; this is just a quick synopsis.
         }
     );
 
-=item Bool (L<Moose::Meta::Attribute::Native::Trait::Bool>)
+=item L<Bool|Moose::Meta::Attribute::Native::Trait::Bool>
 
     has 'is_lit' => (
         traits  => ['Bool'],
@@ -150,7 +162,7 @@ available than what is shown here; this is just a quick synopsis.
         }
     );
 
-=item Code (L<Moose::Meta::Attribute::Native::Trait::Code>)
+=item L<Code|Moose::Meta::Attribute::Native::Trait::Code>
 
     has 'callback' => (
         traits  => ['Code'],
@@ -165,7 +177,7 @@ available than what is shown here; this is just a quick synopsis.
         }
     );
 
-=item Counter (L<Moose::Meta::Attribute::Native::Trait::Counter>)
+=item L<Counter|Moose::Meta::Attribute::Native::Trait::Counter>
 
     has 'counter' => (
         traits  => ['Counter'],
@@ -180,7 +192,7 @@ available than what is shown here; this is just a quick synopsis.
         }
     );
 
-=item Hash (L<Moose::Meta::Attribute::Native::Trait::Hash>)
+=item L<Hash|Moose::Meta::Attribute::Native::Trait::Hash>
 
     has 'options' => (
         traits  => ['Hash'],
@@ -195,7 +207,7 @@ available than what is shown here; this is just a quick synopsis.
         }
     );
 
-=item Number (L<Moose::Meta::Attribute::Native::Trait::Number>)
+=item L<Number|Moose::Meta::Attribute::Native::Trait::Number>
 
     has 'integer' => (
         traits  => ['Number'],
@@ -214,7 +226,7 @@ available than what is shown here; this is just a quick synopsis.
         }
     );
 
-=item String (L<Moose::Meta::Attribute::Native::Trait::String>)
+=item L<String|Moose::Meta::Attribute::Native::Trait::String>
 
     has 'text' => (
         traits  => ['String'],
@@ -243,57 +255,19 @@ the API were changed.
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+

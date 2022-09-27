@@ -1,13 +1,18 @@
 package Moose::Meta::Role::Application::ToRole;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Role::Application::ToRole::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Role::Application::ToRole::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 use metaclass;
 
-use parent 'Moose::Meta::Role::Application';
+use Scalar::Util    'blessed';
 
-use Moose::Util 'throw_exception';
+use base 'Moose::Meta::Role::Application';
 
 sub apply {
     my ($self, $role1, $role2) = @_;
@@ -18,16 +23,13 @@ sub apply {
 sub check_role_exclusions {
     my ($self, $role1, $role2) = @_;
     if ( $role2->excludes_role($role1->name) ) {
-        throw_exception( ConflictDetectedInCheckRoleExclusions => role_name          => $role2->name,
-                                                                  excluded_role_name => $role1->name,
-                       );
+        require Moose;
+        Moose->throw_error("Conflict detected: " . $role2->name . " excludes role '" . $role1->name . "'");
     }
     foreach my $excluded_role_name ($role1->get_excluded_roles_list) {
         if ( $role2->does_role($excluded_role_name) ) {
-            throw_exception( RoleDoesTheExcludedRole => role_name          => $role2->name,
-                                                        excluded_role_name => $excluded_role_name,
-                                                        second_role_name   => $role1->name,
-                           );
+            require Moose;
+            Moose->throw_error("The role " . $role2->name . " does the excluded role '$excluded_role_name'");
         }
         $role2->add_excluded_roles($excluded_role_name);
     }
@@ -59,10 +61,13 @@ sub apply_attributes {
 
             my $role2_name = $role2->name;
 
-            throw_exception( AttributeConflictInRoles => role_name        => $role1->name,
-                                                         second_role_name => $role2->name,
-                                                         attribute_name   => $attribute_name
-                           );
+            require Moose;
+            Moose->throw_error( "Role '"
+                    . $role1->name
+                    . "' has encountered an attribute conflict"
+                    . " while being composed into '$role2_name'."
+                    . " This is a fatal error and cannot be disambiguated."
+                    . " The conflicting attribute is named '$attribute_name'." );
         }
         else {
             $role2->add_attribute(
@@ -86,9 +91,12 @@ sub apply_methods {
             if (   $role2_method
                 && $role2_method->body != $method->body ) {
 
-                # method conflicts between roles used to result in the method
-                # becoming a requirement but now are permitted just like
-                # for classes, hence no code in this branch anymore.
+                # method conflicts between roles result in the method becoming
+                # a requirement
+                $role2->add_conflicting_method(
+                    name  => $method_name,
+                    roles => [ $role1->name, $role2->name ],
+                );
             }
             else {
                 $role2->add_method(
@@ -107,11 +115,10 @@ sub apply_methods {
         if (   $role2_method
             && $role2_method->body != $method->body ) {
 
-            throw_exception( CannotCreateMethodAliasLocalMethodIsPresent => aliased_method_name     => $aliased_method_name,
-                                                                            method                  => $method,
-                                                                            role_name               => $role2->name,
-                                                                            role_being_applied_name => $role1->name,
-                           );
+            require Moose;
+            Moose->throw_error(
+                "Cannot create a method alias if a local method of the same name exists"
+            );
         }
 
         $role2->add_method(
@@ -135,23 +142,22 @@ sub apply_override_method_modifiers {
             # we have a conflict here, because you cannot
             # combine an overridden method with a locally
             # defined one
-            throw_exception( OverrideConflictInComposition => role_name               => $role2->name,
-                                                              role_being_applied_name => $role1->name,
-                                                              method_name             => $method_name
-                           );
+            require Moose;
+            Moose->throw_error("Role '" . $role1->name . "' has encountered an 'override' method conflict " .
+                    "during composition (A local method of the same name as been found). This " .
+                    "is fatal error.");
         }
         else {
             # if we are a role, we need to make sure
-            # we don't have a conflict with the role
+            # we dont have a conflict with the role
             # we are composing into
             if ($role2->has_override_method_modifier($method_name) &&
-                $role1->get_override_method_modifier($method_name) != $role2->get_override_method_modifier($method_name)) {
+                $role2->get_override_method_modifier($method_name) != $role2->get_override_method_modifier($method_name)) {
 
-                throw_exception( OverrideConflictInComposition => role_name               => $role2->name,
-                                                                  role_being_applied_name => $role1->name,
-                                                                  method_name             => $method_name,
-                                                                  two_overrides_found     => 1
-                               );
+                require Moose;
+                Moose->throw_error("Role '" . $role1->name . "' has encountered an 'override' method conflict " .
+                        "during composition (Two 'override' methods of the same name encountered). " .
+                        "This is fatal error.");
             }
             else {
                 # if there is no conflict,
@@ -177,15 +183,14 @@ sub apply_method_modifiers {
     }
 }
 
+
 1;
 
 # ABSTRACT: Compose a role into another role
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -193,7 +198,7 @@ Moose::Meta::Role::Application::ToRole - Compose a role into another role
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -227,57 +232,20 @@ version 2.2014
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+

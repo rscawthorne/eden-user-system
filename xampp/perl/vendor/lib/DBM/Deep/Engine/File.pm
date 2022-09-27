@@ -420,10 +420,6 @@ sub begin_work {
     my $self = shift;
     my ($obj) = @_;
 
-    unless ($self->supports('transactions')) {
-        DBM::Deep->_throw_error( "Cannot begin_work unless transactions are supported" );
-    }
-
     if ( $self->trans_id ) {
         DBM::Deep->_throw_error( "Cannot begin_work within an active transaction" );
     }
@@ -453,10 +449,6 @@ sub begin_work {
 sub rollback {
     my $self = shift;
     my ($obj) = @_;
-
-    unless ($self->supports('transactions')) {
-        DBM::Deep->_throw_error( "Cannot rollback unless transactions are supported" );
-    }
 
     if ( !$self->trans_id ) {
         DBM::Deep->_throw_error( "Cannot rollback without an active transaction" );
@@ -495,10 +487,6 @@ sub rollback {
 sub commit {
     my $self = shift;
     my ($obj) = @_;
-
-    unless ($self->supports('transactions')) {
-        DBM::Deep->_throw_error( "Cannot commit unless transactions are supported" );
-    }
 
     if ( !$self->trans_id ) {
         DBM::Deep->_throw_error( "Cannot commit without an active transaction" );
@@ -817,14 +805,10 @@ settings that set how the file is interpreted.
             DBM::Deep->_throw_error("Corrupted file - bad header");
         }
 
-        if ($values[3] != $self->{num_txns}) {
-            warn "num_txns ($self->{num_txns}) is different from the file ($values[3])\n";
-        }
-
         #XXX Add warnings if values weren't set right
         @{$self}{qw(byte_size max_buckets data_sector_size num_txns)} = @values;
 
-        # These shenanigans are to allow a 256 within a C
+        # These shenangians are to allow a 256 within a C
         $self->{max_buckets} += 1;
         $self->{data_sector_size} += 1;
 
@@ -855,7 +839,7 @@ settings that set how the file is interpreted.
 
 =head2 _apply_digest( @stuff )
 
-This will apply the digest method (default to Digest::MD5::md5) to the arguments
+This will apply the digest methd (default to Digest::MD5::md5) to the arguments
 passed in and return the result.
 
 =cut
@@ -1047,14 +1031,10 @@ sub chains_loc     { $_[0]{chains_loc} }
 sub set_chains_loc { $_[0]{chains_loc} = $_[1] }
 
 sub supports {
-    my $self = shift;
+    shift;
     my ($feature) = @_;
 
-    if ( $feature eq 'transactions' ) {
-        return $self->num_txns > 1;
-    }
-    return 1 if $feature eq 'singletons';
-    return 1 if $feature eq 'unicode';
+    return 1 if $feature =~ /^(?:(?:transacti|singlet)ons|unicode)\z/;
     return;
 }
 

@@ -1,24 +1,16 @@
+package Class::Method::Modifiers;
 use strict;
 use warnings;
-package Class::Method::Modifiers; # git description: v2.12-17-gbc38636
-# ABSTRACT: Provides Moose-like method modifiers
-# KEYWORDS: method wrap modification patch
-# vim: set ts=8 sts=4 sw=4 tw=115 et :
 
-our $VERSION = '2.13';
+our $VERSION = '2.03';
 
 use base 'Exporter';
-
 our @EXPORT = qw(before after around);
 our @EXPORT_OK = (@EXPORT, qw(fresh install_modifier));
 our %EXPORT_TAGS = (
     moose => [qw(before after around)],
     all   => \@EXPORT_OK,
 );
-
-BEGIN {
-  *_HAS_READONLY = $] >= 5.008 ? sub(){1} : sub(){0};
-}
 
 our %MODIFIER_CACHE;
 
@@ -50,7 +42,7 @@ sub install_modifier {
         };
 
         # this must be the first modifier we're installing
-        if (!exists($cache->{"orig"})) {
+        if (!exists($MODIFIER_CACHE{$into}{$name}{"orig"})) {
             no strict 'refs';
 
             # grab the original method (or undef if the method is inherited)
@@ -82,11 +74,7 @@ sub install_modifier {
         # the Moose equivalent. :)
         if ($type eq 'around') {
             my $method = $cache->{wrapped};
-            my $attrs = _sub_attrs($code);
-            # a bare "sub :lvalue {...}" will be parsed as a label and an
-            # indirect method call. force it to be treated as an expression
-            # using +
-            $cache->{wrapped} = eval "package $into; +sub $attrs { \$code->(\$method, \@_); };";
+            $cache->{wrapped} = eval "package $into; sub { \$code->(\$method, \@_); };";
         }
 
         # install our new method which dispatches the modifiers, but only
@@ -101,10 +89,8 @@ sub install_modifier {
             # to take a reference to it. better a deref than a hash lookup
             my $wrapped = \$cache->{"wrapped"};
 
-            my $attrs = _sub_attrs($cache->{wrapped});
-
             my $generated = "package $into;\n";
-            $generated .= "sub $name $attrs {";
+            $generated .= "sub $name {";
 
             # before is easy, it doesn't affect the return value(s)
             if (@$before) {
@@ -117,13 +103,12 @@ sub install_modifier {
 
             if (@$after) {
                 $generated .= '
-                    my $ret;
+                    my @ret;
                     if (wantarray) {
-                        $ret = [$$wrapped->(@_)];
-                        '.(_HAS_READONLY ? 'Internals::SvREADONLY(@$ret, 1);' : '').'
+                        @ret = $$wrapped->(@_);
                     }
                     elsif (defined wantarray) {
-                        $ret = \($$wrapped->(@_));
+                        $ret[0] = $$wrapped->(@_);
                     }
                     else {
                         $$wrapped->(@_);
@@ -133,8 +118,8 @@ sub install_modifier {
                         $method->(@_);
                     }
 
-                    wantarray ? @$ret : $ret ? $$ret : ();
-                '
+                    return wantarray ? @ret : $ret[0];
+                ';
             }
             else {
                 $generated .= '$$wrapped->(@_);';
@@ -197,20 +182,11 @@ sub _fresh {
             *{"$into\::$name"} = $code;
         }
         else {
+            my $body = 'my $self = shift; $self->$code(@_)';
             no warnings 'closure'; # for 5.8.x
-            my $attrs = _sub_attrs($code);
-            eval "package $into; sub $name $attrs { \$code->(\@_) }";
+            eval "package $into; sub $name { $body }";
         }
     }
-}
-
-sub _sub_attrs {
-    my ($coderef) = @_;
-    local *_sub = $coderef;
-    local $@;
-    # this assignment will fail to compile if it isn't an lvalue sub.  we
-    # never want to actually call the sub though, so we return early.
-    (eval 'return 1; &_sub = 1') ? ':lvalue' : '';
 }
 
 sub _is_in_package {
@@ -224,22 +200,14 @@ sub _is_in_package {
 
 __END__
 
-=pod
-
-=encoding UTF-8
-
 =head1 NAME
 
-Class::Method::Modifiers - Provides Moose-like method modifiers
-
-=head1 VERSION
-
-version 2.13
+Class::Method::Modifiers - provides Moose-like method modifiers
 
 =head1 SYNOPSIS
 
     package Child;
-    use parent 'MyParent';
+    use parent 'Parent';
     use Class::Method::Modifiers;
 
     sub new_method { }
@@ -264,9 +232,8 @@ version 2.13
         warn "freshly added method\n";
     };
 
-=head1 DESCRIPTION
 
-=for stopwords CLOS
+=head1 DESCRIPTION
 
 Method modifiers are a convenient feature from the CLOS (Common Lisp Object
 System) world.
@@ -279,7 +246,7 @@ C<Class::Method::Modifiers> provides three modifiers: C<before>, C<around>, and
 C<after>. C<before> and C<after> are run just before and after the method they
 modify, but can not really affect that original method. C<around> is run in
 place of the original method, with a hook to easily call that original method.
-See the L</MODIFIERS> section for more details on how the particular modifiers
+See the C<MODIFIERS> section for more details on how the particular modifiers
 work.
 
 One clear benefit of using C<Class::Method::Modifiers> is that you can define
@@ -290,45 +257,37 @@ those methods to flesh out the specifics.
 
 Parent classes need not know about C<Class::Method::Modifiers>. This means you
 should be able to modify methods in I<any> subclass. See
-L<Term::VT102::ZeroBased> for an example of subclassing with
-C<Class::Method::Modifiers>.
+L<Term::VT102::ZeroBased> for an example of subclassing with CMM.
 
 In short, C<Class::Method::Modifiers> solves the problem of making sure you
 call C<< $self->SUPER::foo(@_) >>, and provides a cleaner interface for it.
 
 As of version 1.00, C<Class::Method::Modifiers> is faster in some cases than
-L<Moose>. See F<benchmark/method_modifiers.pl> in the L<Moose> distribution.
+L<Moose>. See C<benchmark/method_modifiers.pl> in the L<Moose> distribution.
 
 C<Class::Method::Modifiers> also provides an additional "modifier" type,
 C<fresh>; see below.
 
 =head1 MODIFIERS
 
-All modifiers let you modify one or multiple methods at a time. The names of
-multiple methods can be provided as a list or as an array-reference. Examples:
-
- before 'method' => sub { ... };
- before 'method1', 'method2' => sub { ... };
- before [ 'method1', 'method2' ] => sub { ... };
-
-=head2 before method(s) => sub { ... };
+=head2 before method(s) => sub { ... }
 
 C<before> is called before the method it is modifying. Its return value is
-totally ignored. It receives the same C<@_> as the method it is modifying
+totally ignored. It receives the same C<@_> as the the method it is modifying
 would have received. You can modify the C<@_> the original method will receive
 by changing C<$_[0]> and friends (or by changing anything inside a reference).
 This is a feature!
 
-=head2 after method(s) => sub { ... };
+=head2 after method(s) => sub { ... }
 
 C<after> is called after the method it is modifying. Its return value is
-totally ignored. It receives the same C<@_> as the method it is modifying
+totally ignored. It receives the same C<@_> as the the method it is modifying
 received, mostly. The original method can modify C<@_> (such as by changing
 C<$_[0]> or references) and C<after> will see the modified version. If you
 don't like this behavior, specify both a C<before> and C<after>, and copy the
 C<@_> during C<before> for C<after> to use.
 
-=head2 around method(s) => sub { ... };
+=head2 around method(s) => sub { ... }
 
 C<around> is called instead of the method it is modifying. The method you're
 overriding is passed in as the first argument (called C<$orig> by convention).
@@ -365,8 +324,6 @@ You can use C<around> to:
 
 =head2 fresh method(s) => sub { ... };
 
-(Available since version 2.00)
-
 Unlike the other modifiers, this does not modify an existing method.
 Ordinarily, C<fresh> merely installs the coderef as a method in the
 appropriate class; but if the class hierarchy already contains a method of
@@ -374,7 +331,7 @@ the same name, an exception is thrown.  The idea of this "modifier" is to
 increase safety when subclassing.  Suppose you're writing a subclass of a
 class Some::Base, and adding a new method:
 
-    package My::Subclass;
+    package My::SubclassOf::C;
     use base 'Some::Base';
 
     sub foo { ... }
@@ -383,7 +340,7 @@ If a later version of Some::Base also adds a new method named C<foo>, your
 method will shadow that method.  Alternatively, you can use C<fresh>
 to install the additional method into your subclass:
 
-    package My::Subclass;
+    package My::SubclassOf::C;
     use base 'Some::Base';
 
     use Class::Method::Modifiers 'fresh';
@@ -414,7 +371,7 @@ function is exported only when you ask for it specifically, or for C<:all>.
 
 All three normal modifiers; C<before>, C<after>, and C<around>; are exported
 into your namespace by default. You may C<use Class::Method::Modifiers ()> to
-avoid modifying your namespace. I may steal more features from L<Moose>, namely
+avoid thrashing your namespace. I may steal more features from L<Moose>, namely
 C<super>, C<override>, C<inner>, C<augment>, and whatever the L<Moose> folks
 come up with next.
 
@@ -429,31 +386,16 @@ by other code. C<Class::Method::Modifiers> provides a way of
 overriding/augmenting methods safely, and the parent class need not know about
 it.
 
-=head2 :lvalue METHODS
-
-When adding C<before> or C<after> modifiers, the wrapper method will be
-an lvalue method if the wrapped sub is, and assigning to the method
-will propagate to the wrapped method as expected.  For C<around>
-modifiers, it is the modifier sub that determines if the wrapper
-method is an lvalue method.
-
 =head1 CAVEATS
 
 It is erroneous to modify a method that doesn't exist in your class's
 inheritance hierarchy. If this occurs, an exception will be thrown when
 the modifier is defined.
 
-It doesn't yet play well with C<caller>. There are some C<TODO> tests for this.
+It doesn't yet play well with C<caller>. There are some todo tests for this.
 Don't get your hopes up though!
 
-Applying modifiers to array lvalue methods is not fully supported. Attempting
-to assign to an array lvalue method that has an C<after> modifier applied will
-result in an error.  Array lvalue methods are not well supported by perl in
-general, and should be avoided.
-
-=head1 MAJOR VERSION CHANGES
-
-=for stopwords reimplementation
+=head1 VERSION
 
 This module was bumped to 1.00 following a complete reimplementation, to
 indicate breaking backwards compatibility. The "guard" modifier was removed,
@@ -467,101 +409,27 @@ become more correct. And, of course, faster. :)
 
 =head1 SEE ALSO
 
-=over 4
-
-=item *
-
 L<Class::Method::Modifiers::Fast>
+L<Moose>, L<Class::Trigger>, L<Class::MOP::Method::Wrapped>, L<MRO::Compat>,
+CLOS
 
-=item *
+=head1 AUTHOR
 
-L<Moose>
-
-=item *
-
-L<Class::Trigger>
-
-=item *
-
-L<Class::MOP::Method::Wrapped>
-
-=item *
-
-L<MRO::Compat>
-
-=item *
-
-L<CLOS|https://en.wikipedia.org/wiki/Common_Lisp_Object_System>
-
-=back
+Shawn M Moore, C<sartak@gmail.com>
 
 =head1 ACKNOWLEDGEMENTS
-
-=for stopwords Stevan
 
 Thanks to Stevan Little for L<Moose>, I would never have known about
 method modifiers otherwise.
 
 Thanks to Matt Trout and Stevan Little for their advice.
 
-=head1 SUPPORT
-
-Bugs may be submitted through L<the RT bug tracker|https://rt.cpan.org/Public/Dist/Display.html?Name=Class-Method-Modifiers>
-(or L<bug-Class-Method-Modifiers@rt.cpan.org|mailto:bug-Class-Method-Modifiers@rt.cpan.org>).
-
-=head1 AUTHOR
-
-Shawn M Moore <sartak@gmail.com>
-
-=head1 CONTRIBUTORS
-
-=for stopwords Karen Etheridge Shawn M Moore Graham Knop Aaron Crane Peter Rabbitson Justin Hunter David Steinbrunner gfx mannih
-
-=over 4
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Shawn M Moore <code@sartak.org>
-
-=item *
-
-Graham Knop <haarg@haarg.org>
-
-=item *
-
-Aaron Crane <arc@cpan.org>
-
-=item *
-
-Peter Rabbitson <ribasushi@cpan.org>
-
-=item *
-
-Justin Hunter <justin.d.hunter@gmail.com>
-
-=item *
-
-David Steinbrunner <dsteinbrunner@pobox.com>
-
-=item *
-
-gfx <gfuji@cpan.org>
-
-=item *
-
-mannih <github@lxxi.org>
-
-=back
-
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2007 by Shawn M Moore.
+Copyright 2007-2009 Shawn M Moore.
 
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut
+

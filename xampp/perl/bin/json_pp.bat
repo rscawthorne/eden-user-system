@@ -1,31 +1,47 @@
 @rem = '--*-Perl-*--
-@set "ErrorLevel="
-@if "%OS%" == "Windows_NT" @goto WinNT
-@perl -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
-@set ErrorLevel=%ErrorLevel%
-@goto endofperl
-:WinNT
-@perl -x -S %0 %*
-@set ErrorLevel=%ErrorLevel%
-@if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" @goto endofperl
-@if %ErrorLevel% == 9009 @echo You do not have Perl in your PATH.
-@goto endofperl
-@rem ';
-#!/usr/bin/perl
-#line 30
+@echo off
+if "%OS%" == "Windows_NT" goto WinNT
+IF EXIST "%~dp0perl.exe" (
+"%~dp0perl.exe" -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+) ELSE IF EXIST "%~dp0..\..\bin\perl.exe" (
+"%~dp0..\..\bin\perl.exe" -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+) ELSE (
+perl -x -S "%0" %1 %2 %3 %4 %5 %6 %7 %8 %9
+)
 
-BEGIN { pop @INC if $INC[-1] eq '.' }
+goto endofperl
+:WinNT
+IF EXIST "%~dp0perl.exe" (
+"%~dp0perl.exe" -x -S %0 %*
+) ELSE IF EXIST "%~dp0..\..\bin\perl.exe" (
+"%~dp0..\..\bin\perl.exe" -x -S %0 %*
+) ELSE (
+perl -x -S %0 %*
+)
+
+if NOT "%COMSPEC%" == "%SystemRoot%\system32\cmd.exe" goto endofperl
+if %errorlevel% == 9009 echo You do not have Perl in your PATH.
+if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
+goto endofperl
+@rem ';
+#!perl
+#line 29
+    eval 'exec \xampp\perl\bin\perl.exe -S $0 ${1+"$@"}'
+	if $running_under_some_shell;
+#!/usr/bin/perl
+
 use strict;
 use Getopt::Long;
-use Encode ();
 
 use JSON::PP ();
+
+my $VERSION = '1.00';
 
 # imported from JSON-XS/bin/json_xs
 
 my %allow_json_opt = map { $_ => 1 } qw(
     ascii latin1 utf8 pretty indent space_before space_after relaxed canonical allow_nonref
-    allow_singlequote allow_barekey allow_bignum loose escape_slash indent_length
+    allow_singlequote allow_barekey allow_bignum loose escape_slash
 );
 
 
@@ -35,39 +51,24 @@ GetOptions(
    't=s' => \( my $opt_to = 'json' ),
    'json_opt=s' => \( my $json_opt = 'pretty' ),
    'V'   => \( my $version ),
-) or die "Usage: $0 [-V] [-f from_format] [-t to_format] [-json_opt options_to_json1[,options_to_json2[,...]]]\n";
+) or die "Usage: $0 [-v] -f from_format [-t to_format]\n";
 
 
 if ( $version ) {
-    print "$JSON::PP::VERSION\n";
+    print "$VERSION\n";
     exit;
 }
 
 
 $json_opt = '' if $json_opt eq '-';
 
-my %json_opt;
-for my $opt (split /,/, $json_opt) {
-    my ($key, $value) = split /=/, $opt, 2;
-    $value = 1 unless defined $value;
-    die "'$_' is not a valid json option" unless $allow_json_opt{$key};
-    $json_opt{$key} = $value;
-}
+my @json_opt = grep { $allow_json_opt{ $_ } or die "'$_' is invalid json opttion" } split/,/, $json_opt;
 
 my %F = (
    'json' => sub {
       my $json = JSON::PP->new;
-      my $enc =
-         /^\x00\x00\x00/s  ? "utf-32be"
-       : /^\x00.\x00/s     ? "utf-16be"
-       : /^.\x00\x00\x00/s ? "utf-32le"
-       : /^.\x00.\x00/s    ? "utf-16le"
-       :                     "utf-8";
-      for my $key (keys %json_opt) {
-        next if $key eq 'utf8';
-        $json->$key($json_opt{$key});
-      }
-      $json->decode( Encode::decode($enc, $_) );
+      $json->$_() for @json_opt;
+      $json->decode( $_ );
    },
    'eval' => sub {
         my $v = eval "no strict;\n#line 1 \"input\"\n$_";
@@ -80,20 +81,12 @@ my %F = (
 my %T = (
    'null' => sub { "" },
    'json' => sub {
-      my $json = JSON::PP->new->utf8;
-      for my $key (keys %json_opt) {
-        $json->$key($json_opt{$key});
-      }
-      $json->canonical if $json_opt{pretty};
+      my $json = JSON::PP->new;
+      $json->$_() for @json_opt;
       $json->encode( $_ );
    },
    'dumper' => sub {
       require Data::Dumper;
-      local $Data::Dumper::Terse     = 1;
-      local $Data::Dumper::Indent    = 1;
-      local $Data::Dumper::Useqq     = 1;
-      local $Data::Dumper::Quotekeys = 0;
-      local $Data::Dumper::Sortkeys  = 1;
       Data::Dumper::Dumper($_)
    },
 );
@@ -106,11 +99,8 @@ $F{$opt_from}
 $T{$opt_to}
    or die "$opt_from: not a valid toformat\n";
 
-{
-  local $/;
-  binmode STDIN;
-  $_ = <STDIN>;
-}
+local $/;
+$_ = <STDIN>;
 
 $_ = $F{$opt_from}->();
 $_ = $T{$opt_to}->();
@@ -130,7 +120,7 @@ json_pp - JSON::PP command utility
 
 =head1 SYNOPSIS
 
-    json_pp [-v] [-f from_format] [-t to_format] [-json_opt options_to_json1[,options_to_json2[,...]]]
+    json_pp [-v] [-f from_format] [-t to_format] [-json_opt options_to_json]
 
 =head1 DESCRIPTION
 
@@ -188,13 +178,7 @@ options to JSON::PP
 Acceptable options are:
 
     ascii latin1 utf8 pretty indent space_before space_after relaxed canonical allow_nonref
-    allow_singlequote allow_barekey allow_bignum loose escape_slash indent_length
-
-Multiple options must be separated by commas:
-
-    Right: -json_opt pretty,canonical
-
-    Wrong: -json_opt pretty -json_opt canonical
+    allow_singlequote allow_barekey allow_bignum loose escape_slash
 
 =head2 -v
 
@@ -249,6 +233,6 @@ it under the same terms as Perl itself.
 
 =cut
 
+
 __END__
 :endofperl
-@set "ErrorLevel=" & @goto _undefined_label_ 2>NUL || @"%COMSPEC%" /d/c @exit %ErrorLevel%

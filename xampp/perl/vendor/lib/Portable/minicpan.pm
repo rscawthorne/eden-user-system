@@ -3,9 +3,14 @@ package Portable::minicpan;
 use 5.008;
 use strict;
 use warnings;
-use Portable::FileSpec;
+use Carp            ();
+use File::Spec 3.29 ();
 
-our $VERSION = '1.23';
+our $VERSION = '1.17';
+
+
+
+
 
 #####################################################################
 # Portable Driver API
@@ -14,7 +19,7 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 	unless ( Portable::_HASH($parent->portable_minicpan) ) {
-		die('Missing or invalid minicpan key in portable.perl');
+		Carp::croak('Missing or invalid minicpan key in portable.perl');
 	}
 
 	# Create the object
@@ -32,7 +37,7 @@ sub new {
 			$self->{$key} = $minicpan->{$key};
 			next;
 		}
-		$self->{$key} = Portable::FileSpec::catdir(
+		$self->{$key} = File::Spec->catdir(
 			$root, split /\//, $minicpan->{$key}
 		);
 	}

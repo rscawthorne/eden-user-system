@@ -1,6 +1,6 @@
 package Net::Telnet;
 
-## Copyright 1997, 2000, 2002, 2013 Jay Rogers.  All rights reserved.
+## Copyright 1997, 2000, 2002 Jay Rogers.  All rights reserved.
 ## This program is free software; you can redistribute it and/or
 ## modify it under the same terms as Perl itself.
 
@@ -25,7 +25,6 @@ use vars qw(@EXPORT_OK);
 		TELOPT_X3PAD TELOPT_NAWS TELOPT_TSPEED TELOPT_LFLOW
 		TELOPT_LINEMODE TELOPT_XDISPLOC TELOPT_OLD_ENVIRON
 		TELOPT_AUTHENTICATION TELOPT_ENCRYPT TELOPT_NEW_ENVIRON
-		TELOPT_TN3270E TELOPT_CHARSET TELOPT_COMPORT TELOPT_KERMIT
 		TELOPT_EXOPL);
 
 ## Module import.
@@ -43,25 +42,18 @@ else {  # perl version < 5.004
     require FileHandle;
     push @ISA, "FileHandle";
 }
-my $AF_INET6 = &_import_af_inet6();
-my $AF_UNSPEC = &_import_af_unspec() || 0;
-my $AI_ADDRCONFIG = &_import_ai_addrconfig() || 0;
-my $EAI_BADFLAGS = &_import_eai_badflags() || -1;
-my $EINTR = &_import_eintr();
 
 ## Global variables.
 use vars qw($VERSION @Telopts);
-$VERSION = "3.04";
-@Telopts = ("BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAMS", "STATUS",
+$VERSION = "3.03";
+@Telopts = ("BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME", "STATUS",
 	    "TIMING MARK", "RCTE", "NAOL", "NAOP", "NAOCRD", "NAOHTS",
 	    "NAOHTD", "NAOFFD", "NAOVTS", "NAOVTD", "NAOLFD", "EXTEND ASCII",
 	    "LOGOUT", "BYTE MACRO", "DATA ENTRY TERMINAL", "SUPDUP",
 	    "SUPDUP OUTPUT", "SEND LOCATION", "TERMINAL TYPE", "END OF RECORD",
 	    "TACACS UID", "OUTPUT MARKING", "TTYLOC", "3270 REGIME", "X.3 PAD",
 	    "NAWS", "TSPEED", "LFLOW", "LINEMODE", "XDISPLOC", "OLD-ENVIRON",
-	    "AUTHENTICATION", "ENCRYPT", "NEW-ENVIRON", "TN3270E", "XAUTH",
-	    "CHARSET", "RSP", "COMPORT", "SUPPRESS LOCAL ECHO", "START TLS",
-	    "KERMIT");
+	    "AUTHENTICATION", "ENCRYPT", "NEW-ENVIRON");
 
 
 ########################### Public Methods ###########################
@@ -70,17 +62,9 @@ $VERSION = "3.04";
 sub new {
     my ($class) = @_;
     my (
-	$dump_log,
 	$errmode,
-	$family,
 	$fh_open,
 	$host,
-	$input_log,
-	$localfamily,
-	$option_log,
-	$output_log,
-	$port,
-	$prompt,
 	$self,
 	%args,
 	);
@@ -103,8 +87,6 @@ sub new {
 	inputlog     	 => '',
 	last_line    	 => "",
 	last_prompt    	 => "",
-	local_family   	 => "ipv4",
-	local_host       => "",
 	maxbufsize   	 => 1_048_576,
 	num_wrote    	 => 0,
 	ofs          	 => "",
@@ -114,13 +96,10 @@ sub new {
 	opts         	 => {},
 	ors          	 => "\n",
 	outputlog    	 => '',
-	peer_family      => "ipv4",
 	pending_errormsg => "",
 	port         	 => 23,
 	pushback_buf 	 => "",
 	rs           	 => "\n",
-	select_supported => 1,
-	sock_family      => 0,
 	subopt_cback 	 => '',
 	telnet_mode  	 => 1,
 	time_out     	 => 10,
@@ -156,13 +135,10 @@ sub new {
 		$self->cmd_remove_mode($args{$_});
 	    }
 	    elsif (/^-?dump_log$/i) {
-		$dump_log = $args{$_};
+		$self->dump_log($args{$_});
 	    }
 	    elsif (/^-?errmode$/i) {
 		$errmode = $args{$_};
-	    }
-	    elsif (/^-?family$/i) {
-		$family = $args{$_};
 	    }
 	    elsif (/^-?fhopen$/i) {
 		$fh_open = $args{$_};
@@ -171,37 +147,25 @@ sub new {
 		$host = $args{$_};
 	    }
 	    elsif (/^-?input_log$/i) {
-		$input_log = $args{$_};
+		$self->input_log($args{$_});
 	    }
 	    elsif (/^-?input_record_separator$/i or /^-?rs$/i) {
 		$self->input_record_separator($args{$_});
 	    }
-	    elsif (/^-?localfamily$/i) {
-		$localfamily = $args{$_};
-	    }
-	    elsif (/^-?localhost$/i) {
-		$self->localhost($args{$_});
-	    }
-	    elsif (/^-?max_buffer_length$/i) {
-		$self->max_buffer_length($args{$_});
-	    }
 	    elsif (/^-?option_log$/i) {
-		$option_log = $args{$_};
-	    }
-	    elsif (/^-?output_field_separator$/i or /^-?ofs$/i) {
-		$self->output_field_separator($args{$_});
+		$self->option_log($args{$_});
 	    }
 	    elsif (/^-?output_log$/i) {
-		$output_log = $args{$_};
+		$self->output_log($args{$_});
 	    }
 	    elsif (/^-?output_record_separator$/i or /^-?ors$/i) {
 		$self->output_record_separator($args{$_});
 	    }
 	    elsif (/^-?port$/i) {
-		$port = $args{$_};
+		$self->port($args{$_});
 	    }
 	    elsif (/^-?prompt$/i) {
-		$prompt = $args{$_};
+		$self->prompt($args{$_});
 	    }
 	    elsif (/^-?telnetmode$/i) {
 		$self->telnetmode($args{$_});
@@ -220,55 +184,12 @@ sub new {
 	$self->errmode($errmode);
     }
 
-    if (defined $host) {  # user wants to set host
-	$self->host($host);
-    }
-
-    if (defined $port) {  # user wants to set port
-	$self->port($port)
-	    or return;
-    }
-
-    if (defined $family) {  # user wants to set family
-	$self->family($family)
-	    or return;
-    }
-
-    if (defined $localfamily) {  # user wants to set localfamily
-	$self->localfamily($localfamily)
-	    or return;
-    }
-
-    if (defined $prompt) {  # user wants to set prompt
-	$self->prompt($prompt)
-	    or return;
-    }
-
-    if (defined $dump_log) {  # user wants to set dump_log
-	$self->dump_log($dump_log)
-	    or return;
-    }
-
-    if (defined $input_log) {  # user wants to set input_log
-	$self->input_log($input_log)
-	    or return;
-    }
-
-    if (defined $option_log) {  # user wants to set option_log
-	$self->option_log($option_log)
-	    or return;
-    }
-
-    if (defined $output_log) {  # user wants to set output_log
-	$self->output_log($output_log)
-	    or return;
-    }
-
     if (defined $fh_open) {  # user wants us to attach to existing filehandle
 	$self->fhopen($fh_open)
 	    or return;
     }
     elsif (defined $host) {  # user wants us to open a connection to host
+	$self->host($host);
 	$self->open
 	    or return;
     }
@@ -339,7 +260,6 @@ sub close {
 
     $s->{eofile} = 1;
     $s->{opened} = '';
-    $s->{sock_family} = 0;
     close $self
 	if defined fileno($self);
 
@@ -350,8 +270,8 @@ sub close {
 sub cmd {
     my ($self, @args) = @_;
     my (
-	$arg_errmode,
 	$cmd_remove_mode,
+	$errmode,
 	$firstpos,
 	$last_prompt,
 	$lastpos,
@@ -377,28 +297,27 @@ sub cmd {
     $s = *$self->{net_telnet};
     $output = [];
     $cmd_remove_mode = $self->cmd_remove_mode;
+    $errmode = $self->errmode;
     $ors = $self->output_record_separator;
     $prompt = $self->prompt;
     $rs = $self->input_record_separator;
     $timeout = $self->timeout;
 
-    ## Override errmode first, if specified.
-    $arg_errmode = &_extract_arg_errmode($self, \@args);
-    local $s->{errormode} = $arg_errmode
-	if $arg_errmode;
-
     ## Parse args.
-    if (@args == 1) {  # one positional arg given
-	$cmd = $args[0];
+    if (@_ == 2) {  # one positional arg given
+	$cmd = $_[1];
     }
-    elsif (@args >= 2) {  # named args given
+    elsif (@_ > 2) {  # named args given
 	## Get the named args.
-	%args = @args;
+	(undef, %args) = @_;
 
 	## Parse the named args.
 	foreach (keys %args) {
 	    if (/^-?cmd_remove/i) {
 		$cmd_remove_mode = &_parse_cmd_remove_mode($self, $args{$_});
+	    }
+	    elsif (/^-?errmode$/i) {
+		$errmode = &_parse_errmode($self, $args{$_});
 	    }
 	    elsif (/^-?input_record_separator$/i or /^-?rs$/i) {
 		$rs = &_parse_input_record_separator($self, $args{$_});
@@ -410,11 +329,10 @@ sub cmd {
 		}
 	    }
 	    elsif (/^-?output_record_separator$/i or /^-?ors$/i) {
-		$ors = $args{$_};
+		$ors = $self->output_record_separator($args{$_});
 	    }
 	    elsif (/^-?prompt$/i) {
-		$prompt = &_parse_prompt($self, $args{$_})
-		    or return;
+		$prompt = &_parse_prompt($self, $args{$_});
 	    }
 	    elsif (/^-?string$/i) {
 		$cmd = $args{$_};
@@ -430,18 +348,16 @@ sub cmd {
     }
 
     ## Override some user settings.
+    local $s->{errormode} = "return";
     local $s->{time_out} = &_endtime($timeout);
     $self->errmsg("");
 
     ## Send command and wait for the prompt.
-    {
-	local $s->{errormode} = "return";
-
-	$self->put($cmd . $ors)
-	    and ($lines, $last_prompt) = $self->waitfor($prompt);
-    }
+    $self->put($cmd . $ors)
+	and ($lines, $last_prompt) = $self->waitfor($prompt);
 
     ## Check for failure.
+    $s->{errormode} = $errmode;
     return $self->error("command timed-out") if $self->timed_out;
     return $self->error($self->errmsg) if $self->errmsg ne "";
 
@@ -526,26 +442,12 @@ sub dump_log {
     $fh = $s->{dumplog};
 
     if (@_ >= 2) {
-	if (!defined($name) or $name eq "") {  # input arg is ""
-	    ## Turn off logging.
-	    $fh = "";
-	}
-	elsif (&_is_open_fh($name)) {  # input arg is an open fh
-	    ## Use the open fh for logging.
-	    $fh = $name;
-	    select((select($fh), $|=1)[$[]);  # don't buffer writes
-	}
-	elsif (!ref $name) {  # input arg is filename
-	    ## Open the file for logging.
-	    $fh = &_fname_to_handle($self, $name)
-		or return;
-	    select((select($fh), $|=1)[$[]);  # don't buffer writes
-	}
-	else {
-	    return $self->error("bad Dump_log argument ",
-				"\"$name\": not filename or open fh");
+	unless (defined $name) {
+	    $name = "";
 	}
 
+	$fh = &_fname_to_handle($self, $name)
+	    or return;
 	$s->{dumplog} = $fh;
     }
 
@@ -644,27 +546,6 @@ sub error {
 } # end sub error
 
 
-sub family {
-    my ($self, $family) = @_;
-    my (
-	$prev,
-	$s,
-	);
-
-    $s = *$self->{net_telnet};
-    $prev = $s->{peer_family};
-
-    if (@_ >= 2) {
-	$family = &_parse_family($self, $family)
-	    or return;
-
-	$s->{peer_family} = $family;
-    }
-
-    $prev;
-} # end sub family
-
-
 sub fhopen {
     my ($self, $fh) = @_;
     my (
@@ -707,7 +588,6 @@ sub fhopen {
     $s->{pending_errormsg} = "";
     $s->{port} = '';
     $s->{pushback_buf} = "";
-    $s->{select_supported} = $^O ne "MSWin32" || -S $self;
     $s->{timedout} = '';
     $s->{unsent_opts} = "";
     &_reset_options($s->{opts});
@@ -844,7 +724,7 @@ sub getline {
     $s = *$self->{net_telnet};
     $s->{timedout} = '';
     return if $s->{eofile};
-    $rs = $s->{"rs"};
+    $rs = $s->{rs};
     $timeout = $s->{time_out};
 
     ## Parse the named args.
@@ -981,7 +861,7 @@ sub getlines {
 	if defined $binmode;
     local $s->{errormode} = $errmode
 	if defined $errmode;
-    local $s->{"rs"} = $rs
+    local $s->{rs} = $rs
 	if defined $rs;
     local $s->{telnet_mode} = $telnetmode
 	if defined $telnetmode;
@@ -1039,26 +919,12 @@ sub input_log {
     $fh = $s->{inputlog};
 
     if (@_ >= 2) {
-	if (!defined($name) or $name eq "") {  # input arg is ""
-	    ## Turn off logging.
-	    $fh = "";
-	}
-	elsif (&_is_open_fh($name)) {  # input arg is an open fh
-	    ## Use the open fh for logging.
-	    $fh = $name;
-	    select((select($fh), $|=1)[$[]);  # don't buffer writes
-	}
-	elsif (!ref $name) {  # input arg is filename
-	    ## Open the file for logging.
-	    $fh = &_fname_to_handle($self, $name)
-		or return;
-	    select((select($fh), $|=1)[$[]);  # don't buffer writes
-	}
-	else {
-	    return $self->error("bad Input_log argument ",
-				"\"$name\": not filename or open fh");
+	unless (defined $name) {
+	    $name = "";
 	}
 
+	$fh = &_fname_to_handle($self, $name)
+	    or return;
 	$s->{inputlog} = $fh;
     }
 
@@ -1074,10 +940,10 @@ sub input_record_separator {
 	);
 
     $s = *$self->{net_telnet};
-    $prev = $s->{"rs"};
+    $prev = $s->{rs};
 
     if (@_ >= 2) {
-	$s->{"rs"} = &_parse_input_record_separator($self, $rs);
+	$s->{rs} = &_parse_input_record_separator($self, $rs);
     }
 
     $prev;
@@ -1128,78 +994,10 @@ sub lastline {
 } # end sub lastline
 
 
-sub localfamily {
-    my ($self, $family) = @_;
-    my (
-	$prev,
-	$s,
-	);
-
-    $s = *$self->{net_telnet};
-    $prev = $s->{local_family};
-
-    if (@_ >= 2) {
-	unless (defined $family) {
-	    $family = "";
-	}
-
-	if ($family =~ /^\s*ipv4\s*$/i) {  # family arg is "ipv4"
-	    $s->{local_family} = "ipv4";
-	}
-	elsif ($family =~ /^\s*any\s*$/i) {  # family arg is "any"
-	    if ($Socket::VERSION >= 1.94 and defined $AF_INET6) {  # has IPv6
-		$s->{local_family} = "any";
-	    }
-	    else {  # IPv6 not supported on this machine
-		$s->{local_family} = "ipv4";
-	    }
-	}
-	elsif ($family =~ /^\s*ipv6\s*$/i) {  # family arg is "ipv6"
-	    return $self->error("Localfamily arg ipv6 not supported when " .
-				"Socket.pm version < 1.94")
-		unless $Socket::VERSION >= 1.94;
-	    return $self->error("Localfamily arg ipv6 not supported by " .
-				"this OS: AF_INET6 not in Socket.pm")
-		unless defined $AF_INET6;
-
-	    $s->{local_family} = "ipv6";
-	}
-	else {
-	    return $self->error("bad Localfamily argument \"$family\": " .
-				"must be \"ipv4\", \"ipv6\", or \"any\"");
-	}
-    }
-
-    $prev;
-} # end sub localfamily
-
-
-sub localhost {
-    my ($self, $localhost) = @_;
-    my (
-	$prev,
-	$s,
-	);
-
-    $s = *$self->{net_telnet};
-    $prev = $s->{local_host};
-
-    if (@_ >= 2) {
-	unless (defined $localhost) {
-	    $localhost = "";
-	}
-
-	$s->{local_host} = $localhost;
-    }
-
-    $prev;
-} # end sub localhost
-
-
 sub login {
-    my ($self, @args) = @_;
+    my ($self) = @_;
     my (
-	$arg_errmode,
+	$errmode,
 	$error,
 	$is_passwd_arg,
 	$is_username_arg,
@@ -1224,28 +1022,24 @@ sub login {
     $ors = $self->output_record_separator;
     $prompt = $self->prompt;
 
-    ## Parse positional args.
-    if (@args == 2) {  # just username and passwd given
-	$username = $args[0];
-	$passwd = $args[1];
+    ## Parse args.
+    if (@_ == 3) {  # just username and passwd given
+	$username = $_[1];
+	$passwd = $_[2];
 
 	$is_username_arg = 1;
 	$is_passwd_arg = 1;
     }
-
-    ## Override errmode first, if specified.
-    $arg_errmode = &_extract_arg_errmode($self, \@args);
-    local $s->{errormode} = $arg_errmode
-	if $arg_errmode;
-
-    ## Parse named args.
-    if (@args > 2) {
+    else {  # named args given
 	## Get the named args.
-	%args = @args;
+	(undef, %args) = @_;
 
 	## Parse the named args.
 	foreach (keys %args) {
-	    if (/^-?name$/i) {
+	    if (/^-?errmode$/i) {
+		$errmode = &_parse_errmode($self, $args{$_});
+	    }
+	    elsif (/^-?name$/i) {
 		$username = $args{$_};
 		unless (defined $username) {
 		    $username = "";
@@ -1262,8 +1056,7 @@ sub login {
 		$is_passwd_arg = 1;
 	    }
 	    elsif (/^-?prompt$/i) {
-		$prompt = &_parse_prompt($self, $args{$_})
-		    or return;
+		$prompt = &_parse_prompt($self, $args{$_});
 	    }
 	    elsif (/^-?timeout$/i) {
 		$timeout = &_parse_timeout($self, $args{$_});
@@ -1281,7 +1074,9 @@ sub login {
     &_croak($self,"Password argument not given to " . ref($self) . "::login()")
 	unless $is_passwd_arg;
 
-    ## Set timeout for this invocation.
+    ## Override some user settings.
+    local $s->{errormode} = $errmode
+	if defined $errmode;
     local $s->{time_out} = &_endtime($timeout);
 
     ## Create a subroutine to generate an error.
@@ -1397,77 +1192,46 @@ sub max_buffer_length {
 
 
 ## Make ofs() synonymous with output_field_separator().
-sub ofs { &output_field_separator; }
+*ofs = \&output_field_separator;
 
 
 sub open {
-    my ($self, @args) = @_;
+    my ($self) = @_;
     my (
-	$af,
-	$arg_errmode,
-	$err,
+	$errmode,
 	$errno,
-	$family,
-	$flags_hint,
 	$host,
 	$ip_addr,
-	$lfamily,
-	$localhost,
 	$port,
 	$s,
 	$timeout,
 	%args,
-	@ai,
 	);
-    local $@;
     local $_;
-    my $local_addr = '';
-    my $remote_addr = '';
-    my %af = (
-	ipv4 => AF_INET,
-	ipv6 => defined($AF_INET6) ? $AF_INET6 : undef,
-	any => $AF_UNSPEC,
-	);
 
     ## Init.
     $s = *$self->{net_telnet};
+    $timeout = $s->{time_out};
     $s->{timedout} = '';
-    $s->{sock_family} = 0;
-    $port = $self->port;
-    $family = $self->family;
-    $localhost = $self->localhost;
-    $lfamily = $self->localfamily;
-    $timeout = $self->timeout;
 
-    ## Override errmode first, if specified.
-    $arg_errmode = &_extract_arg_errmode($self, \@args);
-    local $s->{errormode} = $arg_errmode
-	if $arg_errmode;
-
-    if (@args == 1) {  # one positional arg given
-	$self->host($args[0]);
+    if (@_ == 2) {  # one positional arg given
+	$self->host($_[1]);
     }
-    elsif (@args >= 2) {  # named args given
+    elsif (@_ > 2) {  # named args given
 	## Get the named args.
-	%args = @args;
+	(undef, %args) = @_;
 
 	## Parse the named args.
 	foreach (keys %args) {
-	    if (/^-?family$/i) {
-		$family = &_parse_family($self, $args{$_});
+	    if (/^-?errmode$/i) {
+		$errmode = &_parse_errmode($self, $args{$_});
 	    }
 	    elsif (/^-?host$/i) {
 		$self->host($args{$_});
 	    }
-	    elsif (/^-?localfamily$/i) {
-		$lfamily = &_parse_localfamily($self, $args{$_});
-	    }
-	    elsif (/^-?localhost$/i) {
-		$args{$_} = "" unless defined $args{$_};
-		$localhost = $args{$_};
-	    }
 	    elsif (/^-?port$/i) {
-		$port = &_parse_port($self, $args{$_});
+		$self->port($args{$_})
+		    or return;
 	    }
 	    elsif (/^-?timeout$/i) {
 		$timeout = &_parse_timeout($self, $args{$_});
@@ -1479,8 +1243,13 @@ sub open {
 	}
     }
 
-    ## Get hostname/ip address.
+    ## If any args given, override corresponding instance data.
+    local $s->{errormode} = $errmode
+	if defined $errmode;
+
+    ## Get host and port.
     $host = $self->host;
+    $port = $self->port;
 
     ## Ensure we're already closed.
     $self->close;
@@ -1496,7 +1265,7 @@ sub open {
 	if ($timeout < 1) {
 	    $timeout = 1;
 	}
-	$timeout = int($timeout + 0.5);
+	$timeout = int($timeout + 1.5);
 
 	## Connect to server, timing out if it takes too long.
 	eval {
@@ -1505,62 +1274,16 @@ sub open {
 	    local $SIG{ALRM} = sub { die "timed-out\n" };
 	    alarm $timeout;
 
-	    if ($family eq "ipv4") {
-		## Lookup server's IP address.
-		$ip_addr = inet_aton $host
-		    or die "unknown remote host: $host\n";
-		$af = AF_INET;
-		$remote_addr = sockaddr_in($port, $ip_addr);
-	    }
-	    else {  # family is "ipv6" or "any"
-		## Lookup server's IP address.
-		$flags_hint = $family eq "any" ? $AI_ADDRCONFIG : 0;
-		($err, @ai) = Socket::getaddrinfo($host, $port,
-						  { socktype => SOCK_STREAM,
-						    "family" => $af{$family},
-						    "flags" => $flags_hint });
-		if ($err == $EAI_BADFLAGS) {
-		    ## Try again with no flags.
-		    ($err, @ai) = Socket::getaddrinfo($host, $port,
-						      {socktype => SOCK_STREAM,
-						       "family"=> $af{$family},
-						       "flags" => 0 });
-		}
-		die "unknown remote host: $host: $err\n"
-		    if $err or !@ai;
-		$af = $ai[0]{"family"};
-		$remote_addr = $ai[0]{addr};
-	    }
+	    ## Lookup server's IP address.
+	    $ip_addr = inet_aton $host
+		or die "unknown remote host: $host\n";
 
 	    ## Create a socket and attach the filehandle to it.
-	    socket $self, $af, SOCK_STREAM, 0
+	    socket $self, AF_INET, SOCK_STREAM, 0
 		or die "problem creating socket: $!\n";
 
-	    ## Bind to a local network interface.
-	    if (length $localhost) {
-		if ($lfamily eq "ipv4") {
-		    ## Lookup server's IP address.
-		    $ip_addr = inet_aton $localhost
-			or die "unknown local host: $localhost\n";
-		    $local_addr = sockaddr_in(0, $ip_addr);
-		}
-		else {  # local family is "ipv6" or "any"
-		    ## Lookup local IP address.
-		    ($err, @ai) = Socket::getaddrinfo($localhost, 0,
-						      {socktype => SOCK_STREAM,
-						       "family"=>$af{$lfamily},
-						       "flags" => 0 });
-		    die "unknown local host: $localhost: $err\n"
-			if $err or !@ai;
-		    $local_addr = $ai[0]{addr};
-		}
-
-		bind $self, $local_addr
-		    or die "problem binding to \"$localhost\": $!\n";
-	    }
-
 	    ## Open connection to server.
-	    connect $self, $remote_addr
+	    connect $self, sockaddr_in($port, $ip_addr)
 		or die "problem connecting to \"$host\", port $port: $!\n";
 	};
 	alarm 0;
@@ -1569,12 +1292,8 @@ sub open {
 	if ($@ =~ /^timed-out$/) {  # time out failure
 	    $s->{timedout} = 1;
 	    $self->close;
-	    if (!$remote_addr) {
+	    if (!$ip_addr) {
 		return $self->error("unknown remote host: $host: ",
-				    "name lookup timed-out");
-	    }
-	    elsif (length($localhost) and !$local_addr) {
-		return $self->error("unknown local host: $localhost: ",
 				    "name lookup timed-out");
 	    }
 	    else {
@@ -1591,63 +1310,16 @@ sub open {
     else {  # don't use a timeout
 	$timeout = undef;
 
-	if ($family eq "ipv4") {
-	    ## Lookup server's IP address.
-	    $ip_addr = inet_aton $host
-		or return $self->error("unknown remote host: $host");
-	    $af = AF_INET;
-	    $remote_addr = sockaddr_in($port, $ip_addr);
-	}
-	else {  # family is "ipv6" or "any"
-	    ## Lookup server's IP address.
-	    $flags_hint = $family eq "any" ? $AI_ADDRCONFIG : 0;
-	    ($err, @ai) = Socket::getaddrinfo($host, $port,
-					      { socktype => SOCK_STREAM,
-						"family" => $af{$family},
-						"flags" => $flags_hint });
-	    if ($err == $EAI_BADFLAGS) {
-		## Try again with no flags.
-		($err, @ai) = Socket::getaddrinfo($host, $port,
-						  { socktype => SOCK_STREAM,
-						    "family"=> $af{$family},
-						    "flags" => 0 });
-	    }
-	    return $self->error("unknown remote host: $host")
-		if $err or !@ai;
-	    $af = $ai[0]{"family"};
-	    $remote_addr = $ai[0]{addr};
-	}
+	## Lookup server's IP address.
+	$ip_addr = inet_aton $host
+	    or return $self->error("unknown remote host: $host");
 
 	## Create a socket and attach the filehandle to it.
-	socket $self, $af, SOCK_STREAM, 0
+	socket $self, AF_INET, SOCK_STREAM, 0
 	    or return $self->error("problem creating socket: $!");
 
-	## Bind to a local network interface.
-	if (length $localhost) {
-	    if ($lfamily eq "ipv4") {
-		## Lookup server's IP address.
-		$ip_addr = inet_aton $localhost
-		    or return $self->error("unknown local host: $localhost");
-		$local_addr = sockaddr_in(0, $ip_addr);
-	    }
-	    else {  # local family is "ipv6" or "any"
-		## Lookup local IP address.
-		($err, @ai) = Socket::getaddrinfo($localhost, 0,
-						  { socktype => SOCK_STREAM,
-						    "family"=>$af{$lfamily},
-						    "flags" => 0 });
-		return $self->error("unknown local host: $localhost: $err")
-		    if $err or !@ai;
-		$local_addr = $ai[0]{addr};
-	    }
-
-	    bind $self, $local_addr
-		or return $self->error("problem binding ",
-				       "to \"$localhost\": $!");
-	}
-
 	## Open connection to server.
-	connect $self, $remote_addr
+	connect $self, sockaddr_in($port, $ip_addr)
 	    or do {
 		$errno = "$!";
 		$self->close;
@@ -1663,12 +1335,10 @@ sub open {
     $s->{errormsg} = "";
     vec($s->{fdmask}='', fileno($self), 1) = 1;
     $s->{last_line} = "";
-    $s->{sock_family} = $af;
     $s->{num_wrote} = 0;
     $s->{opened} = 1;
     $s->{pending_errormsg} = "";
     $s->{pushback_buf} = "";
-    $s->{select_supported} = 1;
     $s->{timedout} = '';
     $s->{unsent_opts} = "";
     &_reset_options($s->{opts});
@@ -1784,26 +1454,12 @@ sub option_log {
     $fh = $s->{opt_log};
 
     if (@_ >= 2) {
-	if (!defined($name) or $name eq "") {  # input arg is ""
-	    ## Turn off logging.
-	    $fh = "";
-	}
-	elsif (&_is_open_fh($name)) {  # input arg is an open fh
-	    ## Use the open fh for logging.
-	    $fh = $name;
-	    select((select($fh), $|=1)[$[]);  # don't buffer writes
-	}
-	elsif (!ref $name) {  # input arg is filename
-	    ## Open the file for logging.
-	    $fh = &_fname_to_handle($self, $name)
-		or return;
-	    select((select($fh), $|=1)[$[]);  # don't buffer writes
-	}
-	else {
-	    return $self->error("bad Option_log argument ",
-				"\"$name\": not filename or open fh");
+	unless (defined $name) {
+	    $name = "";
 	}
 
+	$fh = &_fname_to_handle($self, $name)
+	    or return;
 	$s->{opt_log} = $fh;
     }
 
@@ -1837,7 +1493,7 @@ sub option_state {
 
 
 ## Make ors() synonymous with output_record_separator().
-sub ors { &output_record_separator; }
+*ors = \&output_record_separator;
 
 
 sub output_field_separator {
@@ -1848,14 +1504,14 @@ sub output_field_separator {
 	);
 
     $s = *$self->{net_telnet};
-    $prev = $s->{"ofs"};
+    $prev = $s->{ofs};
 
     if (@_ >= 2) {
 	unless (defined $ofs) {
 	    $ofs = "";
 	}
 
-	$s->{"ofs"} = $ofs;
+	$s->{ofs} = $ofs;
     }
 
     $prev;
@@ -1873,26 +1529,12 @@ sub output_log {
     $fh = $s->{outputlog};
 
     if (@_ >= 2) {
-	if (!defined($name) or $name eq "") {  # input arg is ""
-	    ## Turn off logging.
-	    $fh = "";
-	}
-	elsif (&_is_open_fh($name)) {  # input arg is an open fh
-	    ## Use the open fh for logging.
-	    $fh = $name;
-	    select((select($fh), $|=1)[$[]);  # don't buffer writes
-	}
-	elsif (!ref $name) {  # input arg is filename
-	    ## Open the file for logging.
-	    $fh = &_fname_to_handle($self, $name)
-		or return;
-	    select((select($fh), $|=1)[$[]);  # don't buffer writes
-	}
-	else {
-	    return $self->error("bad Output_log argument ",
-				"\"$name\": not filename or open fh");
+	unless (defined $name) {
+	    $name = "";
 	}
 
+	$fh = &_fname_to_handle($self, $name)
+	    or return;
 	$s->{outputlog} = $fh;
     }
 
@@ -1908,52 +1550,18 @@ sub output_record_separator {
 	);
 
     $s = *$self->{net_telnet};
-    $prev = $s->{"ors"};
+    $prev = $s->{ors};
 
     if (@_ >= 2) {
 	unless (defined $ors) {
 	    $ors = "";
 	}
 
-	$s->{"ors"} = $ors;
+	$s->{ors} = $ors;
     }
 
     $prev;
 } # end sub output_record_separator
-
-
-sub peerhost {
-    my ($self) = @_;
-    my (
-	$host,
-	$sockaddr,
-	);
-    local $^W = '';  # avoid closed socket warning from getpeername()
-
-    ## Get packed sockaddr struct of remote side and then unpack it.
-    $sockaddr = getpeername $self
-	or return "";
-    (undef, $host) = $self->_unpack_sockaddr($sockaddr);
-
-    $host;
-} # end sub peerhost
-
-
-sub peerport {
-    my ($self) = @_;
-    my (
-	$port,
-	$sockaddr,
-	);
-    local $^W = '';  # avoid closed socket warning from getpeername()
-
-    ## Get packed sockaddr struct of remote side and then unpack it.
-    $sockaddr = getpeername $self
-	or return "";
-    ($port) = $self->_unpack_sockaddr($sockaddr);
-
-    $port;
-} # end sub peerport
 
 
 sub port {
@@ -1968,8 +1576,23 @@ sub port {
     $prev = $s->{port};
 
     if (@_ >= 2) {
-	$port = &_parse_port($self, $port)
-	    or return;
+	unless (defined $port) {
+	    $port = "";
+	}
+
+	if (!$port) {
+	    &_carp($self, "ignoring bad Port argument \"$port\"");
+	    $port = $prev;
+	}
+	elsif ($port !~ /^\d+$/) {  # port isn't all digits
+	    $service = $port;
+	    $port = getservbyname($service, "tcp");
+	    unless ($port) {
+		&_carp($self, "ignoring bad Port argument \"$service\": " .
+		       "it's an unknown TCP service");
+		$port = $prev;
+	    }
+	}
 
 	$s->{port} = $port;
     }
@@ -1992,7 +1615,7 @@ sub print {
 	unless $s->{opened};
 
     ## Add field and record separators.
-    $buf = join($s->{"ofs"}, @_) . $s->{"ors"};
+    $buf = join($s->{ofs}, @_) . $s->{ors};
 
     ## Log the output if requested.
     if ($s->{outputlog}) {
@@ -2033,10 +1656,7 @@ sub prompt {
 
     ## Parse args.
     if (@_ == 2) {
-	$prompt = &_parse_prompt($self, $prompt)
-	    or return;
-
-	$s->{cmd_prompt} = $prompt;
+	$s->{cmd_prompt} = &_parse_prompt($self, $prompt);
     }
 
     $prev;
@@ -2130,62 +1750,12 @@ sub put {
 	&_escape_cr(\$buf);
     }
 
-    &_put($self, \$buf, "put");
+    &_put($self, \$buf, "print");
 } # end sub put
 
 
 ## Make rs() synonymous input_record_separator().
-sub rs { &input_record_separator; }
-
-
-sub sockfamily {
-    my ($self) = @_;
-    my $s = *$self->{net_telnet};
-    my $sockfamily = "";
-
-    if ($s->{sock_family} == AF_INET) {
-	$sockfamily = "ipv4";
-    }
-    elsif (defined($AF_INET6) and $s->{sock_family} == $AF_INET6) {
-	$sockfamily = "ipv6";
-    }
-
-    $sockfamily;
-} # end sub sockfamily
-
-
-sub sockhost {
-    my ($self) = @_;
-    my (
-	$host,
-	$sockaddr,
-	);
-    local $^W = '';  # avoid closed socket warning from getsockname()
-
-    ## Get packed sockaddr struct of local side and then unpack it.
-    $sockaddr = getsockname $self
-	or return "";
-    (undef, $host) = $self->_unpack_sockaddr($sockaddr);
-
-    $host;
-} # end sub sockhost
-
-
-sub sockport {
-    my ($self) = @_;
-    my (
-	$port,
-	$sockaddr,
-	);
-    local $^W = '';  # avoid closed socket warning from getsockname()
-
-    ## Get packed sockaddr struct of local side and then unpack it.
-    $sockaddr = getsockname $self
-	or return "";
-    ($port) = $self->_unpack_sockaddr($sockaddr);
-
-    $port;
-} # end sub sockport
+*rs = \&input_record_separator;
 
 
 sub suboption_callback {
@@ -2297,7 +1867,6 @@ sub waitfor {
 	@string_cond,
 	@warns,
 	);
-    local $@;
     local $_;
 
     ## Init.
@@ -2459,20 +2028,12 @@ sub _append_lineno {
 
 
 sub _carp {
-    my ($self) = @_;
-    my $s = *$self->{net_telnet};
-
-    $s->{errormsg} = &_append_lineno(@_);
-    warn $s->{errormsg}, "\n";
+    warn &_append_lineno(@_);
 } # end sub _carp
 
 
 sub _croak {
-    my ($self) = @_;
-    my $s = *$self->{net_telnet};
-
-    $s->{errormsg} = &_append_lineno(@_);
-    die $s->{errormsg}, "\n";
+    die &_append_lineno(@_);
 } # end sub _croak
 
 
@@ -2485,7 +2046,7 @@ sub _endtime {
 	    return $interval;
 	}
 	elsif ($interval > 0) {  # it's relative to the current time
-	    return int($interval + time + 0.5);
+	    return int(time + 1.5 + $interval);
 	}
 	else {  # it's a one time poll
 	    return 0;
@@ -2495,14 +2056,6 @@ sub _endtime {
 	return undef;
     }
 } # end sub _endtime
-
-
-sub _errno_include {
-    local $@;
-    local $SIG{"__DIE__"} = "DEFAULT";
-
-    eval "require Errno";
-} # end sub errno_include
 
 
 sub _escape_cr {
@@ -2524,35 +2077,6 @@ sub _escape_cr {
 
     1;
 } # end sub _escape_cr
-
-
-sub _extract_arg_errmode {
-    my ($self, $args) = @_;
-    my (
-	%args,
-	);
-    local $_;
-    my $errmode = '';
-
-    ## Check for named parameters.
-    return '' unless @$args >= 2;
-
-    ## Rebuild args without errmode parameter.
-    %args = @$args;
-    @$args = ();
-
-    ## Extract errmode arg.
-    foreach (keys %args) {
-	if (/^-?errmode$/i) {
-	    $errmode = &_parse_errmode($self, $args{$_});
-	}
-	else {
-	    push @$args, $_, $args{$_};
-	}
-    }
-
-    $errmode;
-} # end sub _extract_arg_errmode
 
 
 sub _fillbuf {
@@ -2595,18 +2119,13 @@ sub _fillbuf {
 	$nfound = select $ready=$s->{fdmask}, "", "", $timeout;
 
 	## Handle any errors while waiting.
-	if ((!defined $nfound or $nfound <= 0) and $s->{select_supported}) {
+	if (!defined $nfound or $nfound <= 0) {  # input not ready
 	    if (defined $nfound and $nfound == 0) {  # timed-out
 		$s->{timedout} = 1;
 		return $self->error("read timed-out");
 	    }
 	    else {  # error waiting for input ready
-		if (defined $EINTR) {
-		    next if $! == $EINTR;  # restart select()
-		}
-		else {
-		    next if $! =~ /^interrupted/i;  # restart select()
-		}
+		next if $! =~ /^interrupted/i;
 
 		$s->{opened} = '';
 		return $self->error("read error: $!");
@@ -2627,12 +2146,7 @@ sub _fillbuf {
 
 	## Handle any read errors.
 	if (!defined $nread) {  # read failed
-	    if (defined $EINTR) {
-		next if $! == $EINTR;  # restart sysread()
-	    }
-	    else {
-		next if $! =~ /^interrupted/i;  # restart sysread()
-	    }
+	    next if $! =~ /^interrupted/i;  # restart interrupted syscall
 
 	    $s->{opened} = '';
 	    return $self->error("read error: $!");
@@ -2704,23 +2218,30 @@ sub _flush_opts {
 
 
 sub _fname_to_handle {
-    my ($self, $filename) = @_;
+    my ($self, $fh) = @_;
     my (
-	$fh,
+	$filename,
 	);
+
+    ## Ensure valid input.
+    return ""
+	unless defined $fh and (ref $fh or length $fh);
+
+    ## Open a new filehandle if input is a filename.
     no strict "refs";
+    if (!ref($fh) and !defined(fileno $fh)) {  # fh is a filename
+	$filename = $fh;
+	$fh = &_new_handle();
+	CORE::open $fh, "> $filename"
+	    or return $self->error("problem creating $filename: $!");
+    }
 
-    $fh = &_new_handle();
-    CORE::open $fh, "> $filename"
-	or return $self->error("problem creating $filename: $!");
-
+    select((select($fh), $|=1)[$[]);  # don't buffer writes
     $fh;
 } # end sub _fname_to_handle
 
 
 sub _have_alarm {
-    local $@;
-
     eval {
 	local $SIG{"__DIE__"} = "DEFAULT";
 	local $SIG{ALRM} = sub { die };
@@ -2729,58 +2250,6 @@ sub _have_alarm {
 
     ! $@;
 } # end sub _have_alarm
-
-
-sub _import_af_inet6 {
-    local $@;
-
-    eval {
-	local $SIG{"__DIE__"} = "DEFAULT";
-
-	Socket::AF_INET6();
-    };
-} # end sub _import_af_inet6
-
-
-sub _import_af_unspec {
-    local $@;
-
-    eval {
-	local $SIG{"__DIE__"} = "DEFAULT";
-
-	Socket::AF_UNSPEC();
-    };
-} # end sub _import_af_unspec
-
-
-sub _import_ai_addrconfig {
-    local $@;
-
-    eval {
-	local $SIG{"__DIE__"} = "DEFAULT";
-
-	Socket::AI_ADDRCONFIG();
-    };
-} # end sub _import_ai_addrconfig
-
-
-sub _import_eai_badflags {
-    local $@;
-
-    eval {
-	local $SIG{"__DIE__"} = "DEFAULT";
-
-	Socket::EAI_BADFLAGS();
-    };
-} # end sub _import_eai_badflags
-
-
-sub _import_eintr {
-    local $@;
-    local $SIG{"__DIE__"} = "DEFAULT";
-
-    eval "require Errno; Errno::EINTR();";
-} # end sub _import_eintr
 
 
 sub _interpret_cr {
@@ -2907,25 +2376,9 @@ sub _interpret_tcmd {
 
 
 sub _io_socket_include {
-    local $@;
     local $SIG{"__DIE__"} = "DEFAULT";
-
     eval "require IO::Socket";
 } # end sub io_socket_include
-
-
-sub _is_open_fh {
-    my ($fh) = @_;
-    my $is_open = '';
-    local $@;
-
-    eval {
-	local $SIG{"__DIE__"} = "DEFAULT";
-	$is_open = defined(fileno $fh);
-    };
-
-    $is_open;
-} # end sub _is_open_fh
 
 
 sub _log_dump {
@@ -2996,11 +2449,11 @@ sub _log_print {
     my ($fh, $buf) = @_;
     local $\ = '';
 
-    if (ref($fh) eq "GLOB") {  # fh is GLOB ref
-	print $fh $buf;
-    }
-    else {  # fh isn't GLOB ref
+    if (ref($fh) and ref($fh) ne "GLOB") {  # fh is blessed ref
 	$fh->print($buf);
+    }
+    else {  # fh isn't blessed ref
+	print $fh $buf;
     }
 } # end sub _log_print
 
@@ -3009,7 +2462,6 @@ sub _match_check {
     my ($self, $code) = @_;
     my $error;
     my @warns = ();
-    local $@;
 
     ## Use eval to check for syntax errors or warnings.
     {
@@ -3336,8 +2788,8 @@ sub _next_getlines {
     push @lines, $line;
 
     ## Extract subsequent lines from buffer.
-    while (($pos = index($s->{buf}, $s->{"rs"})) != -1) {
-	$len = $pos + length $s->{"rs"};
+    while (($pos = index($s->{buf}, $s->{rs})) != -1) {
+	$len = $pos + length $s->{rs};
 	push @lines, substr($s->{buf}, 0, $len);
 	substr($s->{buf}, 0, $len) = "";
     }
@@ -3382,9 +2834,8 @@ sub _optimal_blksize {
     local $^W = '';  # avoid non-numeric warning for ms-windows blksize of ""
 
     ## Use default when block size is invalid.
-    if (!defined $blksize or $blksize < 512 or $blksize > 1_048_576) {
-	$blksize = 4096;
-    }
+    return 8192
+	unless defined $blksize and $blksize >= 1 and $blksize <= 1_048_576;
 
     $blksize;
 } # end sub _optimal_blksize
@@ -3442,119 +2893,16 @@ sub _parse_errmode {
 } # end sub _parse_errmode
 
 
-sub _parse_family {
-    my ($self, $family) = @_;
-    my (
-	$parsed_family,
-	);
-
-    unless (defined $family) {
-	$family = "";
-    }
-
-    if ($family =~ /^\s*ipv4\s*$/i) {  # family arg is "ipv4"
-	$parsed_family = "ipv4";
-    }
-    elsif ($family =~ /^\s*any\s*$/i) {  # family arg is "any"
-	if ($Socket::VERSION >= 1.94 and defined $AF_INET6) {  # has IPv6
-	    $parsed_family = "any";
-	}
-	else {  # IPv6 not supported on this machine
-	    $parsed_family = "ipv4";
-	}
-    }
-    elsif ($family =~ /^\s*ipv6\s*$/i) {  # family arg is "ipv6"
-	return $self->error("Family arg ipv6 not supported when " .
-			    "Socket.pm version < 1.94")
-	    unless $Socket::VERSION >= 1.94;
-	return $self->error("Family arg ipv6 not supported by " .
-			    "this OS: AF_INET6 not in Socket.pm")
-	    unless defined $AF_INET6;
-
-	$parsed_family = "ipv6";
-    }
-    else {
-	return $self->error("bad Family argument \"$family\": " .
-			    "must be \"ipv4\", \"ipv6\", or \"any\"");
-    }
-
-    $parsed_family;
-} # end sub _parse_family
-
-
 sub _parse_input_record_separator {
     my ($self, $rs) = @_;
 
     unless (defined $rs and length $rs) {
 	&_carp($self, "ignoring null Input_record_separator argument");
-	$rs = *$self->{net_telnet}{"rs"};
+	$rs = *$self->{net_telnet}{rs};
     }
 
     $rs;
 } # end sub _parse_input_record_separator
-
-
-sub _parse_localfamily {
-    my ($self, $family) = @_;
-
-    unless (defined $family) {
-	$family = "";
-    }
-
-    if ($family =~ /^\s*ipv4\s*$/i) {  # family arg is "ipv4"
-	$family = "ipv4";
-    }
-    elsif ($family =~ /^\s*any\s*$/i) {  # family arg is "any"
-	if ($Socket::VERSION >= 1.94 and defined $AF_INET6) {  # has IPv6
-	    $family = "any";
-	}
-	else {  # IPv6 not supported on this machine
-	    $family = "ipv4";
-	}
-    }
-    elsif ($family =~ /^\s*ipv6\s*$/i) {  # family arg is "ipv6"
-	return $self->error("Localfamily arg ipv6 not supported when " .
-			    "Socket.pm version < 1.94")
-	    unless $Socket::VERSION >= 1.94;
-	return $self->error("Localfamily arg ipv6 not supported by " .
-			    "this OS: AF_INET6 not in Socket.pm")
-	    unless defined $AF_INET6;
-
-	$family = "ipv6";
-    }
-    else {
-	return $self->error("bad Localfamily argument \"$family\": " .
-			    "must be \"ipv4\", \"ipv6\", or \"any\"");
-    }
-
-    $family;
-} # end sub _parse_localfamily
-
-
-sub _parse_port {
-    my ($self, $port) = @_;
-    my (
-	$service,
-	);
-
-    unless (defined $port) {
-	$port = "";
-    }
-
-    return $self->error("bad Port argument \"$port\"")
-	unless $port;
-
-    if ($port !~ /^\d+$/) {  # port isn't all digits
-	$service = $port;
-	$port = getservbyname($service, "tcp");
-
-	return $self->error("bad Port argument \"$service\": " .
-			    "it's an unknown TCP service")
-	    unless $port;
-    }
-
-    $port;
-} # end sub _parse_port
 
 
 sub _parse_prompt {
@@ -3564,9 +2912,11 @@ sub _parse_prompt {
 	$prompt = "";
     }
 
-    return $self->error("bad Prompt argument \"$prompt\": " .
-			"missing opening delimiter of match operator")
-	unless $prompt =~ m(^\s*/) or $prompt =~ m(^\s*m\s*\W);
+    unless ($prompt =~ m(^\s*/) or $prompt =~ m(^\s*m\s*\W)) {
+	&_carp($self, "ignoring bad Prompt argument \"$prompt\": " .
+	       "missing opening delimiter of match operator");
+	$prompt = *$self->{net_telnet}{cmd_prompt};
+    }
 
     $prompt;
 } # end sub _parse_prompt
@@ -3574,7 +2924,6 @@ sub _parse_prompt {
 
 sub _parse_timeout {
     my ($self, $timeout) = @_;
-    local $@;
 
     ## Ensure valid timeout.
     if (defined $timeout) {
@@ -3644,18 +2993,13 @@ sub _put {
 	$nfound = select "", $ready=$s->{fdmask}, "", $timeout;
 
 	## Handle any errors while waiting.
-	if ((!defined $nfound or $nfound <= 0) and $s->{select_supported}) {
+	if (!defined $nfound or $nfound <= 0) {  # output not ready
 	    if (defined $nfound and $nfound == 0) {  # timed-out
 		$s->{timedout} = 1;
 		return $self->error("$subname timed-out");
 	    }
 	    else {  # error waiting for output ready
-		if (defined $EINTR) {
-		    next if $! == $EINTR;  # restart select()
-		}
-		else {
-		    next if $! =~ /^interrupted/i;  # restart select()
-		}
+		next if $! =~ /^interrupted/i;
 
 		$s->{opened} = '';
 		return $self->error("write error: $!");
@@ -3663,16 +3007,11 @@ sub _put {
 	}
 
 	## Write the data.
-	$nwrote = syswrite $self, $$buf, $s->{blksize}, $offset;
+	$nwrote = syswrite $self, $$buf, $len, $offset;
 
 	## Handle any write errors.
 	if (!defined $nwrote) {  # write failed
-	    if (defined $EINTR) {
-		next if $! == $EINTR;  # restart syswrite()
-	    }
-	    else {
-		next if $! =~ /^interrupted/i;  # restart syswrite()
-	    }
+	    next if $! =~ /^interrupted/i;  # restart interrupted syscall
 
 	    $s->{opened} = '';
 	    return $self->error("write error: $!");
@@ -3708,7 +3047,6 @@ sub _qualify_fh {
     my (
 	$user_class,
 	);
-    local $@;
     local $_;
 
     ## Get user's package name.
@@ -3720,8 +3058,7 @@ sub _qualify_fh {
     ## If it's not already, make it a typeglob ref.
     if (!ref $name) {
 	no strict;
-	local $SIG{"__DIE__"} = "DEFAULT";
-	local $^W = '';
+	local $^W = 0;
 
 	$name =~ s/^\*+//;
 	$name = eval "\\*$name";
@@ -3848,31 +3185,6 @@ sub _timeout_interval {
 } # end sub _timeout_interval
 
 
-sub _unpack_sockaddr {
-    my ($self, $sockaddr) = @_;
-    my (
-	$packed_addr,
-	$sockfamily,
-	);
-    my $addr = "";
-    my $port = "";
-
-    $sockfamily = $self->sockfamily;
-
-    ## Parse sockaddr struct.
-    if ($sockfamily eq "ipv4") {
-	($port, $packed_addr) = sockaddr_in($sockaddr);
-	$addr = Socket::inet_ntoa($packed_addr);
-    }
-    elsif ($sockfamily eq "ipv6") {
-	($port, $packed_addr) = Socket::sockaddr_in6($sockaddr);
-	$addr = Socket::inet_ntop($AF_INET6, $packed_addr);
-    }
-
-    ($port, $addr);
-} # end sub _unpack_sockaddr
-
-
 sub _user_caller {
     my ($obj) = @_;
     my (
@@ -3885,7 +3197,6 @@ sub _user_caller {
 	%isa,
 	@isa,
 	);
-    local $@;
     local $_;
 
     ## Create a boolean hash to test for isa.  Make sure current
@@ -3913,7 +3224,6 @@ sub _user_caller {
 
 sub _verify_telopt_arg {
     my ($self, $option, $argname) = @_;
-    local $@;
 
     ## If provided, use argument name in error message.
     if (defined $argname) {
@@ -4005,10 +3315,6 @@ sub TELOPT_OLD_ENVIRON ()    {36}; # Environment Option
 sub TELOPT_AUTHENTICATION () {37}; # Authentication Option
 sub TELOPT_ENCRYPT ()	     {38}; # Encryption Option
 sub TELOPT_NEW_ENVIRON ()    {39}; # New Environment Option
-sub TELOPT_TN3270E ()        {40}; # TN3270 Enhancements
-sub TELOPT_CHARSET ()        {42}; # CHARSET Option
-sub TELOPT_COMPORT ()        {44}; # Com Port Control Option
-sub TELOPT_KERMIT ()         {47}; # Kermit Option
 sub TELOPT_EXOPL ()	    {255}; # Extended-Options-List
 
 
@@ -4033,7 +3339,7 @@ Net::Telnet - interact with TELNET port or other TCP ports
 
 C<use Net::Telnet ();>
 
-see METHODS or EXAMPLES sections below
+see METHODS section below
 
 =head1 DESCRIPTION
 
@@ -4044,8 +3350,7 @@ sophisticated interactive features are provided because connecting to
 a TELNET port ultimately means communicating with a program designed
 for human interaction.  These interactive features include the ability
 to specify a time-out and to wait for patterns to appear in the input
-stream, such as the prompt from a shell.  IPv6 support is available
-when using perl 5.14 or later (see C<family()>.
+stream, such as the prompt from a shell.
 
 Other reasons to use this module than strictly with a TELNET port are:
 
@@ -4069,23 +3374,25 @@ appear.
 
 =back
 
-Here's an example that prints who's logged-on to a remote host.  In
-addition to a username and password, you must also know the user's
-shell prompt, which for this example is C<"bash$ ">
+Here's an example that prints who's logged-on to the remote host
+sparky.  In addition to a username and password, you must also know
+the user's shell prompt, which for this example is C<bash$>
 
     use Net::Telnet ();
     $t = new Net::Telnet (Timeout => 10,
                           Prompt => '/bash\$ $/');
-    $t->open($host);
+    $t->open("sparky");
     $t->login($username, $passwd);
     @lines = $t->cmd("who");
     print @lines;
 
-See the B<EXAMPLES> section below for more examples.
+More examples are in the B<EXAMPLES> section below.
 
-Usage questions should be directed to the perlmonks.org discussion
-group.  Bugs can be viewed or reported at cpan.org on the Net::Telnet
-page.
+Usage questions should be directed to the Usenet newsgroup
+comp.lang.perl.modules.
+
+Contact me, Jay Rogers <jay@rgrs.com>, if you find any bugs or have
+suggestions for improvement.
 
 =head2 What To Know Before Using
 
@@ -4162,6 +3469,11 @@ If you have the IO:: libraries installed (they come standard with
 perl5.004 and later) then IO::Socket::INET is used as a base class,
 otherwise FileHandle is used.
 
+=item *
+
+Contact me, Jay Rogers <jay@rgrs.com>, if you find any bugs or have
+suggestions for improvement.
+
 =back
 
 =head2 Debugging
@@ -4228,18 +3540,12 @@ optional parameters.
                             [Cmd_remove_mode => $mode,]
                             [Dump_Log   => $filename,]
                             [Errmode    => $errmode,]
-                            [Family     => $family,]
                             [Fhopen     => $filehandle,]
                             [Host       => $host,]
                             [Input_log  => $file,]
                             [Input_record_separator => $chars,]
-                            [Localfamily => $family,]
-                            [Localhost   => $host,]
-                            [Max_buffer_length => $len,]
-                            [Ofs        => $chars,]
                             [Option_log => $file,]
                             [Ors        => $chars,]
-                            [Output_field_separator => $chars,]
                             [Output_log => $file,]
                             [Output_record_separator => $chars,]
                             [Port       => $port,]
@@ -4267,10 +3573,6 @@ The default I<Host> is C<"localhost">
 =item
 
 The default I<Port> is C<23>
-
-=item
-
-The default I<Family> is C<"ipv4">
 
 =item
 
@@ -4311,23 +3613,6 @@ The default I<Cmd_remove_mode> is C<"auto">
 
 The defaults for I<Dump_log>, I<Input_log>, I<Option_log>, and
 I<Output_log> are C<"">, which means that logging is turned-off.
-
-=item
-
-The default I<Max_buffer_length> is C<1048576> bytes, i.e. 1 MiB.
-
-=item
-
-The default I<Output_field_separator> is C<"">.  Note that I<Ofs>
-is synonymous with I<Output_field_separator>.
-
-=item
-
-The default I<Localhost> is C<"">
-
-=item
-
-The default I<Localfamily> is C<"ipv4">
 
 =back
 
@@ -4451,7 +3736,7 @@ It's assumed that the program to which you're sending is some kind of
 command prompting interpreter such as a shell.
 
 The command I<$string> is automatically appended with the
-output_record_separator, by default it is C<"\n">.  This is similar
+output_record_separator, By default that's C<"\n">.  This is similar
 to someone typing a command and hitting the return key.  Set the
 output_record_separator to change this behavior.
 
@@ -4526,7 +3811,7 @@ always accepts an offer to echo by the remote side.  You can change
 the default to reject such an offer using C<option_accept()>.
 
 A warning is printed to STDERR when attempting to set this attribute
-to something that is not C<"auto"> or a non-negative integer.
+to something that's not C<"auto"> or a non-negative integer.
 
 =back
 
@@ -4547,17 +3832,15 @@ in a hexadecimal and printable character format.  This method is
 useful when debugging, however you might want to first try
 C<input_log()> as it's more readable.
 
-If no argument is given, the log filehandle is returned.  A returned
+If no argument is given, the current log filehandle is returned.  An
 empty string indicates logging is off.
 
-To stop logging, use an empty string as an argument.  The stopped
-filehandle is not closed.
+To stop logging, use an empty string as an argument.
 
 If an open filehandle is given, it is used for logging and returned.
-Otherwise, the argument is assumed to be the name of a file, the
-filename is opened for logging and a filehandle to it is returned.  If
-the filehandle is not already opened or the filename can't be opened
-for writing, the error mode action is performed.
+Otherwise, the argument is assumed to be the name of a file, the file
+is opened and a filehandle to it is returned.  If the file can't be
+opened for writing, the error mode action is performed.
 
 =back
 
@@ -4614,7 +3897,7 @@ errors.  If the I<coderef> itself returns then the method generating
 the error returns undefined or an empty list depending on context.
 
 A warning is printed to STDERR when attempting to set this attribute
-to something that is not C<"die">, C<"return">, a I<coderef>, or an
+to something that's not C<"die">, C<"return">, a I<coderef>, or an
 I<arrayref> whose first element isn't a I<coderef>.
 
 =back
@@ -4653,35 +3936,6 @@ value or an empty list is returned depending on the context.
 
 This method is primarily used by this class or a sub-class to perform
 the user requested action when an error is encountered.
-
-=back
-
-
-=over 4
-
-=item B<family> - IP address family for remote host
-
-    $family = $obj->family;
-
-    $prev   = $obj->family($family);
-
-This method designates which IP address family C<host()> refers to,
-i.e. IPv4 or IPv6.  IPv6 support is available when using perl 5.14 or
-later.  With no argument it returns the current value set in the
-object.  With an argument it sets the current address family to
-I<$family> and returns the previous address family.  Valid values are
-C<"ipv4">, C<"ipv6">, or C<"any">.  When C<"any">, the C<host()> can
-be a hostname or IP address for either IPv4 or IPv6.  After
-connecting, you can use C<sockfamily()> to determine which IP address
-family was used.
-
-The default value is C<"ipv4">.
-
-The error mode action is performed when attempting to set this
-attribute to something that isn't C<"ipv4">, C<"ipv6">, or C<"any">.
-It is also performed when attempting to set it to C<"ipv6"> when the
-Socket module is less than version 1.94 or IPv6 is not supported in
-the OS as indicated by Socket::AF_INET6 not being defined.
 
 =back
 
@@ -4800,17 +4054,17 @@ and timeout.  Rs is synonymous with input_record_separator.
 
 =over 4
 
-=item B<host> - name or IP address of remote host
+=item B<host> - name of remote host
 
     $host = $obj->host;
 
     $prev = $obj->host($host);
 
-This method designates the remote host for C<open()>.  It is either a
-hostname or an IP address.  With no argument it returns the current
-value set in the object.  With an argument it sets the current host
-name to I<$host> and returns the previous value.  Use C<family()> to
-control which IP address family, IPv4 or IPv6, host refers to.
+This method designates the remote host for C<open()>.  With no
+argument it returns the current host name set in the object.  With an
+argument it sets the current host name to I<$host> and returns the
+previous host name.  You may indicate the remote host using either a
+hostname or an IP address.
 
 The default value is C<"localhost">.  It may also be set by C<open()>
 or C<new()>.
@@ -4834,17 +4088,15 @@ echo back commands received, it's likely all your output will also be
 in this log.  Note that input logging occurs after newline
 translation.  See C<binmode()> for details on newline translation.
 
-If no argument is given, the log filehandle is returned.  A returned
-empty string indicates logging is off.
+If no argument is given, the log filehandle is returned.  An empty
+string indicates logging is off.
 
-To stop logging, use an empty string as an argument.  The stopped
-filehandle is not closed.
+To stop logging, use an empty string as an argument.
 
 If an open filehandle is given, it is used for logging and returned.
-Otherwise, the argument is assumed to be the name of a file, the
-filename is opened for logging and a filehandle to it is returned.  If
-the filehandle is not already opened or the filename can't be opened
-for writing, the error mode action is performed.
+Otherwise, the argument is assumed to be the name of a file, the file
+is opened for logging and a filehandle to it is returned.  If the file
+can't be opened for writing, the error mode action is performed.
 
 =back
 
@@ -4911,59 +4163,6 @@ last line.
 
 =over 4
 
-=item B<localfamily> - IP address family for local host
-
-    $localfamily = $obj->localfamily;
-
-    $prev   = $obj->localfamily($family);
-
-This method designates which IP address family C<localhost()> refers
-to, i.e. IPv4 or IPv6.  IPv6 support is available when using perl 5.14
-or later.  With no argument it returns the current value set in the
-object.  With an argument it sets the current local address family to
-I<$family> and returns the previous address family.  Valid values
-are C<"ipv4">, C<"ipv6">, or C<"any">.  When C<"any">, the
-C<localhost()> can be a hostname or IP address for either IPv4 or
-IPv6.
-
-The default value is C<"ipv4">.
-
-The error mode action is performed when attempting to set this
-attribute to something that isn't C<"ipv4">, C<"ipv6">, or C<"any">.
-It is also performed when attempting to set it to C<"ipv6"> when the
-Socket module is less than version 1.94 or IPv6 is not supported in
-the OS as indicated by Socket::AF_INET6 not being defined.
-
-=back
-
-
-=over 4
-
-=item B<localhost> - bind local socket to a specific network interface
-
-    $localhost = $obj->localhost;
-
-    $prev = $obj->localhost($host);
-
-This method designates the local socket IP address for C<open()>.  It
-is either a hostname, an IP address, or a null string (i.e. C<"">).  A
-null string disables this feature.
-
-Normally the OS picks which local network interface to use.  This
-method is useful when the local machine has more than one network
-interface and you want to bind to a specific one.  With no argument it
-returns the current value set in the object.  With an argument it sets
-the current local host name to I<$host> and returns the previous
-value.  Use C<localfamily()> to control which IP address family, IPv4
-or IPv6, local host refers to.
-
-The default value is C<"">.
-
-=back
-
-
-=over 4
-
 =item B<login> - perform standard login
 
     $ok = $obj->login($username, $password);
@@ -5019,7 +4218,7 @@ settings of errmode, prompt, and timeout.
 
 This method designates the maximum size of the input buffer.  An error
 is generated when a read causes the buffer to exceed this limit.  The
-default value is 1,048,576 bytes (1 MiB).  The input buffer can grow
+default value is 1,048,576 bytes (1MB).  The input buffer can grow
 much larger than the block size when you continuously read using
 C<getline()> or C<waitfor()> and the data stream contains no newlines
 or matching waitfor patterns.
@@ -5054,27 +4253,15 @@ This method is synonymous with C<output_field_separator()>.
 
     $ok = $obj->open($host);
 
-    $ok = $obj->open([Host        => $host,]
-                     [Port        => $port,]
-                     [Family      => $family,]
-                     [Errmode     => $mode,]
-                     [Timeout     => $secs,]
-                     [Localhost   => $host,]
-                     [Localfamily => $family,]);
+    $ok = $obj->open([Host    => $host,]
+                     [Port    => $port,]
+                     [Errmode => $mode,]
+                     [Timeout => $secs,]);
 
-This method opens a TCP connection to I<$port> on I<$host> for the IP
-address I<$family>.  If any of those arguments are missing then the
-current attribute value for the object is used.  Specifing I<Host>
-sets that attribute for the object.  Specifing any of the other
-optional named parameters overrides the current setting.
-
-The default IP address family is C<"ipv4">.  I<$family> may be set to
-C<"ipv4">, C<"ipv6">, or C<"any">.  See C<family()> for more details.
-
-I<Localhost> is used to bind to a specific local network interface.
-
-If the object is already open, it is closed before attempting a
-connection.
+This method opens a TCP connection to I<$port> on I<$host>.  If either
+argument is missing then the current value of C<host()> or C<port()>
+is used.  Optional named parameters are provided to override the
+current setting of errmode and timeout.
 
 On success C<1> is returned.  On time-out or other connection
 failures, the error mode action is performed.  See C<errmode()>.
@@ -5182,7 +4369,7 @@ disable a particular TELNET option.
 
     $prev = $obj->option_callback($coderef);
 
-This method defines the callback subroutine that is called when a
+This method defines the callback subroutine that's called when a
 TELNET option is enabled or disabled.  Once defined, the
 I<option_callback> may not be undefined.  However, calling this method
 with a different I<$coderef> changes it.
@@ -5276,14 +4463,12 @@ remote side via C<option_accept()>.  Also see C<dump_log()>.
 If no argument is given, the log filehandle is returned.  An empty
 string indicates logging is off.
 
-To stop logging, use an empty string as an argument.  The stopped
-filehandle is not closed.
+To stop logging, use an empty string as an argument.
 
 If an open filehandle is given, it is used for logging and returned.
-Otherwise, the argument is assumed to be the name of a file, the
-filename is opened for logging and a filehandle to it is returned.  If
-the filehandle is not already opened or the filename can't be opened
-for writing, the error mode action is performed.
+Otherwise, the argument is assumed to be the name of a file, the file
+is opened for logging and a filehandle to it is returned.  If the file
+can't be opened for writing, the error mode action is performed.
 
 =back
 
@@ -5449,17 +4634,15 @@ in an input log.  See C<input_log()>.  Note that output logging occurs
 before newline translation.  See C<binmode()> for details on newline
 translation.
 
-If no argument is given, the log filehandle is returned.  A returned
-empty string indicates logging is off.
+If no argument is given, the log filehandle is returned.  An empty
+string indicates logging is off.
 
-To stop logging, use an empty string as an argument.  The stopped
-filehandle is not closed.
+To stop logging, use an empty string as an argument.
 
 If an open filehandle is given, it is used for logging and returned.
-Otherwise, the argument is assumed to be the name of a file, the
-filename is opened for logging and a filehandle to it is returned.  If
-the filehandle is not already opened or the filename can't be opened
-for writing, the error mode action is performed.
+Otherwise, the argument is assumed to be the name of a file, the file
+is opened for logging and a filehandle to it is returned.  If the file
+can't be opened for writing, the error mode action is performed.
 
 =back
 
@@ -5490,49 +4673,24 @@ record separator to I<$chars> and returns the previous value.
 
 =over 4
 
-=item B<peerhost> - IP address of the other end of the socket connection
-
-    $ipaddr = $obj->peerhost;
-
-This method returns a string which is the IPv4 or IPv6 address the
-remote socket is bound to (i.e. it is the IP address of C<host()>).
-It returns C<""> when not connected.
-
-=back
-
-
-=over 4
-
-=item B<peerport> - TCP port of the other end of the socket connection
-
-    $port = $obj->peerport;
-
-This method returns the port number which the remote socket is bound
-to.  It is the same as the C<port()> number when connected.  It
-returns C<""> when not connected.
-
-=back
-
-
-=over 4
-
 =item B<port> - remote port
 
     $port = $obj->port;
 
     $prev = $obj->port($port);
 
-This method designates the remote TCP port for C<open()>.  With no
-argument this method returns the current port number.  With an
-argument it sets the current port number to I<$port> and returns the
-previous port.  If I<$port> is a TCP service name, then it's first
-converted to a port number using the perl function C<getservbyname()>.
+This method designates the remote TCP port.  With no argument this
+method returns the current port number.  With an argument it sets the
+current port number to I<$port> and returns the previous port.  If
+I<$port> is a TCP service name, then it's first converted to a port
+number using the perl function C<getservbyname()>.
 
-The default value is C<23>.
+The default value is C<23>.  It may also be set by C<open()> or
+C<new()>.
 
-The error mode action is performed when attempting to set this
-attribute to something that is not a positive integer or a valid TCP
-service name.
+A warning is printed to STDERR when attempting to set this attribute
+to something that's not a positive integer or a valid TCP service
+name.
 
 =back
 
@@ -5607,8 +4765,8 @@ Of course don't forget about regexp metacharacters like C<.>, C<[>, or
 C<$>.  You'll only need a single backslash to quote them.  The anchor
 metacharacters C<^> and C<$> refer to positions in the input buffer.
 
-The error mode action is performed when attempting to set this
-attribute with a match operator missing its opening delimiter.
+A warning is printed to STDERR when attempting to set this attribute
+with a match operator missing its opening delimiter.
 
 =back
 
@@ -5650,44 +4808,6 @@ settings of binmode, errmode, telnetmode, and timeout.
     $prev = $obj->rs($chars);
 
 This method is synonymous with C<input_record_separator()>.
-
-=back
-
-
-=over 4
-
-=item B<sockfamily> - IP address family of connected local socket
-
-    $sockfamily = $obj->sockfamily;
-
-This method returns which IP address family C<open()> used to
-successfully connect.  It is most useful when the requested address
-C<family()> for C<open()> was C<"any">.  Values returned may be
-C<"ipv4">, C<"ipv6">, or C<""> (when not connected).
-
-=back
-
-
-=over 4
-
-=item B<sockhost> - IP address of this end of the socket connection
-
-    $ipaddr = $obj->sockhost;
-
-This method returns a string which is the IPv4 or IPv6 address the
-local socket is bound to.  It returns C<""> when not connected.
-
-=back
-
-
-=over 4
-
-=item B<sockport> - TCP port of this end of the socket connection
-
-    $port = $obj->sockport;
-
-This method returns the port number which the local socket is bound
-to.  It returns C<""> when not connected.
 
 =back
 
@@ -5743,7 +4863,7 @@ internal methods set this indicator.
 
     $prev = $obj->timeout($secs);
 
-This method sets the timeout interval used when performing I/O
+This method sets the timeout interval that's used when performing I/O
 or connecting to a port.  When a method doesn't complete within the
 timeout interval then it's an error and the error mode action is
 performed.
@@ -5764,7 +4884,7 @@ With an argument it sets the timeout to I<$secs> and returns the
 previous value.  The default timeout value is C<10> seconds.
 
 A warning is printed to STDERR when attempting to set this attribute
-to something that is not an C<undef> or a non-negative integer.
+to something that's not an C<undef> or a non-negative integer.
 
 =back
 
@@ -5835,13 +4955,13 @@ settings of binmode, errmode, telnetmode, and timeout.
 
 S<TELNET Protocol Specification>
 
-S<http://tools.ietf.org/html/rfc854>
+S<ftp://ftp.isi.edu/in-notes/rfc854.txt>
 
 =item RFC 1143
 
 S<Q Method of Implementing TELNET Option Negotiation>
 
-S<http://tools.ietf.org/html/rfc1143>
+S<ftp://ftp.isi.edu/in-notes/rfc1143.txt>
 
 =item TELNET Option Assignments
 
@@ -5852,116 +4972,158 @@ S<http://www.iana.org/assignments/telnet-options>
 
 =head1 EXAMPLES
 
-Setting C<prompt()> to match a user's shell prompt can be tricky.
-This example logs in without knowing the shell prompt and then sets it
-to match C<prompt()>.  It requires /usr/bin/env and /bin/sh on the
-remote host.
+This example gets the current weather forecast for Brainerd, Minnesota.
 
-    my $host = 'your_destination_host_here';
-    my $user = 'your_username_here';
-    my $passwd = 'your_password_here';
-    my ($t, @output);
+    my ($forecast, $t);
 
-    ## Create a Net::Telnet object.
     use Net::Telnet ();
-    $t = new Net::Telnet (Timeout  => 10);
+    $t = new Net::Telnet;
+    $t->open("rainmaker.wunderground.com");
 
-    ## Connect and login.
-    $t->open($host);
+    ## Wait for first prompt and "hit return".
+    $t->waitfor('/continue:.*$/');
+    $t->print("");
 
-    $t->waitfor('/login: ?$/i');
-    $t->print($user);
+    ## Wait for second prompt and respond with city code.
+    $t->waitfor('/city code.*$/');
+    $t->print("BRD");
 
-    $t->waitfor('/password: ?$/i');
-    $t->print($passwd);
-
-    ## Switch to a known shell, using a known prompt.
-    $t->prompt('/<xPROMPTx> $/');
-    $t->errmode("return");
-
-    $t->cmd("exec /usr/bin/env 'PS1=<xPROMPTx> ' /bin/sh -i")
-        or die "login failed to remote host $host";
-
-    $t->errmode("die");
-
-    ## Now you can do cmd() to your heart's content.
-    @output = $t->cmd("uname -a");
-    print @output;
+    ## Read and print the first page of forecast.
+    ($forecast) = $t->waitfor('/[ \t]+press return to continue/i');
+    print $forecast;
 
     exit;
 
 
-Usually you want the remote TERM environment variable to be
-set to something like "dumb" so you don't read escape
-sequences meant to be interpreted by a display terminal.  It
-is best to set it via C<cmd()>, or via C<waitfor()> and
-C<print()>.  It is also possible to negotiate the terminal
-type via telnet.  Here is how to do that.
+This example checks a POP server to see if you have mail.
 
-    ## Module import.
-    use Net::Telnet qw(TELNET_IAC TELNET_SB TELNET_SE TELOPT_TTYPE);
+    my ($hostname, $line, $passwd, $pop, $username);
 
-    ## Global variables.
-    my $Term;
+    $hostname = "your_destination_host_here";
+    $username = "your_username_here";
+    $passwd = "your_password_here";
+
+    use Net::Telnet ();
+    $pop = new Net::Telnet (Telnetmode => 0);
+    $pop->open(Host => $hostname,
+               Port => 110);
+
+
+    ## Read connection message.
+    $line = $pop->getline;
+    die $line unless $line =~ /^\+OK/;
+
+    ## Send user name.
+    $pop->print("user $username");
+    $line = $pop->getline;
+    die $line unless $line =~ /^\+OK/;
+
+    ## Send password.
+    $pop->print("pass $passwd");
+    $line = $pop->getline;
+    die $line unless $line =~ /^\+OK/;
+
+    ## Request status of messages.
+    $pop->print("list");
+    $line = $pop->getline;
+    print $line;
+
+    exit;
+
+
+Here's an example that uses the ssh program to connect to a remote
+host.  Because the ssh program reads and writes to its controlling
+terminal, the IO::Pty module is used to create a new pseudo terminal
+for use by ssh.  A new Net::Telnet object is then created to read and
+write to that pseudo terminal.  To use the code below, substitute
+"changeme" with the actual host, user, password, and command prompt.
 
     ## Main program.
     {
-        my $host = "your_destination_host_here";
-        my $user = "your_username_here";
-        my $passwd = "your_password_here";
-        my $prompt = '/bash\$ $/';  # your regexp for shell prompt here
-        my $t;
+        my ($pty, $ssh, @lines);
+        my $host = "changeme";
+        my $user = "changeme";
+        my $password = "changeme";
+        my $prompt = '/changeme:~> $/';
 
-        $t = new Net::Telnet (Prompt => $prompt);
+        ## Start ssh program.
+        $pty = &spawn("ssh", "-l", $user, $host);  # spawn() defined below
 
-        ## Set up callbacks to negotiate terminal type.
-        $t->option_callback(sub {});
-        $t->suboption_callback(\&subopt_callback);
-        $t->option_accept(Do => TELOPT_TTYPE);
+        ## Create a Net::Telnet object to perform I/O on ssh's tty.
+        use Net::Telnet;
+        $ssh = new Net::Telnet (-fhopen => $pty,
+                                -prompt => $prompt,
+                                -telnetmode => 0,
+                                -cmd_remove_mode => 1,
+                                -output_record_separator => "\r");
 
-        ## Login and print value of TERM.
-        $Term = "dumb";
-        $t->open($host);
-        $t->login($user, $passwd);
-        print $t->cmd('hostname');
-        print "TERM=", $t->cmd('echo $TERM');
-        $t->close;
+        ## Login to remote host.
+        $ssh->waitfor(-match => '/password: ?$/i',
+                      -errmode => "return")
+            or die "problem connecting to host: ", $ssh->lastline;
+        $ssh->print($password);
+        $ssh->waitfor(-match => $ssh->prompt,
+                      -errmode => "return")
+            or die "login failed: ", $ssh->lastline;
+
+        ## Send command, get and print its output.
+        @lines = $ssh->cmd("who");
+        print @lines;
 
         exit;
     } # end main program
 
-    sub subopt_callback {
-        my ($t, $option, $parameters) = @_;
-        my $telcmd;
+    sub spawn {
+        my(@cmd) = @_;
+        my($pid, $pty, $tty, $tty_fd);
 
-        if ($option == TELOPT_TTYPE) {
-            $telcmd = pack("C4 A* C2", TELNET_IAC, TELNET_SB, TELOPT_TTYPE, 0,
-                           $Term, TELNET_IAC, TELNET_SE);
-            $t->put(String => $telcmd,
-                    Telnetmode => 0);
-        }
+        ## Create a new pseudo terminal.
+        use IO::Pty ();
+        $pty = new IO::Pty
+            or die $!;
 
-        1;
-    } # end sub subopt_callback
+        ## Execute the program in another process.
+        unless ($pid = fork) {  # child process
+            die "problem spawning program: $!\n" unless defined $pid;
+
+            ## Disassociate process from existing controlling terminal.
+            use POSIX ();
+            POSIX::setsid
+                or die "setsid failed: $!";
+
+            ## Associate process with a new controlling terminal.
+            $tty = $pty->slave;
+            $tty_fd = $tty->fileno;
+            close $pty;
+
+            ## Make stdio use the new controlling terminal.
+            open STDIN, "<&$tty_fd" or die $!;
+            open STDOUT, ">&$tty_fd" or die $!;
+            open STDERR, ">&STDOUT" or die $!;
+            close $tty;
+
+            ## Execute requested program.
+            exec @cmd
+                or die "problem executing $cmd[0]\n";
+        } # end child process
+
+        $pty;
+    } # end sub spawn
 
 
-You can also use Net::Telnet to interact with local programs.  This
-example changes a user's login password.  It introduces the C<spawn()>
-subroutine to start a program and associate a filehandle with its
-standard I/O.  Because the passwd program always prompts for passwords
-on its controlling terminal, the IO::Pty module is used to create a
-new pseudo terminal for use by passwd.  The Net::Telnet object reads
-and writes to that pseudo terminal.  To use the code below, substitute
+Here's an example that changes a user's login password.  Because the
+passwd program always prompts for passwords on its controlling
+terminal, the IO::Pty module is used to create a new pseudo terminal
+for use by passwd.  A new Net::Telnet object is then created to read
+and write to that pseudo terminal.  To use the code below, substitute
 "changeme" with the actual old and new passwords.
 
-## Main program.
-{
     my ($pty, $passwd);
     my $oldpw = "changeme";
     my $newpw = "changeme";
 
     ## Start passwd program.
-    $pty = spawn("passwd");
+    $pty = &spawn("passwd");  # spawn() defined above
 
     ## Create a Net::Telnet object to perform I/O on passwd's tty.
     use Net::Telnet;
@@ -5978,191 +5140,113 @@ and writes to that pseudo terminal.  To use the code below, substitute
     $passwd->print($oldpw);
 
     ## Send new password.
-    $passwd->waitfor('/new (\w+\s)?password: ?$/i')
+    $passwd->waitfor('/new password: ?$/i')
         or die "bad old password: ", $passwd->lastline;
     $passwd->print($newpw);
 
     ## Send new password verification.
-    $passwd->waitfor('/new (\w+\s)?password: ?$/i')
+    $passwd->waitfor('/new password: ?$/i')
         or die "bad new password: ", $passwd->lastline;
     $passwd->print($newpw);
 
     ## Display success or failure.
-    $passwd->waitfor('/(changed|updated)/')
+    $passwd->waitfor('/changed/')
         or die "bad new password: ", $passwd->lastline;
     print $passwd->lastline;
 
     $passwd->close;
     exit;
-} # end main program
-
-sub spawn {
-    my (@cmd) = @_;
-    my ($pid, $pty, $tty, $tty_fd);
-
-    ## Create a new pseudo terminal.
-    use IO::Pty ();
-    $pty = new IO::Pty
-        or die $!;
-
-    ## Execute the program in another process.
-    unless ($pid = fork) {  # child process
-        die "problem spawning program: $!\n" unless defined $pid;
-
-        ## Disassociate process from its controlling terminal.
-        use POSIX ();
-        POSIX::setsid()
-            or die "setsid failed: $!";
-
-        ## Associate process with a new controlling terminal.
-        $pty->make_slave_controlling_terminal;
-        $tty = $pty->slave;
-        $tty_fd = $tty->fileno;
-        close $pty;
-
-        ## Make standard I/O use the new controlling terminal.
-        open STDIN, "<&$tty_fd" or die $!;
-        open STDOUT, ">&$tty_fd" or die $!;
-        open STDERR, ">&STDOUT" or die $!;
-        close $tty;
-
-        ## Execute requested program.
-        exec @cmd
-            or die "problem executing $cmd[0]\n";
-    } # end child process
-
-    $pty;
-} # end sub spawn
 
 
-Here is an example that uses the openssh program to connect to a
-remote host.  It uses the C<spawn()> subroutine, from the password
-changing example above, to start the ssh program and then read and
-write to it via a Net::Telnet object.  This example turns off ssh host
-key checking, which reduces your ability to know when someone on the
-network is impersonating the remote host.  To use the code below,
-substitute "changeme" with the actual host, user, password, and
-command prompt.
+Here's an example you can use to down load a file of any type.  The
+file is read from the remote host's standard output using cat.  To
+prevent any output processing, the remote host's standard output is
+put in raw mode using the Bourne shell.  The Bourne shell is used
+because some shells, notably tcsh, prevent changing tty modes.  Upon
+completion, FTP style statistics are printed to stderr.
 
-    ## Main program.
-    {
-        my $host = "changeme";
-        my $user = "changeme";
-        my $passwd = "changeme";
-        my $prompt = '/changeme\$ $/';
-        my ($buf, $match, $pty, $ssh, @lines);
+    my ($block, $filename, $host, $hostname, $k_per_sec, $line,
+        $num_read, $passwd, $prevblock, $prompt, $size, $size_bsd,
+        $size_sysv, $start_time, $total_time, $username);
 
-        ## Start ssh program.
-        $pty = spawn("ssh",
-                     "-l", $user,
-                     "-e", "none",
-                     "-F", "/dev/null",
-                     "-o", "PreferredAuthentications=password",
-                     "-o", "NumberOfPasswordPrompts=1",
-                     "-o", "StrictHostKeyChecking=no",
-                     "-o", "UserKnownHostsFile=/dev/null",
-                     $host);
+    $hostname = "your_destination_host_here";
+    $username = "your_username_here";
+    $passwd = "your_password_here";
+    $filename = "your_download_file_here";
 
-        ## Create a Net::Telnet object to perform I/O on ssh's tty.
-        use Net::Telnet;
-        $ssh = new Net::Telnet (-fhopen => $pty,
-                                -prompt => $prompt,
-                                -telnetmode => 0,
-                                -output_record_separator => "\r",
-                                -cmd_remove_mode => 1);
+    ## Connect and login.
+    use Net::Telnet ();
+    $host = new Net::Telnet (Timeout => 30,
+                             Prompt => '/[%#>] $/');
+    $host->open($hostname);
+    $host->login($username, $passwd);
 
-        ## Wait for the password prompt and send password.
-        $ssh->waitfor(-match => '/password: ?$/i',
-                      -errmode => "return")
-            or die "problem connecting to \"$host\": ", $ssh->lastline;
-        $ssh->print($passwd);
+    ## Make sure prompt won't match anything in send data.
+    $prompt = "_funkyPrompt_";
+    $host->prompt("/$prompt\$/");
+    $host->cmd("set prompt = '$prompt'");
 
-        ## Wait for the shell prompt.
-        (undef, $match) = $ssh->waitfor(-match => $ssh->prompt,
-                                        -match => '/^Permission denied/m',
-                                        -errmode => "return")
-            or return $ssh->error("login failed: expected shell prompt ",
-                                  "doesn't match actual\n");
-        return $ssh->error("login failed: bad login-name or password\n")
-            if $match =~ /^Permission denied/m;
+    ## Get size of file.
+    ($line) = $host->cmd("/bin/ls -l $filename");
+    ($size_bsd, $size_sysv) = (split ' ', $line)[3,4];
+    if ($size_sysv =~ /^\d+$/) {
+        $size = $size_sysv;
+    }
+    elsif ($size_bsd =~ /^\d+$/) {
+        $size = $size_bsd;
+    }
+    else {
+        die "$filename: no such file on $hostname";
+    }
 
-        ## Run commands on remote host.
-        print $ssh->cmd("hostname");
-        print $ssh->cmd("uptime");
+    ## Start sending the file.
+    binmode STDOUT;
+    $host->binmode(1);
+    $host->print("/bin/sh -c 'stty raw; cat $filename'");
+    $host->getline;    # discard echoed back line
 
-        $ssh->close;
-        exit;
-    } # end main program
-
-
-Some shells have a rather restrictive 255 character line limit.  If
-you run into this problem, here is an example for sending lines longer
-than 254 as a sequence of shorter lines.
-
-    ## Main program.
-    {
-        my $host = "changeme";
-        my $user = "changeme";
-        my $passwd = "changeme";
-        my $prompt = '/changeme\$ $/';
-        my $cmd = join("", "echo ",
-                       "11111111112222222222333333333344444444445555555555",
-                       "66666666667777777777888888888899999999990000000000",
-                       "11111111112222222222333333333344444444445555555555",
-                       "66666666667777777777888888888899999999990000000000",
-                       "11111111112222222222333333333344444444445555555555",
-                       "66666666667777777777888888888899999999990000000000");
-
-        use Net::Telnet ();
-        my $t = new Net::Telnet (-prompt => $prompt);
-        $t->open($host);
-        $t->login($user, $passwd);
-
-        my @output = cmd_unixlong($t, $cmd);
-        print @output;
-
-        exit;
-    } # end main program
-
-    sub cmd_unixlong {
-        my ($obj, $cmd) = @_;
-        my ($line, $pos);
-        my $max_tty_line = 254;
-
-        ## Start a Bourne shell.
-        $obj->cmd(-string => "/usr/bin/env " .
-                  "'PS1=<xPROMPTx> ' 'PS2=<xPROMPTx> ' /bin/sh -i",
-                  -prompt => '/<xPROMPTx> $/')
-            or return;
-
-        ## Break-up the one large command line and send as shorter lines.
-        $pos = 0;
-        while (1) {
-            $line = substr $cmd, $pos, $max_tty_line;
-            $pos += length $line;
-            last unless $pos < length $cmd;
-
-            ## Send the line with continuation char.
-            $obj->cmd(-string => "$line\\",
-                      -prompt => '/<xPROMPTx> $/')
-                or return;
+    ## Read file a block at a time.
+    $num_read = 0;
+    $prevblock = "";
+    $start_time = time;
+    while (($block = $host->get) and ($block !~ /$prompt$/o)) {
+        if (length $block >= length $prompt) {
+            print $prevblock;
+            $num_read += length $prevblock;
+            $prevblock = $block;
+        }
+        else {
+            $prevblock .= $block;
         }
 
-        ## Send the last line and return the output.
-        $obj->cmd("$line ; exit");
-    } # end sub cmd_unixlong
+    }
+    $host->close;
+
+    ## Print last block without trailing prompt.
+    $prevblock .= $block;
+    $prevblock =~ s/$prompt$//;
+    print $prevblock;
+    $num_read += length $prevblock;
+    die "error: expected size $size, received size $num_read\n"
+        unless $num_read == $size;
+
+    ## Print totals.
+    $total_time = (time - $start_time) || 1;
+    $k_per_sec = ($size / 1024) / $total_time;
+    $k_per_sec = sprintf "%3.1f", $k_per_sec;
+    warn("$num_read bytes received in $total_time seconds ",
+         "($k_per_sec Kbytes/s)\n");
+
+    exit;
 
 
 =head1 AUTHOR
 
 Jay Rogers <jay@rgrs.com>
 
-=head1 CREDITS
-
-Dave Martin, Dave Cardosi
 
 =head1 COPYRIGHT
 
-Copyright 1997, 2000, 2002, 2013 by Jay Rogers.  All rights reserved.
-This program is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
+Copyright 1997, 2000, 2002 by Jay Rogers.  All rights reserved.
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.

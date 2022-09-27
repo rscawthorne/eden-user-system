@@ -3,7 +3,7 @@ use strict;
 use Exporter;
 use vars qw/$VERSION @ISA @EXPORT_OK
             $strict_leading_dot $strict_wildcard_slash/;
-$VERSION = '0.11';
+$VERSION = '0.09';
 @ISA = 'Exporter';
 @EXPORT_OK = qw( glob_to_regex glob_to_regex_string match_glob );
 
@@ -21,11 +21,6 @@ sub glob_to_regex {
 sub glob_to_regex_string
 {
     my $glob = shift;
-
-    my $seperator = $Text::Glob::seperator;
-    $seperator = "/" unless defined $seperator;
-    $seperator = quotemeta($seperator);
-
     my ($regex, $in_curlies, $escaping);
     local $_;
     my $first_byte = 1;
@@ -45,11 +40,11 @@ sub glob_to_regex_string
         }
         elsif ($_ eq '*') {
             $regex .= $escaping ? "\\*" :
-              $strict_wildcard_slash ? "(?:(?!$seperator).)*" : ".*";
+              $strict_wildcard_slash ? "[^/]*" : ".*";
         }
         elsif ($_ eq '?') {
             $regex .= $escaping ? "\\?" :
-              $strict_wildcard_slash ? "(?!$seperator)." : ".";
+              $strict_wildcard_slash ? "[^/]" : ".";
         }
         elsif ($_ eq '{') {
             $regex .= $escaping ? "\\{" : "(";
@@ -161,20 +156,18 @@ C<demo.[a-c]> matches C<demo.a>, C<demo.b>, and C<demo.c>
 C<example.{foo,bar,baz}> matches C<example.foo>, C<example.bar>, and
 C<example.baz>
 
-=item leading . must be explicitly matched
+=item leading . must be explictly matched
 
 C<*.foo> does not match C<.bar.foo>.  For this you must either specify
 the leading . in the glob pattern (C<.*.foo>), or set
 C<$Text::Glob::strict_leading_dot> to a false value while compiling
 the regex.
 
-=item C<*> and C<?> do not match the seperator (i.e. do not match C</>)
+=item C<*> and C<?> do not match /
 
 C<*.foo> does not match C<bar/baz.foo>.  For this you must either
 explicitly match the / in the glob (C<*/*.foo>), or set
-C<$Text::Glob::strict_wildcard_slash> to a false value while compiling
-the regex, or change the seperator that Text::Glob uses by setting
-C<$Text::Glob::seperator> to an alternative value while compiling the
+C<$Text::Glob::strict_wildcard_slash> to a false value with compiling
 the regex.
 
 =back

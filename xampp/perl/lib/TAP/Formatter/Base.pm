@@ -1,14 +1,17 @@
 package TAP::Formatter::Base;
 
 use strict;
-use warnings;
-use base 'TAP::Base';
+use TAP::Base ();
 use POSIX qw(strftime);
+
+use vars qw($VERSION @ISA);
 
 my $MAX_ERRORS = 5;
 my %VALIDATION_FOR;
 
 BEGIN {
+    @ISA = qw(TAP::Base);
+
     %VALIDATION_FOR = (
         directives => sub { shift; shift },
         verbosity  => sub { shift; shift },
@@ -58,11 +61,11 @@ TAP::Formatter::Base - Base class for harness output delegates
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 DESCRIPTION
 

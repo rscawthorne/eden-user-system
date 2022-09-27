@@ -1,25 +1,19 @@
 package MooseX::Types::Wrapper;
-# ABSTRACT: Wrap exports from a library
+{
+  $MooseX::Types::Wrapper::VERSION = '0.35';
+}
 
-our $VERSION = '0.50';
+#ABSTRACT: Wrap exports from a library
 
 use Moose;
-use Carp::Clan      qw( ^MooseX::Types );
-use Module::Runtime 'use_module';
 
-use namespace::autoclean;
+use Carp::Clan      qw( ^MooseX::Types );
+use Class::MOP;
+
+use namespace::clean -except => [qw( meta )];
 
 extends 'MooseX::Types';
 
-#pod =head1 DESCRIPTION
-#pod
-#pod See L<MooseX::Types/SYNOPSIS> for detailed usage.
-#pod
-#pod =head1 METHODS
-#pod
-#pod =head2 import
-#pod
-#pod =cut
 
 sub import {
     my ($class, @args) = @_;
@@ -30,11 +24,11 @@ sub import {
         croak qq($class expects an array reference as import spec)
             unless ref $libraries{ $l } eq 'ARRAY';
 
-        my $library_class
+        my $library_class 
           = ($l eq 'Moose' ? 'MooseX::Types::Moose' : $l );
-        use_module($library_class);
+        Class::MOP::load_class($library_class);
 
-        $library_class->import({
+        $library_class->import({ 
             -into    => scalar(caller),
             -wrapper => $class,
         }, @{ $libraries{ $l } });
@@ -44,11 +38,9 @@ sub import {
 
 1;
 
+
 __END__
-
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -56,7 +48,7 @@ MooseX::Types::Wrapper - Wrap exports from a library
 
 =head1 VERSION
 
-version 0.50
+version 0.35
 
 =head1 DESCRIPTION
 
@@ -70,26 +62,21 @@ See L<MooseX::Types/SYNOPSIS> for detailed usage.
 
 L<MooseX::Types>
 
-=head1 SUPPORT
+=head1 LICENSE
 
-Bugs may be submitted through L<the RT bug tracker|https://rt.cpan.org/Public/Dist/Display.html?Name=MooseX-Types>
-(or L<bug-MooseX-Types@rt.cpan.org|mailto:bug-MooseX-Types@rt.cpan.org>).
-
-There is also a mailing list available for users of this distribution, at
-L<http://lists.perl.org/list/moose.html>.
-
-There is also an irc channel available for users of this distribution, at
-L<C<#moose> on C<irc.perl.org>|irc://irc.perl.org/#moose>.
+This program is free software; you can redistribute it and/or modify
+it under the same terms as perl itself.
 
 =head1 AUTHOR
 
 Robert "phaylon" Sedlacek <rs@474.at>
 
-=head1 COPYRIGHT AND LICENCE
+=head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2007 by Robert "phaylon" Sedlacek.
+This software is copyright (c) 2012 by Robert "phaylon" Sedlacek.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+

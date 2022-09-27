@@ -47,15 +47,14 @@ use Template::Document;
 use File::Basename;
 use File::Spec;
 
-use constant PREV    => 0;
-use constant NAME    => 1;   # template name -- indexed by this name in LOOKUP
-use constant DATA    => 2;   # Compiled template
-use constant LOAD    => 3;   # mtime of template
-use constant NEXT    => 4;   # link to next item in cache linked list
-use constant STAT    => 5;   # Time last stat()ed
-use constant MSWin32 => $^O eq 'MSWin32';
+use constant PREV   => 0;
+use constant NAME   => 1;   # template name -- indexed by this name in LOOKUP
+use constant DATA   => 2;   # Compiled template
+use constant LOAD   => 3;   # mtime of template
+use constant NEXT   => 4;   # link to next item in cache linked list
+use constant STAT   => 5;   # Time last stat()ed
 
-our $VERSION = '3.009';
+our $VERSION = 2.94;
 our $DEBUG   = 0 unless defined $DEBUG;
 our $ERROR   = '';
 
@@ -81,6 +80,17 @@ my $boms = [
 
 # regex to match relative paths
 our $RELATIVE_PATH = qr[(?:^|/)\.+/];
+
+
+# hack so that 'use bytes' will compile on versions of Perl earlier than
+# 5.6, even though we never call _decode_unicode() on those systems
+BEGIN {
+    if ($] < 5.006) {
+        package bytes;
+        $INC{'bytes.pm'} = 1;
+    }
+}
+
 
 #========================================================================
 #                         -- PUBLIC METHODS --
@@ -162,11 +172,10 @@ sub fetch {
 #------------------------------------------------------------------------
 
 sub store {
-    my ($self, $name, $data, $mtime) = @_;
+    my ($self, $name, $data) = @_;
     $self->_store($name, {
-        data  => $data,
-        load  => 0,
-        mtime => $mtime
+        data => $data,
+        load => 0,
     });
 }
 
@@ -203,7 +212,7 @@ sub load {
           foreach my $dir (@$paths) {
               $path = File::Spec->catfile($dir, $name);
               last INCPATH
-                  if defined $self->_template_modified($path);
+                  if $self->_template_modified($path);
           }
           undef $path;      # not found
       }
@@ -338,7 +347,7 @@ sub _init {
 
     # tweak delim to ignore C:/
     unless (defined $dlim) {
-        $dlim = MSWin32 ? ':(?!\\/)' : ':';
+        $dlim = ($^O eq 'MSWin32') ? ':(?!\\/)' : ':';
     }
 
     # coerce INCLUDE_PATH to an array ref, if not already so
@@ -372,8 +381,9 @@ sub _init {
         foreach my $dir (@$path) {
             next if ref $dir;
             my $wdir = $dir;
-            $wdir =~ tr[:][]d if MSWin32;
-            $wdir = each %{ { $wdir => undef } } if ${^TAINT};    #untaint
+            $wdir =~ s[:][]g if $^O eq 'MSWin32';
+            $wdir =~ /(.*)/;  # untaint
+            $wdir = "$1";     # quotes work around bug in Strawberry Perl
             $wdir = File::Spec->catfile($cdir, $wdir);
             File::Path::mkpath($wdir) unless -d $wdir;
         }
@@ -446,19 +456,13 @@ sub _fetch {
         }
     }
 
-    my($template,$error);
-    my $uncompiled_template_mtime = $self->_template_modified( $name );  # does template exist?
-
-    # some templates like Provider::FromDATA does not provide mtime information
-    $uncompiled_template_mtime = 0 unless defined $uncompiled_template_mtime;
-
     # Is there an up-to-date compiled version on disk?
-    if (my $template_mtime = $self->_compiled_is_current($name, $uncompiled_template_mtime)) {
+    if ($self->_compiled_is_current($name)) {
         # require() the compiled template.
         my $compiled_template = $self->_load_compiled( $self->_compiled_filename($name) );
 
         # Store and return the compiled template
-        return $self->store( $name, $compiled_template, $template_mtime ) if $compiled_template;
+        return $self->store( $name, $compiled_template ) if $compiled_template;
 
         # Problem loading compiled template:
         # warn and continue to fetch source template
@@ -466,7 +470,7 @@ sub _fetch {
     }
 
     # load template from source
-    ($template, $error) = $self->_load($name, $t_name);
+    my ($template, $error) = $self->_load($name, $t_name);
 
     if ($error) {
         # Template could not be fetched.  Add to the negative/notfound cache.
@@ -540,9 +544,6 @@ sub _fetch_path {
 
 sub _compiled_filename {
     my ($self, $file) = @_;
-
-    return $self->{ COMPILEDPATH }{$file} if $self->{ COMPILEDPATH }{$file};
-
     my ($compext, $compdir) = @$self{ qw( COMPILE_EXT COMPILE_DIR ) };
     my ($path, $compiled);
 
@@ -550,45 +551,24 @@ sub _compiled_filename {
         unless $compext || $compdir;
 
     $path = $file;
-    $path or die "invalid filename: $path";
-    $path =~ tr[:][]d if MSWin32;
-
+    $path =~ /^(.+)$/s or die "invalid filename: $path";
+    $path =~ s[:][]g if $^O eq 'MSWin32';
 
     $compiled = "$path$compext";
-    $self->{ COMPILEDPATH }{$file} = $compiled = File::Spec->catfile($compdir, $compiled) if length $compdir;
+    $compiled = File::Spec->catfile($compdir, $compiled) if length $compdir;
 
     return $compiled;
 }
 
 sub _load_compiled {
     my ($self, $file) = @_;
-
-    # Implicitly Relative paths are not supported
-    # by "require" and invoke @INC traversal, where relative
-    # paths only traditionally worked prior to Perl 5.26
-    # due to the presence of '.' in @INC
-    #
-    # Given load_compiled never wants to traverse @INC, forcing
-    # an absolute path for the loaded file and the INC key is
-    # sensible.
-    #
-    # NB: %INC Keys are always identical to their respective
-    # "require" invocations regardless of OS, and the only time
-    # one needs to care about slash direction is when dealing
-    # with Module::Name -> Module/Name.pm translation.
-    my $fpath = File::Spec->rel2abs( $file );
-
-    return $self->error("compiled template missing path") unless defined $fpath;
-
-    ($fpath) = $fpath =~ /^(.*)$/s;
-
     my $compiled;
 
     # load compiled template via require();  we zap any
     # %INC entry to ensure it is reloaded (we don't
     # want 1 returned by require() to say it's in memory)
-    delete $INC{ $fpath };
-    eval { $compiled = require $fpath; };
+    delete $INC{ $file };
+    eval { $compiled = require $file; };
     return $@
         ? $self->error("compiled template $compiled: $@")
         : $compiled;
@@ -647,7 +627,7 @@ sub _load {
     }
 
     # Otherwise, it's the name of the template
-    if ( defined $self->_template_modified( $name ) ) {  # does template exist?
+    if ( $self->_template_modified( $name ) ) {  # does template exist?
         my ($text, $error, $mtime ) = $self->_template_content( $name );
         unless ( $error )  {
             $text = $self->_decode_unicode($text) if $self->{ UNICODE };
@@ -660,7 +640,7 @@ sub _load {
             };
         }
 
-        return ( $error, Template::Constants::STATUS_ERROR )
+        return ( "$alias: $!", Template::Constants::STATUS_ERROR )
             unless $tolerant;
     }
 
@@ -675,7 +655,7 @@ sub _load {
 # Private method called to mark a cache slot as most recently used.
 # A reference to the slot array should be passed by parameter.  The
 # slot is relocated to the head of the linked list.  If the file from
-# which the data was loaded has been updated since it was compiled, then
+# which the data was loaded has been upated since it was compiled, then
 # it is re-loaded from disk and re-compiled.
 #------------------------------------------------------------------------
 
@@ -774,17 +754,17 @@ sub _store {
     my $size = $self->{ SIZE };
     my ($slot, $head);
 
-    # Return if memory cache disabled.  (overriding code should also check)
+    # Return if memory cache disabled.  (overridding code should also check)
     # $$$ What's the expected behaviour of store()?  Can't tell from the
     # docs if you can call store() when SIZE = 0.
     return $data->{data} if defined $size and !$size;
 
-    # check the modification time -- extra stat here
-    my $load = $data->{ mtime } || $self->_modified($name);
-
     # extract the compiled template from the data hash
     $data = $data->{ data };
     $self->debug("_store($name, $data)") if $self->{ DEBUG };
+
+    # check the modification time -- extra stat here
+    my $load = $self->_modified($name);
 
     if (defined $size && $self->{ SLOTS } >= $size) {
         # cache has reached size limit, so reuse oldest entry
@@ -865,14 +845,15 @@ sub _compile {
 
         $parsedoc->{ METADATA } = {
             'name'    => $data->{ name },
-            'modtime' => $data->{ 'time' },
+            'modtime' => $data->{ time },
             %{ $parsedoc->{ METADATA } },
         };
 
         # write the Perl code to the file $compfile, if defined
         if ($compfile) {
             my $basedir = &File::Basename::dirname($compfile);
-            $basedir = each %{ { $basedir => undef } } if ${^TAINT};    #untaint
+            $basedir =~ /(.*)/;
+            $basedir = $1;
 
             unless (-d $basedir) {
                 eval { File::Path::mkpath($basedir) };
@@ -890,15 +871,14 @@ sub _compile {
 
             # set atime and mtime of newly compiled file, don't bother
             # if time is undef
-            if (!defined($error) && defined $data->{ 'time' }) {
-                my $cfile = each %{ { $compfile => undef } };
-                if (!length $cfile) {
+            if (!defined($error) && defined $data->{ time }) {
+                my ($cfile) = $compfile =~ /^(.+)$/s or do {
                     return("invalid filename: $compfile",
                            Template::Constants::STATUS_ERROR);
                 };
 
-                my $ctime = $data->{ time };
-                if (!length $ctime || $ctime =~ tr{0-9}{}c) {
+                my ($ctime) = $data->{ time } =~ /^(\d+)$/;
+                unless ($ctime || $ctime eq 0) {
                     return("invalid time: $ctime",
                            Template::Constants::STATUS_ERROR);
                 }
@@ -934,20 +914,14 @@ sub _compile {
 #------------------------------------------------------------------------
 
 sub _compiled_is_current {
-    my ( $self, $template_name, $uncompiled_template_mtime ) = @_;
-
-    my $compiled_name   = $self->_compiled_filename($template_name);
-    return unless defined $compiled_name;
-
-    my $compiled_mtime  = (stat($compiled_name))[9];
-    return unless defined $compiled_mtime;
-
-    my $template_mtime  = $uncompiled_template_mtime || $self->_template_modified( $template_name )  or return;
-    return unless defined $template_mtime;
+    my ( $self, $template_name ) = @_;
+    my $compiled_name   = $self->_compiled_filename($template_name) || return;
+    my $compiled_mtime  = (stat($compiled_name))[9] || return;
+    my $template_mtime  = $self->_template_modified( $template_name ) || return;
 
     # This was >= in the 2.15, but meant that downgrading
     # a source template would not get picked up.
-    return $compiled_mtime == $template_mtime ?  $template_mtime : 0;
+    return $compiled_mtime == $template_mtime;
 }
 
 
@@ -987,10 +961,7 @@ sub _template_content {
     my $error;
 
     local *FH;
-    if(-d $path) {
-        $error = "$path: not a file";
-    }
-    elsif (open(FH, "<", $path)) {
+    if (open(FH, "< $path")) {
         local $/;
         binmode(FH);
         $data = <FH>;
@@ -1018,8 +989,8 @@ sub _template_content {
 
 sub _modified {
     my ($self, $name, $time) = @_;
-    my $load = $self->_template_modified($name);
-    return $time ? 1 : 0 unless defined $load;
+    my $load = $self->_template_modified($name)
+        || return $time ? 1 : 0;
 
     return $time
          ? $load > $time

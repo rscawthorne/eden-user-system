@@ -1,4 +1,3 @@
-use strict;
 {
     package DBD::Sponge;
 
@@ -6,16 +5,17 @@ use strict;
     require Carp;
 
     our @EXPORT = qw(); # Do NOT @EXPORT anything.
-    our $VERSION = "12.010003";
+    our $VERSION = sprintf("12.%06d", q$Revision: 10002 $ =~ /(\d+)/o);
 
-#   $Id: Sponge.pm 10002 2007-09-26 21:03:25Z Tim $
+
+#   $Id: Sponge.pm 10002 2007-09-26 21:03:25Z timbo $
 #
 #   Copyright (c) 1994-2003 Tim Bunce Ireland
 #
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
 
-    our $drh = undef;	# holds driver handle once initialised
+    $drh = undef;	# holds driver handle once initialised
     my $methods_already_installed;
 
     sub driver{
@@ -41,13 +41,13 @@ use strict;
 
 
 {   package DBD::Sponge::dr; # ====== DRIVER ======
-    our $imp_data_size = 0;
+    $imp_data_size = 0;
     # we use default (dummy) connect method
 }
 
 
 {   package DBD::Sponge::db; # ====== DATABASE ======
-    our $imp_data_size = 0;
+    $imp_data_size = 0;
     use strict;
 
     sub prepare {
@@ -157,7 +157,7 @@ use strict;
 
 
 {   package DBD::Sponge::st; # ====== STATEMENT ======
-    our $imp_data_size = 0;
+    $imp_data_size = 0;
     use strict;
 
     sub execute {
@@ -214,7 +214,7 @@ use strict;
 
 1;
 
-__END__
+__END__ 
 
 =pod
 
@@ -274,7 +274,7 @@ C<$data> is a reference to the data you are providing, given as an array of arra
 =item *
 
 C<$names> is a reference an array of column names for the C<$data> you are providing.
-The number and order should match the number and ordering of the C<$data> columns.
+The number and order should match the number and ordering of the C<$data> columns. 
 
 =item *
 

@@ -1,26 +1,11 @@
 package LWP::Authen::Basic;
-
 use strict;
 
-our $VERSION = '6.52';
-
-require Encode;
 require MIME::Base64;
 
 sub auth_header {
-    my($class, $user, $pass, $request, $ua, $h) = @_;
-
-    my $userpass = "$user:$pass";
-    # https://tools.ietf.org/html/rfc7617#section-2.1
-    my $charset = uc($h->{auth_param}->{charset} || "");
-    $userpass = Encode::encode($charset, $userpass)
-        if ($charset eq "UTF-8");
-
-    return "Basic " . MIME::Base64::encode($userpass, "");
-}
-
-sub _reauth_requested {
-    return 0;
+    my($class, $user, $pass) = @_;
+    return "Basic " . MIME::Base64::encode("$user:$pass", "");
 }
 
 sub authenticate
@@ -49,15 +34,9 @@ sub authenticate
     });
     $h->{auth_param} = $auth_param;
 
-    my $reauth_requested
-        = $class->_reauth_requested($auth_param, $ua, $request, $auth_header);
-    if (   !$proxy
-        && (!$request->header($auth_header) || $reauth_requested)
-        && $ua->credentials($host_port, $realm))
-    {
-        # we can make sure this handler applies and retry
-        add_path($h, $url->path)
-            unless $reauth_requested;  # Do not clobber up path list for retries
+    if (!$proxy && !$request->header($auth_header) && $ua->credentials($host_port, $realm)) {
+	# we can make sure this handler applies and retry
+        add_path($h, $url->path);
         return $ua->request($request->clone, $arg, $size, $response);
     }
 

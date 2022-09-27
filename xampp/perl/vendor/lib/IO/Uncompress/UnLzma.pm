@@ -4,18 +4,18 @@ use strict ;
 use warnings;
 use bytes;
 
-use IO::Compress::Base::Common 2.100 qw(:Status createSelfTiedObject);
+use IO::Compress::Base::Common 2.060 qw(:Status createSelfTiedObject);
 
-use IO::Uncompress::Base 2.100 ;
-use IO::Uncompress::Adapter::UnLzma 2.100 ;
+use IO::Uncompress::Base 2.060 ;
+use IO::Uncompress::Adapter::UnLzma 2.060 ;
 
 require Exporter ;
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS, $UnLzmaError);
 
-$VERSION = '2.100';
+$VERSION = '2.060';
 $UnLzmaError = '';
 
-@ISA    = qw( IO::Uncompress::Base Exporter );
+@ISA    = qw( Exporter IO::Uncompress::Base );
 @EXPORT_OK = qw( $UnLzmaError unlzma ) ;
 #%EXPORT_TAGS = %IO::Uncompress::Base::EXPORT_TAGS ;
 push @{ $EXPORT_TAGS{all} }, @EXPORT_OK ;
@@ -68,7 +68,7 @@ sub mkUncomp
 
     return $self->saveErrorString(undef, $errstr, $errno)
         if ! defined $obj;
-
+    
     *$self->{Uncomp} = $obj;
 
     *$self->{Info} = $self->ckMagic()
@@ -106,14 +106,14 @@ sub isLzma
 
     my $buffer = '';
 
-    $self->smartRead(\$buffer, *$self->{BlockSize}) >= 0
+    $self->smartRead(\$buffer, *$self->{BlockSize}) >= 0  
         or return $self->saveErrorString(undef, "No data to read");
 
     my $temp_buf = $magic . $buffer ;
-    *$self->{HeaderPending} = $temp_buf ;
+    *$self->{HeaderPending} = $temp_buf ;    
     $buffer = '';
     my $status = *$self->{Uncomp}->uncompr(\$temp_buf, \$buffer, $self->smartEof()) ;
-
+    
     return $self->saveErrorString(undef, *$self->{Uncomp}{Error}, STATUS_ERROR)
         if $status == STATUS_ERROR;
 
@@ -121,12 +121,12 @@ sub isLzma
 
     return $self->saveErrorString(undef, "unexpected end of file", STATUS_ERROR)
         if $self->smartEof() && $status != STATUS_ENDSTREAM;
-
+            
     #my $buf_len = *$self->{Uncomp}->uncompressedBytes();
     my $buf_len = length $buffer;
 
     if ($status == STATUS_ENDSTREAM) {
-        if (*$self->{MultiStream}
+        if (*$self->{MultiStream} 
                     && (length $temp_buf || ! $self->smartEof())){
             *$self->{NewStream} = 1 ;
             *$self->{EndStream} = 0 ;
@@ -135,9 +135,9 @@ sub isLzma
             *$self->{EndStream} = 1 ;
         }
     }
-    *$self->{HeaderPending} = $buffer ;
-    *$self->{InflatedBytesRead} = $buf_len ;
-    *$self->{TotalInflatedBytesRead} += $buf_len ;
+    *$self->{HeaderPending} = $buffer ;    
+    *$self->{InflatedBytesRead} = $buf_len ;    
+    *$self->{TotalInflatedBytesRead} += $buf_len ;    
     *$self->{Type} = 'lzma';
 
     $self->saveStatus(STATUS_OK);
@@ -148,9 +148,25 @@ sub isLzma
         'TrailerLength' => 0,
         'Header'        => ''
         };
-
+    
 
     return '';
+
+#    my $magic ;
+#    $self->smartReadExact(\$magic, 4);
+#
+#    *$self->{HeaderPending} = $magic ;
+#    
+#    return $self->HeaderError("Header size is " . 
+#                                        4 . " bytes") 
+#        if length $magic != 4;
+#
+#    return $self->HeaderError("Bad Magic.")
+#        if ! isBzip2Magic($magic) ;
+#                      
+#        
+#    *$self->{Type} = 'bzip2';
+#    return $magic;
 }
 
 
@@ -170,7 +186,7 @@ sub readHeader
         'TrailerLength'     => 0,
         'Header'            => ''
         };
-
+    
 }
 
 sub chkTrailer
@@ -195,7 +211,7 @@ IO::Uncompress::UnLzma - Read lzma files/buffers
     my $status = unlzma $input => $output [,OPTS]
         or die "unlzma failed: $UnLzmaError\n";
 
-    my $z = IO::Uncompress::UnLzma->new( $input [OPTS] )
+    my $z = new IO::Uncompress::UnLzma $input [OPTS] 
         or die "unlzma failed: $UnLzmaError\n";
 
     $status = $z->read($buffer)
@@ -233,6 +249,20 @@ IO::Uncompress::UnLzma - Read lzma files/buffers
 
 =head1 DESCRIPTION
 
+B<WARNING -- This is a Beta release>. 
+
+=over 5
+
+=item * DO NOT use in production code.
+
+=item * The documentation is incomplete in places.
+
+=item * Parts of the interface defined here are tentative.
+
+=item * Please report any problems you find.
+
+=back
+
 This module provides a Perl interface that allows the reading of
 lzma files/buffers.
 
@@ -247,21 +277,20 @@ section.
 
     use IO::Uncompress::UnLzma qw(unlzma $UnLzmaError) ;
 
-    unlzma $input_filename_or_reference => $output_filename_or_reference [,OPTS]
+    unlzma $input_filename_or_reference => $output_filename_or_reference [,OPTS] 
         or die "unlzma failed: $UnLzmaError\n";
 
 The functional interface needs Perl5.005 or better.
 
-=head2 unlzma $input_filename_or_reference => $output_filename_or_reference [, OPTS]
+=head2 unlzma $input => $output [, OPTS]
 
 C<unlzma> expects at least two parameters,
-C<$input_filename_or_reference> and C<$output_filename_or_reference>
-and zero or more optional parameters (see L</Optional Parameters>)
+C<$input_filename_or_reference> and C<$output_filename_or_reference>.
 
 =head3 The C<$input_filename_or_reference> parameter
 
 The parameter, C<$input_filename_or_reference>, is used to define the
-source of the compressed data.
+source of the compressed data. 
 
 It can take one of the following forms:
 
@@ -269,7 +298,7 @@ It can take one of the following forms:
 
 =item A filename
 
-If the C<$input_filename_or_reference> parameter is a simple scalar, it is
+If the <$input_filename_or_reference> parameter is a simple scalar, it is
 assumed to be a filename. This file will be opened for reading and the
 input data will be read from it.
 
@@ -279,17 +308,17 @@ If the C<$input_filename_or_reference> parameter is a filehandle, the input
 data will be read from it.  The string '-' can be used as an alias for
 standard input.
 
-=item A scalar reference
+=item A scalar reference 
 
 If C<$input_filename_or_reference> is a scalar reference, the input data
 will be read from C<$$input_filename_or_reference>.
 
-=item An array reference
+=item An array reference 
 
 If C<$input_filename_or_reference> is an array reference, each element in
 the array must be a filename.
 
-The input data will be read from each file in turn.
+The input data will be read from each file in turn. 
 
 The complete array will be walked to ensure that it only
 contains valid filenames before any data is uncompressed.
@@ -297,8 +326,8 @@ contains valid filenames before any data is uncompressed.
 =item An Input FileGlob string
 
 If C<$input_filename_or_reference> is a string that is delimited by the
-characters "<" and ">" C<unlzma> will assume that it is an
-I<input fileglob string>. The input is the list of files that match the
+characters "<" and ">" C<unlzma> will assume that it is an 
+I<input fileglob string>. The input is the list of files that match the 
 fileglob.
 
 See L<File::GlobMapper|File::GlobMapper> for more details.
@@ -319,7 +348,7 @@ these forms.
 =item A filename
 
 If the C<$output_filename_or_reference> parameter is a simple scalar, it is
-assumed to be a filename.  This file will be opened for writing and the
+assumed to be a filename.  This file will be opened for writing and the 
 uncompressed data will be written to it.
 
 =item A filehandle
@@ -328,14 +357,14 @@ If the C<$output_filename_or_reference> parameter is a filehandle, the
 uncompressed data will be written to it.  The string '-' can be used as
 an alias for standard output.
 
-=item A scalar reference
+=item A scalar reference 
 
 If C<$output_filename_or_reference> is a scalar reference, the
 uncompressed data will be stored in C<$$output_filename_or_reference>.
 
 =item An Array Reference
 
-If C<$output_filename_or_reference> is an array reference,
+If C<$output_filename_or_reference> is an array reference, 
 the uncompressed data will be pushed onto the array.
 
 =item An Output FileGlob
@@ -366,15 +395,15 @@ files/buffers.
 
 =head2 Optional Parameters
 
-The optional parameters for the one-shot function C<unlzma>
-are (for the most part) identical to those used with the OO interface defined in the
-L</"Constructor Options"> section. The exceptions are listed below
+Unless specified below, the optional parameters for C<unlzma>,
+C<OPTS>, are the same as those used with the OO interface defined in the
+L</"Constructor Options"> section below.
 
 =over 5
 
 =item C<< AutoClose => 0|1 >>
 
-This option applies to any input or output data streams to
+This option applies to any input or output data streams to 
 C<unlzma> that are filehandles.
 
 If C<AutoClose> is specified, and the value is true, it will result in all
@@ -385,7 +414,10 @@ This parameter defaults to 0.
 
 =item C<< BinModeOut => 0|1 >>
 
-This option is now a no-op. All files will be written  in binmode.
+When writing to a file or filehandle, set C<binmode> before writing to the
+file.
+
+Defaults to 0.
 
 =item C<< Append => 0|1 >>
 
@@ -414,7 +446,7 @@ written to it.  Otherwise the file pointer will not be moved.
 
 =back
 
-When C<Append> is specified, and set to true, it will I<append> all uncompressed
+When C<Append> is specified, and set to true, it will I<append> all uncompressed 
 data to the output data stream.
 
 So when the output is a filehandle it will carry out a seek to the eof
@@ -442,7 +474,7 @@ Defaults to 0.
 =item C<< TrailingData => $scalar >>
 
 Returns the data, if any, that is present immediately after the compressed
-data stream once uncompression is complete.
+data stream once uncompression is complete. 
 
 This option can be used when there is useful information immediately
 following the compressed data stream, and you don't know the length of the
@@ -454,7 +486,7 @@ end of the compressed data stream to the end of the buffer.
 If the input is a filehandle, C<trailingData> will return the data that is
 left in the filehandle input buffer once the end of the compressed data
 stream has been reached. You can then use the filehandle to read the rest
-of the input file.
+of the input file. 
 
 Don't bother using C<trailingData> if the input is a filename.
 
@@ -486,10 +518,10 @@ uncompressed data to a buffer, C<$buffer>.
     use IO::Uncompress::UnLzma qw(unlzma $UnLzmaError) ;
     use IO::File ;
 
-    my $input = IO::File->new( "<file1.txt.lzma" )
+    my $input = new IO::File "<file1.txt.lzma"
         or die "Cannot open 'file1.txt.lzma': $!\n" ;
     my $buffer ;
-    unlzma $input => \$buffer
+    unlzma $input => \$buffer 
         or die "unlzma failed: $UnLzmaError\n";
 
 To uncompress all files in the directory "/my/home" that match "*.txt.lzma" and store the compressed data in the same directory
@@ -511,7 +543,7 @@ and if you want to compress each file one at a time, this will do the trick
     {
         my $output = $input;
         $output =~ s/.lzma// ;
-        unlzma $input => $output
+        unlzma $input => $output 
             or die "Error compressing '$input': $UnLzmaError\n";
     }
 
@@ -521,7 +553,7 @@ and if you want to compress each file one at a time, this will do the trick
 
 The format of the constructor for IO::Uncompress::UnLzma is shown below
 
-    my $z = IO::Uncompress::UnLzma->new( $input [OPTS] )
+    my $z = new IO::Uncompress::UnLzma $input [OPTS]
         or die "IO::Uncompress::UnLzma failed: $UnLzmaError\n";
 
 Returns an C<IO::Uncompress::UnLzma> object on success and undef on failure.
@@ -552,7 +584,7 @@ If the C<$input> parameter is a filehandle, the compressed data will be
 read from it.
 The string '-' can be used as an alias for standard input.
 
-=item A scalar reference
+=item A scalar reference 
 
 If C<$input> is a scalar reference, the compressed data will be read from
 C<$$input>.
@@ -627,7 +659,7 @@ When present this option will limit the number of compressed bytes read
 from the input file/buffer to C<$size>. This option can be used in the
 situation where there is useful data directly after the compressed data
 stream and you know beforehand the exact length of the compressed data
-stream.
+stream. 
 
 This option is mostly used when reading from a filehandle, in which case
 the file pointer will be left pointing to the first byte directly after the
@@ -661,7 +693,7 @@ The default for this option is off.
 
 TODO
 
-=head1 Methods
+=head1 Methods 
 
 =head2 read
 
@@ -669,7 +701,7 @@ Usage is
 
     $status = $z->read($buffer)
 
-Reads a block of compressed data (the size of the compressed block is
+Reads a block of compressed data (the size the the compressed block is
 determined by the C<Buffer> option in the constructor), uncompresses it and
 writes any uncompressed data into C<$buffer>. If the C<Append> parameter is
 set in the constructor, the uncompressed data will be appended to the
@@ -705,16 +737,16 @@ Usage is
     $line = $z->getline()
     $line = <$z>
 
-Reads a single line.
+Reads a single line. 
 
-This method fully supports the use of the variable C<$/> (or
+This method fully supports the use of of the variable C<$/> (or
 C<$INPUT_RECORD_SEPARATOR> or C<$RS> when C<English> is in use) to
 determine what constitutes an end of line. Paragraph mode, record mode and
-file slurp mode are all supported.
+file slurp mode are all supported. 
 
 =head2 getc
 
-Usage is
+Usage is 
 
     $char = $z->getc()
 
@@ -767,7 +799,7 @@ It is a fatal error to attempt to seek backward.
 Note that the implementation of C<seek> in this module does not provide
 true random access to a compressed file/buffer. It  works by uncompressing
 data from the current offset in the file/buffer until it reaches the
-uncompressed offset specified in the parameters to C<seek>. For very small
+ucompressed offset specified in the parameters to C<seek>. For very small
 files this may be acceptable behaviour. For large files it may cause an
 unacceptable delay.
 
@@ -789,7 +821,7 @@ This is a noop provided for completeness.
 
     $z->opened()
 
-Returns true if the object currently refers to a opened file/buffer.
+Returns true if the object currently refers to a opened file/buffer. 
 
 =head2 autoflush
 
@@ -816,7 +848,7 @@ Returns the current uncompressed line number. If C<EXPR> is present it has
 the effect of setting the line number. Note that setting the line number
 does not change the current position within the file/buffer being read.
 
-The contents of C<$/> are used to determine what constitutes a line
+The contents of C<$/> are used to to determine what constitutes a line
 terminator.
 
 =head2 fileno
@@ -836,7 +868,7 @@ C<undef>.
     $z->close() ;
     close $z ;
 
-Closes the output file/buffer.
+Closes the output file/buffer. 
 
 For most versions of Perl this method will be automatically invoked if
 the IO::Uncompress::UnLzma object is destroyed (either explicitly or by the
@@ -890,7 +922,7 @@ end of the compressed data stream to the end of the buffer.
 If the input is a filehandle, C<trailingData> will return the data that is
 left in the filehandle input buffer once the end of the compressed data
 stream has been reached. You can then use the filehandle to read the rest
-of the input file.
+of the input file. 
 
 Don't bother using C<trailingData> if the input is a filename.
 
@@ -898,9 +930,9 @@ If you know the length of the compressed data stream before you start
 uncompressing, you can avoid having to use C<trailingData> by setting the
 C<InputLength> option in the constructor.
 
-=head1 Importing
+=head1 Importing 
 
-No symbolic constants are required by IO::Uncompress::UnLzma at present.
+No symbolic constants are required by this IO::Uncompress::UnLzma at present. 
 
 =over 5
 
@@ -915,15 +947,9 @@ Same as doing this
 
 =head1 EXAMPLES
 
-=head1 SUPPORT
-
-General feedback/questions/bug reports should be sent to
-L<https://github.com/pmqs/IO-Compress-Lzma/issues> (preferred) or
-L<https://rt.cpan.org/Public/Dist/Display.html?Name=IO-Compress-Lzma>.
-
 =head1 SEE ALSO
 
-L<Compress::Zlib>, L<IO::Compress::Gzip>, L<IO::Uncompress::Gunzip>, L<IO::Compress::Deflate>, L<IO::Uncompress::Inflate>, L<IO::Compress::RawDeflate>, L<IO::Uncompress::RawInflate>, L<IO::Compress::Bzip2>, L<IO::Uncompress::Bunzip2>, L<IO::Compress::Lzma>, L<IO::Compress::Xz>, L<IO::Uncompress::UnXz>, L<IO::Compress::Lzip>, L<IO::Uncompress::UnLzip>, L<IO::Compress::Lzop>, L<IO::Uncompress::UnLzop>, L<IO::Compress::Lzf>, L<IO::Uncompress::UnLzf>, L<IO::Compress::Zstd>, L<IO::Uncompress::UnZstd>, L<IO::Uncompress::AnyInflate>, L<IO::Uncompress::AnyUncompress>
+L<Compress::Zlib>, L<IO::Compress::Gzip>, L<IO::Uncompress::Gunzip>, L<IO::Compress::Deflate>, L<IO::Uncompress::Inflate>, L<IO::Compress::RawDeflate>, L<IO::Uncompress::RawInflate>, L<IO::Compress::Bzip2>, L<IO::Uncompress::Bunzip2>, L<IO::Compress::Lzma>, L<IO::Compress::Xz>, L<IO::Uncompress::UnXz>, L<IO::Compress::Lzop>, L<IO::Uncompress::UnLzop>, L<IO::Compress::Lzf>, L<IO::Uncompress::UnLzf>, L<IO::Uncompress::AnyInflate>, L<IO::Uncompress::AnyUncompress>
 
 L<IO::Compress::FAQ|IO::Compress::FAQ>
 
@@ -933,7 +959,7 @@ L<IO::Zlib|IO::Zlib>
 
 =head1 AUTHOR
 
-This module was written by Paul Marquess, C<pmqs@cpan.org>.
+This module was written by Paul Marquess, F<pmqs@cpan.org>. 
 
 =head1 MODIFICATION HISTORY
 
@@ -941,7 +967,8 @@ See the Changes file.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2005-2021 Paul Marquess. All rights reserved.
+Copyright (c) 2005-2013 Paul Marquess. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
+

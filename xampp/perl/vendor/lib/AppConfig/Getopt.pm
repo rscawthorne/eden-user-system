@@ -18,12 +18,11 @@
 #============================================================================
 
 package AppConfig::Getopt;
-use 5.006;
 use strict;
 use warnings;
 use AppConfig::State;
 use Getopt::Long 2.17;
-our $VERSION = '1.71';
+our $VERSION = '1.65';
 
 
 #------------------------------------------------------------------------
@@ -46,7 +45,7 @@ sub new {
    };
 
     bless $self, $class;
-
+        
     # call parse() to parse any arg list passed 
     $self->parse(@_)
         if @_;
@@ -68,7 +67,7 @@ sub parse {
     my $self  = shift;
     my $state = $self->{ STATE };
     my (@config, $args, $getopt);
-
+    
     local $" = ', ';
 
     # we trap $SIG{__WARN__} errors and patch them into AppConfig::State
@@ -80,7 +79,7 @@ sub parse {
         chomp($msg);
         $state->_error("%s", $msg);
     };
-
+    
     # slurp all config items into @config
     push(@config, shift) while defined $_[0] && ! ref($_[0]);   
 
@@ -207,12 +206,12 @@ in your Perl script:
 
 AppConfig::Getopt is used automatically if you use the AppConfig module 
 and create an AppConfig::Getopt object through the getopt() method.
-
+      
 AppConfig::Getopt is implemented using object-oriented methods.  A new 
 AppConfig::Getopt object is created and initialised using the new() method.
 This returns a reference to a new AppConfig::Getopt object.  A reference to
 an AppConfig::State object should be passed in as the first parameter:
-
+       
     my $state  = AppConfig::State->new();
     my $getopt = AppConfig::Getopt->new($state);
 

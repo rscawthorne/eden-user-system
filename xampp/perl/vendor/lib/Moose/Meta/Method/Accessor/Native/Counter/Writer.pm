@@ -1,5 +1,10 @@
 package Moose::Meta::Method::Accessor::Native::Counter::Writer;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Counter::Writer::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Counter::Writer::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;

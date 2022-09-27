@@ -23,10 +23,11 @@ DDP - Data::Printer shortcut for faster debugging
 Tired of typing C<use Data::Printer> every time? C<DDP> lets you quickly call
 your favorite variable dumper!
 
-It behaves exactly like L<Data::Printer> - it is, indeed, just an alias to it :)
+It behaves exacly like L<Data::Printer> - it is, indeed, just an alias to it :)
 
 Happy debugging!
 
 =head1 SEE ALSO
 
 L<Data::Printer>
+

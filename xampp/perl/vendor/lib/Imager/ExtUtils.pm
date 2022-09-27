@@ -1,9 +1,10 @@
 package Imager::ExtUtils;
-use 5.006;
 use strict;
 use File::Spec;
 
-our $VERSION = "1.003";
+use vars qw($VERSION);
+
+$VERSION = "1.002";
 
 =head1 NAME
 

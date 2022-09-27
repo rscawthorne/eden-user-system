@@ -1,6 +1,6 @@
 package English;
 
-our $VERSION = '1.11';
+our $VERSION = '1.05';
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -11,10 +11,8 @@ English - use nice English (or awk) names for ugly punctuation variables
 
 =head1 SYNOPSIS
 
+    use English qw( -no_match_vars ) ;  # Avoids regex performance penalty
     use English;
-    use English qw( -no_match_vars ) ;  # Avoids regex performance
-                                        # penalty in perl 5.18 and
-                                        # earlier
     ...
     if ($ERRNO =~ /denied/) { ... }
 
@@ -33,10 +31,6 @@ $INPUT_RECORD_SEPARATOR if you are using the English module.
 See L<perlvar> for a complete list of these.
 
 =head1 PERFORMANCE
-
-NOTE: This was fixed in perl 5.20.  Mentioning these three variables no
-longer makes a speed difference.  This section still applies if your code
-is to run on perl 5.18 or earlier.
 
 This module can provoke sizeable inefficiencies for regular expressions,
 due to unfortunate implementation details.  If performance matters in
@@ -119,7 +113,6 @@ sub import {
 	*EGID
 	*PROGRAM_NAME
 	*PERL_VERSION
-	*OLD_PERL_VERSION
 	*ACCUMULATOR
 	*COMPILING
 	*DEBUGGING
@@ -182,7 +175,7 @@ sub import {
 
 	*FORMAT_PAGE_NUMBER			= *%	;
 	*FORMAT_LINES_PER_PAGE			= *=	;
-	*FORMAT_LINES_LEFT			= *-{SCALAR}	;
+	*FORMAT_LINES_LEFT			= *-	;
 	*FORMAT_NAME				= *~	;
 	*FORMAT_TOP_NAME			= *^	;
 	*FORMAT_LINE_BREAK_CHARACTERS		= *:	;
@@ -215,7 +208,6 @@ sub import {
 # Internals.
 
 	*PERL_VERSION				= *^V	;
-	*OLD_PERL_VERSION			= *]	;
 	*ACCUMULATOR				= *^A	;
 	*COMPILING				= *^C	;
 	*DEBUGGING				= *^D	;
@@ -233,5 +225,6 @@ sub import {
 
 #	*ARRAY_BASE				= *[	;
 #	*OFMT					= *#	;
+#	*OLD_PERL_VERSION			= *]	;
 
 1;

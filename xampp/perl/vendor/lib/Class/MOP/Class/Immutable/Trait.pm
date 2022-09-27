@@ -1,11 +1,18 @@
 package Class::MOP::Class::Immutable::Trait;
-our $VERSION = '2.2014';
+BEGIN {
+  $Class::MOP::Class::Immutable::Trait::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Class::MOP::Class::Immutable::Trait::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
 use MRO::Compat;
-use Module::Runtime 'use_module';
+
+use Carp 'confess';
+use Scalar::Util 'blessed', 'weaken';
 
 # the original class of the metaclass instance
 sub _get_mutable_metaclass_name { $_[0]{__immutable}{original_class} }
@@ -17,12 +24,12 @@ sub _immutable_metaclass { ref $_[1] }
 
 sub _immutable_read_only {
     my $name = shift;
-    __throw_exception( CallingReadOnlyMethodOnAnImmutableInstance => method_name => $name );
+    confess "The '$name' method is read-only when called on an immutable instance";
 }
 
 sub _immutable_cannot_call {
     my $name = shift;
-    __throw_exception( CallingMethodOnAnImmutableInstance => method_name => $name );
+    Carp::confess "The '$name' method cannot be called on an immutable instance";
 }
 
 for my $name (qw/superclasses/) {
@@ -83,23 +90,13 @@ sub _method_map {
     $self->{__immutable}{_method_map} ||= $self->$orig;
 }
 
-# private method, for this file only -
-# if we declare a method here, it will behave differently depending on what
-# class this trait is applied to, so we won't have a reliable parameter list.
-sub __throw_exception {
-    my ($exception_type, @args_to_exception) = @_;
-    die use_module( "Moose::Exception::$exception_type" )->new( @args_to_exception );
-}
-
 1;
 
 # ABSTRACT: Implements immutability for metaclass objects
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -107,7 +104,7 @@ Class::MOP::Class::Immutable::Trait - Implements immutability for metaclass obje
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -116,57 +113,20 @@ objects. In reality, it is simply a parent class.
 
 It implements caching and read-only-ness for various metaclass methods.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+

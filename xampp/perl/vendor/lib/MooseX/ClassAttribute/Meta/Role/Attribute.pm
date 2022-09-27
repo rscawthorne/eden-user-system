@@ -1,13 +1,15 @@
 package MooseX::ClassAttribute::Meta::Role::Attribute;
+BEGIN {
+  $MooseX::ClassAttribute::Meta::Role::Attribute::VERSION = '0.26';
+}
 
 use strict;
 use warnings;
 
-our $VERSION = '0.29';
+use List::MoreUtils qw( uniq );
 
 use namespace::autoclean;
 use Moose;
-use List::Util 1.45 'uniq';
 
 extends 'Moose::Meta::Role::Attribute';
 
@@ -26,11 +28,9 @@ sub new {
 
 # ABSTRACT: An attribute metaclass for class attributes in roles
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -38,7 +38,7 @@ MooseX::ClassAttribute::Meta::Role::Attribute - An attribute metaclass for class
 
 =head1 VERSION
 
-version 0.29
+version 0.26
 
 =head1 DESCRIPTION
 
@@ -49,21 +49,20 @@ attribute declaration in roles.
 
 See L<MooseX::ClassAttribute> for details.
 
-Bugs may be submitted through L<the RT bug tracker|http://rt.cpan.org/Public/Dist/Display.html?Name=MooseX-ClassAttribute>
-(or L<bug-moosex-classattribute@rt.cpan.org|mailto:bug-moosex-classattribute@rt.cpan.org>).
-
-I am also usually active on IRC as 'drolsky' on C<irc://irc.perl.org>.
-
 =head1 AUTHOR
 
 Dave Rolsky <autarch@urth.org>
 
-=head1 COPYRIGHT AND LICENCE
+=head1 COPYRIGHT AND LICENSE
 
-This software is Copyright (c) 2016 by Dave Rolsky.
+This software is Copyright (c) 2011 by Dave Rolsky.
 
 This is free software, licensed under:
 
   The Artistic License 2.0 (GPL Compatible)
 
 =cut
+
+
+__END__
+

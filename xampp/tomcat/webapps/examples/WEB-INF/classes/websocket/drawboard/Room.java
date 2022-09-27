@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.locks.ReentrantLock;
@@ -52,13 +51,13 @@ public final class Room {
      * The number (single char) will be prefixed to the string when sending
      * the message.
      */
-    public enum MessageType {
+    public static enum MessageType {
         /**
          * '0': Error: contains error message.
          */
         ERROR('0'),
         /**
-         * '1': DrawMessage: contains serialized DrawMessage(s) prefixed
+         * '1': DrawMesssage: contains serialized DrawMessage(s) prefixed
          *      with the current Player's {@link Player#lastReceivedMessageId}
          *      and ",".<br>
          *      Multiple draw messages are concatenated with "|" as separator.
@@ -137,7 +136,7 @@ public final class Room {
     /**
      * List of all currently joined players.
      */
-    private final List<Player> players = new ArrayList<>();
+    private final List<Player> players = new ArrayList<Player>();
 
 
 
@@ -167,10 +166,7 @@ public final class Room {
 
     /**
      * Creates a Player from the given Client and adds it to this room.
-     *
      * @param client the client
-     *
-     * @return The newly created player
      */
     public Player createAndAddPlayer(Client client) {
         if (players.size() >= MAX_PLAYER_COUNT) {
@@ -186,14 +182,14 @@ public final class Room {
         // Add the new player to the list.
         players.add(p);
 
-        // If currently no Broadcast Timer Task is scheduled, then we need to create one.
+        // If currently no Broacast Timer Task is scheduled, then we need to create one.
         if (activeBroadcastTimerTask == null) {
             activeBroadcastTimerTask = createBroadcastTimerTask();
             drawmessageBroadcastTimer.schedule(activeBroadcastTimerTask,
                     TIMER_DELAY, TIMER_DELAY);
         }
 
-        // Send the current number of players and the current room image.
+        // Send him the current number of players and the current room image.
         String content = String.valueOf(players.size());
         p.sendRoomMessage(MessageType.IMAGE_MESSAGE, content);
 
@@ -215,7 +211,7 @@ public final class Room {
 
     /**
      * @see Player#removeFromRoom()
-     * @param p player to remove
+     * @param p
      */
     private void internalRemovePlayer(Player p) {
         boolean removed = players.remove(p);
@@ -227,7 +223,7 @@ public final class Room {
             // Note that it can happen that the TimerTask is just about to execute (from
             // the Timer thread) but waits until all players are gone (or even until a new
             // player is added to the list), and then executes. This is OK. To prevent it,
-            // a TimerTask subclass would need to have some boolean "cancel" instance variable and
+            // a TimerTask subclass would need to have some boolan "cancel" instance variable and
             // query it in the invocation of Room#invokeAndWait.
             activeBroadcastTimerTask.cancel();
             activeBroadcastTimerTask = null;
@@ -239,9 +235,9 @@ public final class Room {
 
     /**
      * @see Player#handleDrawMessage(DrawMessage, long)
-     * @param p player
-     * @param msg message containing details of new shapes to draw
-     * @param msgId message ID
+     * @param p
+     * @param msg
+     * @param msgId
      */
     private void internalHandleDrawMessage(Player p, DrawMessage msg,
             long msgId) {
@@ -261,8 +257,8 @@ public final class Room {
      * {@link #broadcastDrawMessage(DrawMessage)}
      * as this method will buffer them and prefix them with the correct
      * last received Message ID.
-     * @param type message type
-     * @param content message content
+     * @param type
+     * @param content
      */
     private void broadcastRoomMessage(MessageType type, String content) {
         for (Player p : players) {
@@ -276,7 +272,7 @@ public final class Room {
      * and the {@link #drawmessageBroadcastTimer} will broadcast them
      * at a regular interval, prefixing them with the player's current
      * {@link Player#lastReceivedMessageId}.
-     * @param msg message to broadcast
+     * @param msg
      */
     private void broadcastDrawMessage(DrawMessage msg) {
         if (!BUFFER_DRAW_MESSAGES) {
@@ -315,9 +311,8 @@ public final class Room {
 
                     String s = String.valueOf(p.getLastReceivedMessageId())
                             + "," + msg.toString();
-                    if (i > 0) {
+                    if (i > 0)
                         sb.append("|");
-                    }
 
                     sb.append(s);
                 }
@@ -343,8 +338,7 @@ public final class Room {
      * runnable on this Room, it will not be executed recursively, but instead
      * cached until the original runnable is finished, to keep the behavior of
      * using a Executor.
-     *
-     * @param task The task to be executed
+     * @param task
      */
     public void invokeAndWait(Runnable task)  {
 
@@ -354,7 +348,7 @@ public final class Room {
         if (roomLock.isHeldByCurrentThread()) {
 
             if (cachedRunnables == null) {
-                cachedRunnables = new ArrayList<>();
+                cachedRunnables = new ArrayList<Runnable>();
             }
             cachedRunnables.add(task);
 
@@ -362,7 +356,7 @@ public final class Room {
 
             roomLock.lock();
             try {
-                // Explicitly overwrite value to ensure data consistency in
+                // Explicitely overwrite value to ensure data consistency in
                 // current thread
                 cachedRunnables = null;
 
@@ -372,9 +366,9 @@ public final class Room {
 
                 // Run the cached runnables.
                 if (cachedRunnables != null) {
-                    for (Runnable cachedRunnable : cachedRunnables) {
+                    for (int i = 0; i < cachedRunnables.size(); i++) {
                         if (!closed) {
-                            cachedRunnable.run();
+                            cachedRunnables.get(i).run();
                         }
                     }
                     cachedRunnables = null;
@@ -410,7 +404,7 @@ public final class Room {
      * Note: This means a player object is actually a join between Room and
      * Client.
      */
-    public static final class Player {
+    public final class Player {
 
         /**
          * The room to which this player belongs.
@@ -429,7 +423,7 @@ public final class Room {
          * Buffered DrawMessages that will be sent by a Timer.
          */
         private final List<DrawMessage> bufferedDrawMessages =
-                new ArrayList<>();
+                new ArrayList<DrawMessage>();
 
         private List<DrawMessage> getBufferedDrawMessages() {
             return bufferedDrawMessages;
@@ -471,9 +465,8 @@ public final class Room {
         /**
          * Handles the given DrawMessage by drawing it onto this Room's
          * image and by broadcasting it to the connected players.
-         *
-         * @param msg   The draw message received
-         * @param msgId The ID for the draw message received
+         * @param msg
+         * @param msgId
          */
         public void handleDrawMessage(DrawMessage msg, long msgId) {
             room.internalHandleDrawMessage(this, msg, msgId);
@@ -482,12 +475,12 @@ public final class Room {
 
         /**
          * Sends the given room message.
-         * @param type message type
-         * @param content message content
+         * @param type
+         * @param content
          */
         private void sendRoomMessage(MessageType type, String content) {
-            Objects.requireNonNull(content);
-            Objects.requireNonNull(type);
+            if (content == null || type == null)
+                throw new NullPointerException();
 
             String completeMsg = String.valueOf(type.flag) + content;
 

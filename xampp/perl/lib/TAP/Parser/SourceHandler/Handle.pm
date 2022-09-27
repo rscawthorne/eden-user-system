@@ -1,12 +1,13 @@
 package TAP::Parser::SourceHandler::Handle;
 
 use strict;
-use warnings;
+use vars qw($VERSION @ISA);
 
+use TAP::Parser::SourceHandler    ();
 use TAP::Parser::IteratorFactory  ();
 use TAP::Parser::Iterator::Stream ();
 
-use base 'TAP::Parser::SourceHandler';
+@ISA = qw(TAP::Parser::SourceHandler);
 
 TAP::Parser::IteratorFactory->register_handler(__PACKAGE__);
 
@@ -16,11 +17,11 @@ TAP::Parser::SourceHandler::Handle - Stream TAP from an IO::Handle or a GLOB.
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 SYNOPSIS
 

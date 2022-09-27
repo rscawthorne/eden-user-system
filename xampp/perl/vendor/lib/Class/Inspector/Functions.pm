@@ -5,41 +5,41 @@ use strict;
 use warnings;
 use Exporter         ();
 use Class::Inspector ();
-use base qw( Exporter );
 
-# ABSTRACT: Get information about a class and its structure
-our $VERSION = '1.36'; # VERSION
-
+use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $VERSION);
 BEGIN {
+	$VERSION = '1.28';
+	@ISA     = 'Exporter';
 
-  our @EXPORT = qw(
-    installed
-    loaded
 
-    filename
-    functions
-    methods
+	@EXPORT = qw(
+		installed
+		loaded
 
-    subclasses
-  );
+		filename
+		functions
+		methods
 
-  our @EXPORT_OK = qw(
-    resolved_filename
-    loaded_filename
+		subclasses
+	);
 
-    function_refs
-    function_exists
-  );
-    #children
-    #recursive_children
+	@EXPORT_OK = qw(
+		resolved_filename
+		loaded_filename
 
-  our %EXPORT_TAGS = ( ALL => [ @EXPORT_OK, @EXPORT ] );
+		function_refs
+		function_exists
+	);
+		#children
+		#recursive_children
 
-  foreach my $meth (@EXPORT, @EXPORT_OK) {
-      my $sub = Class::Inspector->can($meth);
-      no strict 'refs';
-      *{$meth} = sub {&$sub('Class::Inspector', @_)};
-  }
+	%EXPORT_TAGS = ( ALL => [ @EXPORT_OK, @EXPORT ] );
+
+	foreach my $meth (@EXPORT, @EXPORT_OK) {
+	    my $sub = Class::Inspector->can($meth);
+	    no strict 'refs';
+	    *{$meth} = sub {&$sub('Class::Inspector', @_)};
+	}
 
 }
 
@@ -49,15 +49,9 @@ __END__
 
 =pod
 
-=encoding UTF-8
-
 =head1 NAME
 
 Class::Inspector::Functions - Get information about a class and its structure
-
-=head1 VERSION
-
-version 1.36
 
 =head1 SYNOPSIS
 
@@ -108,29 +102,34 @@ The following functions are exported only by request.
 
 All the functions may be imported using the C<:ALL> tag.
 
-=head1 SEE ALSO
+=head1 SUPPORT
 
-L<http://ali.as/>, L<Class::Handle>, L<Class::Inspector>
+Bugs should be reported via the CPAN bug tracker
+
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Class-Inspector>
+
+For other issues, or commercial enhancement or support, contact the author.
 
 =head1 AUTHOR
 
-Original author: Adam Kennedy E<lt>adamk@cpan.orgE<gt>
+Adam Kennedy E<lt>adamk@cpan.orgE<gt>
 
-Current maintainer: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+Steffen Mueller E<lt>smueller@cpan.orgE<gt>
 
-Contributors:
+=head1 SEE ALSO
 
-Tom Wyant
+L<http://ali.as/>, L<Class::Handle>
 
-Steffen Müller
+=head1 COPYRIGHT
 
-Kivanc Yazan (KYZN)
+Copyright 2002 - 2012 Adam Kennedy.
 
-=head1 COPYRIGHT AND LICENSE
+Class::Inspector::Functions copyright 2008 - 2009 Steffen Mueller.
 
-This software is copyright (c) 2002-2019 by Adam Kennedy.
+This program is free software; you can redistribute
+it and/or modify it under the same terms as Perl itself.
 
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
+The full text of the license can be found in the
+LICENSE file included with this module.
 
 =cut

@@ -35,12 +35,14 @@ use List::Util     ();
 use Params::Util   qw{_INSTANCE};
 use PPI::Statement ();
 
-our $VERSION = '1.270'; # VERSION
-
-our @ISA = "PPI::Statement";
+use vars qw{$VERSION @ISA};
+BEGIN {
+	$VERSION = '1.215';
+	@ISA     = 'PPI::Statement';
+}
 
 # Lexer clue
-sub __LEXER__normal() { '' }
+sub __LEXER__normal { '' }
 
 sub _complete {
 	my $child = $_[0]->schild(-1);
@@ -72,19 +74,11 @@ false.
 =cut
 
 sub name {
-	my ($self) = @_;
+	my $self = shift;
 
-	# Usually the second token is the name.
-	my $token = $self->schild(1);
-	return $token->content
-	  if defined $token and $token->isa('PPI::Token::Word');
-
-	# In the case of special subs whose 'sub' can be omitted (AUTOLOAD
-	# or DESTROY), the name will be the first token.
-	$token = $self->schild(0);
-	return $token->content
-	  if defined $token and $token->isa('PPI::Token::Word');
-	return '';
+	# The second token should be the name, if we have one
+	my $Token = $self->schild(1) or return '';
+	$Token->isa('PPI::Token::Word') and $Token->content;
 }
 
 =pod
@@ -95,9 +89,7 @@ If it has one, the C<prototype> method returns the subroutine's prototype.
 It is returned in the same format as L<PPI::Token::Prototype/prototype>,
 cleaned and removed from its brackets.
 
-Returns the subroutine's prototype, or undef if the subroutine does not
-define one. Note that when the sub has an empty prototype (C<()>) the
-return is an empty string.
+Returns false if the subroutine does not define a prototype
 
 =cut
 
@@ -106,7 +98,7 @@ sub prototype {
 	my $Prototype = List::Util::first {
 		_INSTANCE($_, 'PPI::Token::Prototype')
 	} $self->children;
-	defined($Prototype) ? $Prototype->prototype : undef;
+	defined($Prototype) ? $Prototype->prototype : '';
 }
 
 =pod
@@ -163,42 +155,16 @@ Returns true if it is a special reserved subroutine, or false if not.
 sub reserved {
 	my $self = shift;
 	my $name = $self->name or return '';
-	# perlsub is silent on whether reserveds can contain:
-	# - underscores;
-	# we allow them due to existing practice like CLONE_SKIP and __SUB__.
-	# - numbers; we allow them by PPI tradition.
 	$name eq uc $name;
-}
-
-=pod
-
-=head2 type
-
-The C<type> method checks and returns the declaration type of the statement,
-which will be one of 'my', 'our', or 'state'.
-
-Returns a string of the type, or C<undef> if the type is not declared.
-
-=cut
-
-sub type {
-	my $self = shift;
-
-	# Get the first significant child
-	my @schild = grep { $_->significant } $self->children;
-
-	# Ignore labels
-	shift @schild if _INSTANCE($schild[0], 'PPI::Token::Label');
-
-	# Get the type
-	(_INSTANCE($schild[0], 'PPI::Token::Word') and $schild[0]->content =~ /^(my|our|state)$/)
-		? $schild[0]->content
-		: undef;
 }
 
 1;
 
 =pod
+
+=head1 TO DO
+
+- Write unit tests for this package
 
 =head1 SUPPORT
 

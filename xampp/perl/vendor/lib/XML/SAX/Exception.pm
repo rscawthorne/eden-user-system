@@ -1,5 +1,8 @@
 package XML::SAX::Exception;
-$XML::SAX::Exception::VERSION = '1.09';
+BEGIN {
+  $XML::SAX::Exception::VERSION = '1.08';
+}
+
 use strict;
 
 use overload '""' => "stringify",

@@ -1,13 +1,14 @@
 package YAML::Types;
-
 use YAML::Mo;
+
+our $VERSION = '0.84';
+
 use YAML::Node;
 
 # XXX These classes and their APIs could still use some refactoring,
 # but at least they work for now.
 #-------------------------------------------------------------------------------
 package YAML::Type::blessed;
-
 use YAML::Mo; # XXX
 
 sub yaml_dump {
@@ -26,11 +27,6 @@ sub yaml_dump {
     elsif ($type eq 'SCALAR') {
         $_[1] = $$value;
         YAML::Node->new($_[1], $tag);
-    }
-    elsif ($type eq 'GLOB') {
-        # blessed glob support is minimal, and will not round-trip
-        # initial aim: to not cause an error
-        return YAML::Type::glob->yaml_dump($value, $tag);
     } else {
         YAML::Node->new($value, $tag);
     }
@@ -52,11 +48,7 @@ package YAML::Type::glob;
 
 sub yaml_dump {
     my $self = shift;
-    # $_[0] remains as the glob
-    my $tag = pop @_ if 2==@_;
-
-    $tag = '!perl/glob:' unless defined $tag;
-    my $ynode = YAML::Node->new({}, $tag);
+    my $ynode = YAML::Node->new({}, '!perl/glob:');
     for my $type (qw(PACKAGE NAME SCALAR ARRAY HASH CODE IO)) {
         my $value = *{$_[0]}{$type};
         $value = $$value if $type eq 'SCALAR';
@@ -72,7 +64,7 @@ sub yaml_dump {
                     $value->{tell} = tell(*{$_[0]});
                 }
             }
-            $ynode->{$type} = $value;
+            $ynode->{$type} = $value; 
         }
     }
     return $ynode;
@@ -99,9 +91,7 @@ sub yaml_load {
     }
     no strict 'refs';
     if (exists $node->{SCALAR}) {
-        if ($YAML::LoadBlessed and $loader->load_code) {
-            *{"${package}::$name"} = \$node->{SCALAR};
-        }
+        *{"${package}::$name"} = \$node->{SCALAR};
         delete $node->{SCALAR};
     }
     for my $elem (qw(ARRAY HASH CODE IO)) {
@@ -111,9 +101,7 @@ sub yaml_load {
                 delete $node->{IO};
                 next;
             }
-            if ($YAML::LoadBlessed and $loader->load_code) {
-                *{"${package}::$name"} = $node->{$elem};
-            }
+            *{"${package}::$name"} = $node->{$elem};
             delete $node->{$elem};
         }
     }
@@ -126,7 +114,7 @@ sub yaml_load {
 #-------------------------------------------------------------------------------
 package YAML::Type::code;
 
-my $dummy_warned = 0;
+my $dummy_warned = 0; 
 my $default = '{ "DUMMY" }';
 
 sub yaml_dump {
@@ -141,7 +129,7 @@ sub yaml_dump {
     }
     else {
         bless $value, "CODE" if $class;
-        eval { require B::Deparse };
+        eval { use B::Deparse };
         return if $@;
         my $deparse = B::Deparse->new();
         eval {
@@ -158,7 +146,7 @@ sub yaml_dump {
     }
     $_[2] = $code;
     YAML::Node->new($_[2], $tag);
-}
+}    
 
 sub yaml_load {
     my $self = shift;
@@ -170,12 +158,12 @@ sub yaml_load {
             return sub {};
         }
         else {
-            CORE::bless $code, $class if ($class and $YAML::LoadBlessed);
+            CORE::bless $code, $class if $class;
             return $code;
         }
     }
     else {
-        return CORE::bless sub {}, $class if ($class and $YAML::LoadBlessed);
+        return CORE::bless sub {}, $class if $class;
         return sub {};
     }
 }
@@ -226,15 +214,48 @@ use constant _QR_TYPES => {
 sub yaml_load {
     my $self = shift;
     my ($node, $class) = @_;
-    return qr{$node} unless $node =~ /^\(\?([\^\-uxism]*):(.*)\)\z/s;
+    return qr{$node} unless $node =~ /^\(\?([\^\-xism]*):(.*)\)\z/s;
     my ($flags, $re) = ($1, $2);
     $flags =~ s/-.*//;
     $flags =~ s/^\^//;
-    $flags =~ tr/u//d;
     my $sub = _QR_TYPES->{$flags} || sub { qr{$_[0]} };
     my $qr = &$sub($re);
-    bless $qr, $class if (length $class and $YAML::LoadBlessed);
+    bless $qr, $class if length $class;
     return $qr;
 }
 
 1;
+
+__END__
+
+=head1 NAME
+
+YAML::Types - Marshall Perl internal data types to/from YAML
+
+=head1 SYNOPSIS
+
+    $::foo = 42;
+    print YAML::Dump(*::foo);
+
+    print YAML::Dump(qr{match me});
+
+=head1 DESCRIPTION
+
+This module has the helper classes for transferring objects,
+subroutines, references, globs, regexps and file handles to and
+from YAML.
+
+=head1 AUTHOR
+
+Ingy döt Net <ingy@cpan.org>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2006, 2011-2012. Ingy döt Net. All rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+See L<http://www.perl.com/perl/misc/Artistic.html>
+
+=cut

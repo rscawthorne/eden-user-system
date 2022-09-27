@@ -1,5 +1,10 @@
 package Moose::Meta::Method::Accessor::Native::Array::sort_in_place;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Array::sort_in_place::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Array::sort_in_place::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
@@ -8,7 +13,15 @@ use Params::Util ();
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Array::Writer';
+with 'Moose::Meta::Method::Accessor::Native::Array::Writer' => {
+    -excludes => [
+        qw(
+            _maximum_arguments
+            _inline_check_arguments
+            _return_value
+            )
+    ]
+};
 
 sub _maximum_arguments { 1 }
 
@@ -17,11 +30,9 @@ sub _inline_check_arguments {
 
     return (
         'if (@_ && !Params::Util::_CODELIKE($_[0])) {',
-            $self->_inline_throw_exception( InvalidArgumentToMethod =>
-                                            'argument                => $_[0],'.
-                                            'method_name             => "sort_in_place",'.
-                                            'type_of_argument        => "code reference",'.
-                                            'type                    => "CodeRef",',
+            $self->_inline_throw_error(
+                '"The argument passed to sort_in_place must be a code '
+              . 'reference"',
             ) . ';',
         '}',
     );

@@ -1,16 +1,10 @@
 package MooseX::NonMoose::Meta::Role::Class;
 BEGIN {
-  $MooseX::NonMoose::Meta::Role::Class::AUTHORITY = 'cpan:DOY';
-}
-{
-  $MooseX::NonMoose::Meta::Role::Class::VERSION = '0.26';
+  $MooseX::NonMoose::Meta::Role::Class::VERSION = '0.22';
 }
 use Moose::Role;
-# ABSTRACT: metaclass trait for L<MooseX::NonMoose>
-
 use List::MoreUtils qw(any);
-use Module::Runtime qw(use_package_optimistically);
-use Try::Tiny;
+# ABSTRACT: metaclass trait for L<MooseX::NonMoose>
 
 
 has has_nonmoose_constructor => (
@@ -39,7 +33,7 @@ around reinitialize => sub {
     my $class = shift;
     my ($pkg) = @_;
 
-    my $meta = blessed($pkg) ? $pkg : Moose::Util::find_meta($pkg);
+    my $meta = blessed($pkg) ? $pkg : Class::MOP::class_of($pkg);
 
     $class->$orig(
         @_,
@@ -58,7 +52,7 @@ sub _determine_constructor_options {
 
     # if we're using just the metaclass trait, but not the constructor trait,
     # then suppress the warning about not inlining a constructor
-    my $cc_meta = Moose::Util::find_meta($self->constructor_class);
+    my $cc_meta = Class::MOP::class_of($self->constructor_class);
     return (@options, inline_constructor => 0)
         unless $cc_meta->can('does_role')
             && $cc_meta->does_role('MooseX::NonMoose::Meta::Role::Constructor');
@@ -250,15 +244,10 @@ around superclasses => sub {
             );
         }
 
-        if ($opts && exists($opts->{-version})) {
-            use_package_optimistically($name, $opts->{-version});
-        }
-        else {
-            use_package_optimistically($name);
-        }
+        Class::MOP::load_class($name, $opts);
 
         if (defined($cur_constructor_name)) {
-            my $meta = Moose::Util::find_meta($name);
+            my $meta = Class::MOP::class_of($name);
             $self->throw_error(
                 "You specified '$cur_constructor_name' as the constructor for "
               . "$name, but $name has no method by that name"
@@ -362,7 +351,6 @@ no Moose::Role;
 1;
 
 __END__
-
 =pod
 
 =head1 NAME
@@ -371,7 +359,7 @@ MooseX::NonMoose::Meta::Role::Class - metaclass trait for L<MooseX::NonMoose>
 
 =head1 VERSION
 
-version 0.26
+version 0.22
 
 =head1 SYNOPSIS
 
@@ -393,7 +381,7 @@ version 0.26
           for_class       => $options{for_class},
           metaclass_roles => ['MooseX::NonMoose::Meta::Role::Class'],
       );
-      return Moose::Util::find_meta($options{for_class});
+      return Class::MOP::class_of($options{for_class});
   }
 
 =head1 DESCRIPTION
@@ -404,13 +392,14 @@ L<MooseX::NonMoose> for more details.
 
 =head1 AUTHOR
 
-Jesse Luehrs <doy@tozt.net>
+Jesse Luehrs <doy at tozt dot net>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by Jesse Luehrs.
+This software is copyright (c) 2011 by Jesse Luehrs.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+

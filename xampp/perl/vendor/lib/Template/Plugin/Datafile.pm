@@ -23,11 +23,11 @@ use strict;
 use warnings;
 use base 'Template::Plugin';
 
-our $VERSION = '3.009';
+our $VERSION = 2.72;
 
 sub new {
     my ($class, $context, $filename, $params) = @_;
-    my ($delim, $encoding, $line, @fields, @data, @results);
+    my ($delim, $line, @fields, @data, @results);
     my $self = [ ];
     local *FD;
     local $/ = "\n";
@@ -35,13 +35,12 @@ sub new {
     $params ||= { };
     $delim = $params->{'delim'} || ':';
     $delim = quotemeta($delim);
-    $encoding = defined $params->{'encoding'} ? ':encoding('.$params->{'encoding'}.')' : '';
 
-    return $class->error("No filename specified")
+    return $class->fail("No filename specified")
         unless $filename;
 
-    open(FD, '<'.$encoding, $filename)
-        || return $class->error("$filename: $!");
+    open(FD, $filename)
+        || return $class->fail("$filename: $!");
 
     # first line of file should contain field definitions
     while (! $line || $line =~ /^#/) {
@@ -51,7 +50,7 @@ sub new {
     }
 
     (@fields = split(/\s*$delim\s*/, $line)) 
-        || return $class->error("first line of file must contain field names");
+        || return $class->fail("first line of file must contain field names");
 
     # read each line of the file
     while (<FD>) {
@@ -93,7 +92,6 @@ Template::Plugin::Datafile - Plugin to construct records from a simple data file
 
     [% USE mydata = datafile('/path/to/datafile') %]
     [% USE mydata = datafile('/path/to/datafile', delim = '|') %]
-    [% USE mydata = datafile('/path/to/datafile', encoding = 'UTF-8') %]
     
     [% FOREACH record = mydata %]
        [% record.this %]  [% record.that %]
@@ -111,8 +109,6 @@ A absolute filename must be specified (for this initial implementation at
 least - in a future version it might also use the C<INCLUDE_PATH>).  An 
 optional C<delim> parameter may also be provided to specify an alternate
 delimiter character.
-The optional C<encoding> parameter may be used to specify the input file
-encoding.
 
     [% USE userlist = datafile('/path/to/file/users')     %]
     [% USE things   = datafile('items', delim = '|') %]

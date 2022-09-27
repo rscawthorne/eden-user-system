@@ -4,7 +4,7 @@
 #
 # DESCRIPTION
 #   Template Toolkit plugin module which allows you to assert that
-#   items fetches from the stash are defined.
+#   items fetchs from the stash are defined.
 #
 # AUTHOR
 #   Andy Wardley   <abw@wardley.org>
@@ -23,7 +23,7 @@ use strict;
 use warnings;
 use Template::Exception;
 
-our $VERSION   = '3.009';
+our $VERSION   = 1.00;
 our $MONAD     = 'Template::Monad::Assert';
 our $EXCEPTION = 'Template::Exception';
 our $AUTOLOAD;

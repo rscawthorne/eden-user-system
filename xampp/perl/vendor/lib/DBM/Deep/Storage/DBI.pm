@@ -159,9 +159,12 @@ sub driver { $_[0]{driver} }
 sub rand_function {
     my $self = shift;
     my $driver = $self->driver;
-
-    $driver eq 'sqlite' and return 'random()';
-    $driver eq 'mysql'  and return 'RAND()';
+    if ( $driver eq 'sqlite' ) {
+        return 'random()';
+    }
+    elsif ( $driver eq 'mysql' ) {
+        return 'RAND()';
+    }
 
     die "rand_function undefined for $driver\n";
 }

@@ -1,4 +1,4 @@
-# Convert POD data to formatted text.
+# Pod::Text -- Convert POD data to formatted ASCII text.
 #
 # This module converts POD to formatted text.  It replaces the old Pod::Text
 # module that came with versions of Perl prior to 5.6.0 and attempts to match
@@ -6,7 +6,16 @@
 # seemed to produce better output.  It uses Pod::Parser and is designed to be
 # very easy to subclass.
 #
-# SPDX-License-Identifier: GPL-1.0-or-later OR Artistic-1.0-Perl
+# Perl core hackers, please note that this module is also separately
+# maintained outside of the Perl core as part of the podlators.  Please send
+# me any patches at the address above in addition to sending them to the
+# standard Perl mailing lists.
+#
+# Copyright 1999, 2000, 2001, 2002, 2004, 2006, 2008, 2009, 2012, 2013
+#     Russ Allbery <rra@stanford.edu>
+#
+# This program is free software; you may redistribute it and/or modify it
+# under the same terms as Perl itself.
 
 ##############################################################################
 # Modules and declarations
@@ -14,10 +23,9 @@
 
 package Pod::Text;
 
-use 5.008;
-use strict;
-use warnings;
+require 5.004;
 
+use strict;
 use vars qw(@ISA @EXPORT %ESCAPES $VERSION);
 
 use Carp qw(carp croak);
@@ -30,18 +38,7 @@ use Pod::Simple ();
 # We have to export pod2text for backward compatibility.
 @EXPORT = qw(pod2text);
 
-$VERSION = '4.14';
-
-# Ensure that $Pod::Simple::nbsp and $Pod::Simple::shy are available.  Code
-# taken from Pod::Simple 3.32, but was only added in 3.30.
-my ($NBSP, $SHY);
-if ($Pod::Simple::VERSION ge 3.30) {
-    $NBSP = $Pod::Simple::nbsp;
-    $SHY  = $Pod::Simple::shy;
-} else {
-    $NBSP = chr utf8::unicode_to_native(0xA0);
-    $SHY  = chr utf8::unicode_to_native(0xAD);
-}
+$VERSION = '3.17';
 
 ##############################################################################
 # Initialization
@@ -109,7 +106,6 @@ sub new {
         $self->no_errata_section (0);
         $self->complain_stderr (0);
     } elsif ($$self{opt_errors} eq 'none') {
-        $self->no_errata_section (1);
         $self->no_whining (1);
     } else {
         croak (qq(Invalid errors setting: "$$self{errors}"));
@@ -130,10 +126,10 @@ sub new {
         $$self{LQUOTE} = $$self{RQUOTE} = '';
     } elsif (length ($$self{opt_quotes}) == 1) {
         $$self{LQUOTE} = $$self{RQUOTE} = $$self{opt_quotes};
-    } elsif (length ($$self{opt_quotes}) % 2 == 0) {
-        my $length = length ($$self{opt_quotes}) / 2;
-        $$self{LQUOTE} = substr ($$self{opt_quotes}, 0, $length);
-        $$self{RQUOTE} = substr ($$self{opt_quotes}, $length);
+    } elsif ($$self{opt_quotes} =~ /^(.)(.)$/
+             || $$self{opt_quotes} =~ /^(..)(..)$/) {
+        $$self{LQUOTE} = $1;
+        $$self{RQUOTE} = $2;
     } else {
         croak qq(Invalid quote specification "$$self{opt_quotes}");
     }
@@ -239,7 +235,7 @@ sub wrap {
     my $spaces = ' ' x $$self{MARGIN};
     my $width = $$self{opt_width} - $$self{MARGIN};
     while (length > $width) {
-        if (s/^([^\n]{0,$width})[ \t\n]+// || s/^([^\n]{$width})//) {
+        if (s/^([^\n]{0,$width})\s+// || s/^([^\n]{$width})//) {
             $output .= $spaces . $1 . "\n";
         } else {
             last;
@@ -257,16 +253,14 @@ sub reformat {
     local $_ = shift;
 
     # If we're trying to preserve two spaces after sentences, do some munging
-    # to support that.  Otherwise, smash all repeated whitespace.  Be careful
-    # not to use \s here, which in Unicode input may match non-breaking spaces
-    # that we don't want to smash.
+    # to support that.  Otherwise, smash all repeated whitespace.
     if ($$self{opt_sentence}) {
         s/ +$//mg;
         s/\.\n/. \n/g;
         s/\n/ /g;
         s/   +/  /g;
     } else {
-        s/[ \t\n]+/ /g;
+        s/\s+/ /g;
     }
     return $self->wrap ($_);
 }
@@ -278,18 +272,13 @@ sub reformat {
 sub output {
     my ($self, @text) = @_;
     my $text = join ('', @text);
-    if ($NBSP) {
-        $text =~ s/$NBSP/ /g;
-    }
-    if ($SHY) {
-        $text =~ s/$SHY//g;
-    }
-    unless ($$self{opt_utf8}) {
+    $text =~ tr/\240\255/ /d;
+    unless ($$self{opt_utf8} || $$self{CHECKED_ENCODING}) {
         my $encoding = $$self{encoding} || '';
-        if ($encoding && $encoding ne $$self{ENCODING}) {
-            $$self{ENCODING} = $encoding;
+        if ($encoding) {
             eval { binmode ($$self{output_fh}, ":encoding($encoding)") };
         }
+        $$self{CHECKED_ENCODING} = 1;
     }
     if ($$self{ENCODE}) {
         print { $$self{output_fh} } encode ('UTF-8', $text);
@@ -312,6 +301,7 @@ sub start_document {
     my ($self, $attrs) = @_;
     if ($$attrs{contentless} && !$$self{ALWAYS_EMIT_SOMETHING}) {
         $$self{CONTENTLESS} = 1;
+        return;
     } else {
         delete $$self{CONTENTLESS};
     }
@@ -323,20 +313,20 @@ sub start_document {
     $$self{PENDING} = [[]];     # Pending output.
 
     # We have to redo encoding handling for each document.
-    $$self{ENCODING} = '';
+    delete $$self{CHECKED_ENCODING};
 
     # When UTF-8 output is set, check whether our output file handle already
     # has a PerlIO encoding layer set.  If it does not, we'll need to encode
-    # our output before printing it (handled in the output() sub).
+    # our output before printing it (handled in the output() sub).  Wrap the
+    # check in an eval to handle versions of Perl without PerlIO.
     $$self{ENCODE} = 0;
     if ($$self{opt_utf8}) {
         $$self{ENCODE} = 1;
         eval {
             my @options = (output => 1, details => 1);
             my $flag = (PerlIO::get_layers ($$self{output_fh}, @options))[-1];
-            if ($flag && ($flag & PerlIO::F_UTF8 ())) {
+            if ($flag & PerlIO::F_UTF8 ()) {
                 $$self{ENCODE} = 0;
-                $$self{ENCODING} = 'UTF-8';
             }
         };
     }
@@ -692,7 +682,7 @@ sub parse_from_file {
     my $self = shift;
     $self->reinit;
 
-    # Fake the old cutting option to Pod::Parser.  This fiddles with internal
+    # Fake the old cutting option to Pod::Parser.  This fiddings with internal
     # Pod::Simple state and is quite ugly; we need a better approach.
     if (ref ($_[0]) eq 'HASH') {
         my $opts = shift @_;
@@ -737,26 +727,6 @@ sub parse_file {
     return $self->SUPER::parse_file ($in);
 }
 
-# Do the same for parse_lines, just to be polite.  Pod::Simple's man page
-# implies that the caller is responsible for setting this, but I don't see any
-# reason not to set a default.
-sub parse_lines {
-    my ($self, @lines) = @_;
-    unless (defined $$self{output_fh}) {
-        $self->output_fh (\*STDOUT);
-    }
-    return $self->SUPER::parse_lines (@lines);
-}
-
-# Likewise for parse_string_document.
-sub parse_string_document {
-    my ($self, $doc) = @_;
-    unless (defined $$self{output_fh}) {
-        $self->output_fh (\*STDOUT);
-    }
-    return $self->SUPER::parse_string_document ($doc);
-}
-
 ##############################################################################
 # Module return value and documentation
 ##############################################################################
@@ -766,16 +736,15 @@ __END__
 
 =for stopwords
 alt stderr Allbery Sean Burke's Christiansen UTF-8 pre-Unicode utf8 nourls
-parsers
 
 =head1 NAME
 
-Pod::Text - Convert POD data to formatted text
+Pod::Text - Convert POD data to formatted ASCII text
 
 =head1 SYNOPSIS
 
     use Pod::Text;
-    my $parser = Pod::Text->new (sentence => 1, width => 78);
+    my $parser = Pod::Text->new (sentence => 0, width => 78);
 
     # Read POD from STDIN and write to STDOUT.
     $parser->parse_from_filehandle;
@@ -785,10 +754,10 @@ Pod::Text - Convert POD data to formatted text
 
 =head1 DESCRIPTION
 
-Pod::Text is a module that can convert documentation in the POD format
-(the preferred language for documenting Perl) into formatted text.  It
-uses no special formatting controls or codes whatsoever, and its output is
-therefore suitable for nearly any device.
+Pod::Text is a module that can convert documentation in the POD format (the
+preferred language for documenting Perl) into formatted ASCII.  It uses no
+special formatting controls or codes whatsoever, and its output is therefore
+suitable for nearly any device.
 
 As a derived class from Pod::Simple, Pod::Text supports the same methods and
 interfaces.  See L<Pod::Simple> for all the details; briefly, one creates a
@@ -819,7 +788,7 @@ not to throw an exception.  C<pod> says to include a POD ERRORS section
 in the resulting documentation summarizing the errors.  C<none> ignores
 POD errors entirely, as much as possible.
 
-The default is C<pod>.
+The default is C<output>.
 
 =item indent
 
@@ -861,9 +830,10 @@ important.
 =item quotes
 
 Sets the quote marks used to surround CE<lt>> text.  If the value is a
-single character, it is used as both the left and right quote.  Otherwise,
-it is split in half, and the first half of the string is used as the left
-quote and the second is used as the right quote.
+single character, it is used as both the left and right quote; if it is two
+characters, the first character is used as the left quote and the second as
+the right quoted; and if it is four characters, the first two are used as
+the left quote and the second two as the right quote.
 
 This may also be set to the special value C<none>, in which case no quote
 marks are added around CE<lt>> text.
@@ -873,7 +843,7 @@ marks are added around CE<lt>> text.
 If set to a true value, Pod::Text will assume that each sentence ends in two
 spaces, and will try to preserve that spacing.  If set to false, all
 consecutive whitespace in non-verbatim paragraphs is compressed into a
-single space.  Defaults to false.
+single space.  Defaults to true.
 
 =item stderr
 
@@ -890,10 +860,10 @@ doesn't encode its output).  If this option is given, the output encoding
 is forced to UTF-8.
 
 Be aware that, when using this option, the input encoding of your POD
-source should be properly declared unless it's US-ASCII.  Pod::Simple will
-attempt to guess the encoding and may be successful if it's Latin-1 or
-UTF-8, but it will produce warnings.  Use the C<=encoding> command to
-declare the encoding.  See L<perlpod(1)> for more information.
+source must be properly declared unless it is US-ASCII or Latin-1.  POD
+input without an C<=encoding> command will be assumed to be in Latin-1,
+and if it's actually in UTF-8, the output will be double-encoded.  See
+L<perlpod(1)> for more information on the C<=encoding> command.
 
 =item width
 
@@ -901,26 +871,10 @@ The column at which to wrap text on the right-hand side.  Defaults to 76.
 
 =back
 
-The standard Pod::Simple method parse_file() takes one argument naming the
-POD file to read from.  By default, the output is sent to C<STDOUT>, but
-this can be changed with the output_fh() method.
-
-The standard Pod::Simple method parse_from_file() takes up to two
-arguments, the first being the input file to read POD from and the second
-being the file to write the formatted output to.
-
-You can also call parse_lines() to parse an array of lines or
-parse_string_document() to parse a document already in memory.  As with
-parse_file(), parse_lines() and parse_string_document() default to sending
-their output to C<STDOUT> unless changed with the output_fh() method.  Be
-aware that parse_lines() and parse_string_document() both expect raw bytes,
-not decoded characters.
-
-To put the output from any parse method into a string instead of a file
-handle, call the output_string() method instead of output_fh().
-
-See L<Pod::Simple> for more specific details on the methods available to
-all derived parsers.
+The standard Pod::Simple method parse_file() takes one argument, the file or
+file handle to read from, and writes output to standard output unless that
+has been changed with the output_fh() method.  See L<Pod::Simple> for the
+specific details and for other alternative interfaces.
 
 =head1 DIAGNOSTICS
 
@@ -945,8 +899,8 @@ and the input file it was given could not be opened.
 =item Invalid quote specification "%s"
 
 (F) The quote specification given (the C<quotes> option to the
-constructor) was invalid.  A quote specification must be either one
-character long or an even number (greater than one) characters long.
+constructor) was invalid.  A quote specification must be one, two, or four
+characters long.
 
 =item POD document had syntax errors
 
@@ -991,9 +945,17 @@ sequences, although it wasn't turned on by default and it was problematic to
 get it to work at all.  This rewrite doesn't even try to do that, but a
 subclass of it does.  Look for L<Pod::Text::Termcap>.
 
+=head1 SEE ALSO
+
+L<Pod::Simple>, L<Pod::Text::Termcap>, L<perlpod(1)>, L<pod2text(1)>
+
+The current version of this module is always available from its web site at
+L<http://www.eyrie.org/~eagle/software/podlators/>.  It is also part of the
+Perl core distribution as of 5.6.0.
+
 =head1 AUTHOR
 
-Russ Allbery <rra@cpan.org>, based I<very> heavily on the original
+Russ Allbery <rra@stanford.edu>, based I<very> heavily on the original
 Pod::Text by Tom Christiansen <tchrist@mox.perl.com> and its conversion to
 Pod::Parser by Brad Appleton <bradapp@enteract.com>.  Sean Burke's initial
 conversion of Pod::Man to use Pod::Simple provided much-needed guidance on
@@ -1001,22 +963,10 @@ how to use Pod::Simple.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 1999-2002, 2004, 2006, 2008-2009, 2012-2016, 2018-2019 Russ Allbery
-<rra@cpan.org>
+Copyright 1999, 2000, 2001, 2002, 2004, 2006, 2008, 2009, 2012, 2013 Russ
+Allbery <rra@stanford.edu>.
 
 This program is free software; you may redistribute it and/or modify it
 under the same terms as Perl itself.
 
-=head1 SEE ALSO
-
-L<Pod::Simple>, L<Pod::Text::Termcap>, L<perlpod(1)>, L<pod2text(1)>
-
-The current version of this module is always available from its web site at
-L<https://www.eyrie.org/~eagle/software/podlators/>.  It is also part of the
-Perl core distribution as of 5.6.0.
-
 =cut
-
-# Local Variables:
-# copyright-at-end-flag: t
-# End:

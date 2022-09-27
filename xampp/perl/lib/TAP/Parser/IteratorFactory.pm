@@ -1,12 +1,14 @@
 package TAP::Parser::IteratorFactory;
 
 use strict;
-use warnings;
+use vars qw($VERSION @ISA);
+
+use TAP::Object ();
 
 use Carp qw( confess );
 use File::Basename qw( fileparse );
 
-use base 'TAP::Object';
+@ISA = qw(TAP::Object);
 
 use constant handlers => [];
 
@@ -16,11 +18,11 @@ TAP::Parser::IteratorFactory - Figures out which SourceHandler objects to use fo
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 SYNOPSIS
 
@@ -243,14 +245,19 @@ sub detect_source {
     confess('no raw source ref defined!') unless defined $source->raw;
 
     # find a list of handlers that can handle this source:
-    my %confidence_for;
-    for my $handler ( @{ $self->handlers } ) {
-        my $confidence = $handler->can_handle($source);
-        # warn "handler: $handler: $confidence\n";
-        $confidence_for{$handler} = $confidence if $confidence;
+    my %handlers;
+    for my $dclass ( @{ $self->handlers } ) {
+        my $confidence = $dclass->can_handle($source);
+
+        # warn "handler: $dclass: $confidence\n";
+        $handlers{$dclass} = $confidence if $confidence;
     }
 
-    if ( !%confidence_for ) {
+    if ( !%handlers ) {
+
+        # use Data::Dump qw( pp );
+        # warn pp( $meta );
+
         # error: can't detect source
         my $raw_source_short = substr( ${ $source->raw }, 0, 50 );
         confess("Cannot detect source of '$raw_source_short'!");
@@ -258,30 +265,23 @@ sub detect_source {
     }
 
     # if multiple handlers can handle it, choose the most confident one
-    my @handlers =
-          sort { $confidence_for{$b} <=> $confidence_for{$a} }
-          keys %confidence_for;
-
-    # Check for a tie.
-    if( @handlers > 1 &&
-        $confidence_for{$handlers[0]} == $confidence_for{$handlers[1]}
-    ) {
-        my $filename = $source->meta->{file}{basename};
-        die("There is a tie between $handlers[0] and $handlers[1].\n".
-            "Both voted $confidence_for{$handlers[0]} on $filename.\n");
-    }
+    my @handlers = (
+        map    {$_}
+          sort { $handlers{$a} cmp $handlers{$b} }
+          keys %handlers
+    );
 
     # this is really useful for debugging handlers:
     if ( $ENV{TAP_HARNESS_SOURCE_FACTORY_VOTES} ) {
         warn(
             "votes: ",
-            join( ', ', map {"$_: $confidence_for{$_}"} @handlers ),
+            join( ', ', map {"$_: $handlers{$_}"} @handlers ),
             "\n"
         );
     }
 
     # return 1st
-    return $handlers[0];
+    return pop @handlers;
 }
 
 1;
@@ -302,8 +302,11 @@ But in case you find the need to...
   package MyIteratorFactory;
 
   use strict;
+  use vars '@ISA';
 
-  use base 'TAP::Parser::IteratorFactory';
+  use TAP::Parser::IteratorFactory;
+
+  @ISA = qw( TAP::Parser::IteratorFactory );
 
   # override source detection algorithm
   sub detect_source {

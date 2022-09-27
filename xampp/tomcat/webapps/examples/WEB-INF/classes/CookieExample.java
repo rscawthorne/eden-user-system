@@ -24,9 +24,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
-import util.CookieFilter;
 import util.HTMLFilter;
 
 /**
@@ -39,12 +37,13 @@ public class CookieExample extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
+    private static final ResourceBundle RB = ResourceBundle.getBundle("LocalStrings");
+
     @Override
     public void doGet(HttpServletRequest request,
                       HttpServletResponse response)
         throws IOException, ServletException
     {
-        ResourceBundle rb = ResourceBundle.getBundle("LocalStrings",request.getLocale());
 
         String cookieName = request.getParameter("cookiename");
         String cookieValue = request.getParameter("cookievalue");
@@ -56,14 +55,12 @@ public class CookieExample extends HttpServlet {
         }
 
         response.setContentType("text/html");
-        response.setCharacterEncoding("UTF-8");
 
         PrintWriter out = response.getWriter();
-        out.println("<!DOCTYPE html><html>");
+        out.println("<html>");
         out.println("<head>");
-        out.println("<meta charset=\"UTF-8\" />");
 
-        String title = rb.getString("cookies.title");
+        String title = RB.getString("cookies.title");
         out.println("<title>" + title + "</title>");
         out.println("</head>");
         out.println("<body bgcolor=\"white\">");
@@ -85,40 +82,35 @@ public class CookieExample extends HttpServlet {
 
         Cookie[] cookies = request.getCookies();
         if ((cookies != null) && (cookies.length > 0)) {
-            HttpSession session = request.getSession(false);
-            String sessionId = null;
-            if (session != null) {
-                sessionId = session.getId();
-            }
-            out.println(rb.getString("cookies.cookies") + "<br>");
-            for (Cookie cookie : cookies) {
-                String cName = cookie.getName();
-                String cValue = cookie.getValue();
-                out.print("Cookie Name: " + HTMLFilter.filter(cName) + "<br>");
+            out.println(RB.getString("cookies.cookies") + "<br>");
+            for (int i = 0; i < cookies.length; i++) {
+                Cookie cookie = cookies[i];
+                out.print("Cookie Name: " + HTMLFilter.filter(cookie.getName())
+                          + "<br>");
                 out.println("  Cookie Value: "
-                        + HTMLFilter.filter(CookieFilter.filter(cName, cValue, sessionId))
-                        + "<br><br>");
+                            + HTMLFilter.filter(cookie.getValue())
+                            + "<br><br>");
             }
         } else {
-            out.println(rb.getString("cookies.no-cookies"));
+            out.println(RB.getString("cookies.no-cookies"));
         }
 
         if (aCookie != null) {
             out.println("<P>");
-            out.println(rb.getString("cookies.set") + "<br>");
-            out.print(rb.getString("cookies.name") + "  "
+            out.println(RB.getString("cookies.set") + "<br>");
+            out.print(RB.getString("cookies.name") + "  "
                       + HTMLFilter.filter(cookieName) + "<br>");
-            out.print(rb.getString("cookies.value") + "  "
+            out.print(RB.getString("cookies.value") + "  "
                       + HTMLFilter.filter(cookieValue));
         }
 
         out.println("<P>");
-        out.println(rb.getString("cookies.make-cookie") + "<br>");
+        out.println(RB.getString("cookies.make-cookie") + "<br>");
         out.print("<form action=\"");
         out.println("CookieExample\" method=POST>");
-        out.print(rb.getString("cookies.name") + "  ");
+        out.print(RB.getString("cookies.name") + "  ");
         out.println("<input type=text length=20 name=cookiename><br>");
-        out.print(rb.getString("cookies.value") + "  ");
+        out.print(RB.getString("cookies.value") + "  ");
         out.println("<input type=text length=20 name=cookievalue><br>");
         out.println("<input type=submit></form>");
 

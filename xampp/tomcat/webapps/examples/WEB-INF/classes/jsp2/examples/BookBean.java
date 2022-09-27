@@ -14,12 +14,14 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+
 package jsp2.examples;
 
 public class BookBean {
-    private final String title;
-    private final String author;
-    private final String isbn;
+    private String title;
+    private String author;
+    private String isbn;
 
     public BookBean( String title, String author, String isbn ) {
         this.title = title;

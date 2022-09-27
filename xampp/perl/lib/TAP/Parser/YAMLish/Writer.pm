@@ -1,11 +1,12 @@
 package TAP::Parser::YAMLish::Writer;
 
 use strict;
-use warnings;
+use vars qw($VERSION @ISA);
 
-use base 'TAP::Object';
+use TAP::Object ();
 
-our $VERSION = '3.42';
+@ISA     = 'TAP::Object';
+$VERSION = '3.26';
 
 my $ESCAPE_CHAR = qr{ [ \x00-\x1f \" ] }x;
 my $ESCAPE_KEY  = qr{ (?: ^\W ) | $ESCAPE_CHAR }x;
@@ -146,7 +147,7 @@ TAP::Parser::YAMLish::Writer - Write YAMLish data
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =head1 SYNOPSIS
 

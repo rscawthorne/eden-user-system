@@ -1,56 +1,51 @@
 package HTTP::Cookies::Netscape;
 
 use strict;
+use vars qw(@ISA $VERSION);
 
-our $VERSION = '6.10';
+$VERSION = "6.00";
 
 require HTTP::Cookies;
-our @ISA=qw(HTTP::Cookies);
+@ISA=qw(HTTP::Cookies);
 
 sub load
 {
-    my ($self, $file) = @_;
+    my($self, $file) = @_;
     $file ||= $self->{'file'} || return;
-
+    local(*FILE, $_);
     local $/ = "\n";  # make sure we got standard record separator
-    open (my $fh, '<', $file) || return;
-    my $magic = <$fh>;
-    chomp $magic;
-    unless ($magic =~ /^#(?: Netscape)? HTTP Cookie File/) {
-        warn "$file does not look like a netscape cookies file";
-        return;
+    my @cookies;
+    open(FILE, $file) || return;
+    my $magic = <FILE>;
+    unless ($magic =~ /^\#(?: Netscape)? HTTP Cookie File/) {
+	warn "$file does not look like a netscape cookies file" if $^W;
+	close(FILE);
+	return;
     }
-
     my $now = time() - $HTTP::Cookies::EPOCH_OFFSET;
-    while (my $line = <$fh>) {
-        chomp($line);
-        $line =~ s/\s*\#HttpOnly_//;
-        next if $line =~ /^\s*\#/;
-        next if $line =~ /^\s*$/;
-        $line =~ tr/\n\r//d;
-        my($domain,$bool1,$path,$secure, $expires,$key,$val) = split(/\t/, $line);
-        $secure = ($secure eq "TRUE");
-        $self->set_cookie(undef, $key, $val, $path, $domain, undef, 0, $secure, $expires-$now, 0);
+    while (<FILE>) {
+	next if /^\s*\#/;
+	next if /^\s*$/;
+	tr/\n\r//d;
+	my($domain,$bool1,$path,$secure, $expires,$key,$val) = split(/\t/, $_);
+	$secure = ($secure eq "TRUE");
+	$self->set_cookie(undef,$key,$val,$path,$domain,undef,
+			  0,$secure,$expires-$now, 0);
     }
+    close(FILE);
     1;
 }
 
 sub save
 {
-    my $self = shift;
-    my %args = (
-        file => $self->{'file'},
-        ignore_discard => $self->{'ignore_discard'},
-        @_ == 1 ? ( file => $_[0] ) : @_
-    );
-    Carp::croak('Unexpected argument to save method') if keys %args > 2;
-    my $file = $args{'file'} || return;
-
-    open(my $fh, '>', $file) || return;
+    my($self, $file) = @_;
+    $file ||= $self->{'file'} || return;
+    local(*FILE, $_);
+    open(FILE, ">$file") || return;
 
     # Use old, now broken link to the old cookie spec just in case something
     # else (not us!) requires the comment block exactly this way.
-    print {$fh} <<EOT;
+    print FILE <<EOT;
 # Netscape HTTP Cookie File
 # http://www.netscape.com/newsref/std/cookie_spec.html
 # This is a generated file!  Do not edit.
@@ -59,30 +54,25 @@ EOT
 
     my $now = time - $HTTP::Cookies::EPOCH_OFFSET;
     $self->scan(sub {
-        my ($version, $key, $val, $path, $domain, $port, $path_spec, $secure, $expires, $discard, $rest) = @_;
-        return if $discard && !$args{'ignore_discard'};
-        $expires = $expires ? $expires - $HTTP::Cookies::EPOCH_OFFSET : 0;
-        return if $now > $expires;
-        $secure = $secure ? "TRUE" : "FALSE";
-        my $bool = $domain =~ /^\./ ? "TRUE" : "FALSE";
-        print {$fh} join("\t", $domain, $bool, $path, $secure, $expires, $key, $val), "\n";
+	my($version,$key,$val,$path,$domain,$port,
+	   $path_spec,$secure,$expires,$discard,$rest) = @_;
+	return if $discard && !$self->{ignore_discard};
+	$expires = $expires ? $expires - $HTTP::Cookies::EPOCH_OFFSET : 0;
+	return if $now > $expires;
+	$secure = $secure ? "TRUE" : "FALSE";
+	my $bool = $domain =~ /^\./ ? "TRUE" : "FALSE";
+	print FILE join("\t", $domain, $bool, $path, $secure, $expires, $key, $val), "\n";
     });
+    close(FILE);
     1;
 }
 
 1;
-
-=pod
-
-=encoding UTF-8
+__END__
 
 =head1 NAME
 
-HTTP::Cookies::Netscape - Access to Netscape cookies files
-
-=head1 VERSION
-
-version 6.10
+HTTP::Cookies::Netscape - access to Netscape cookies files
 
 =head1 SYNOPSIS
 
@@ -107,27 +97,18 @@ Please note that the Netscape/Mozilla cookie file format can't store
 all the information available in the Set-Cookie2 headers, so you will
 probably lose some information if you save in this format.
 
-At time of writing, this module seems to work fine with Mozilla
+At time of writing, this module seems to work fine with Mozilla      
 Phoenix/Firebird.
 
 =head1 SEE ALSO
 
 L<HTTP::Cookies::Microsoft>
 
-=head1 AUTHOR
+=head1 COPYRIGHT
 
-Gisle Aas <gisle@activestate.com>
+Copyright 2002-2003 Gisle Aas
 
-=head1 COPYRIGHT AND LICENSE
-
-This software is copyright (c) 2002 by Gisle Aas.
-
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
 
 =cut
-
-__END__
-
-#ABSTRACT: Access to Netscape cookies files
-

@@ -1,14 +1,12 @@
 package Imager::Font::FT2;
-use 5.006;
 use strict;
 use Imager;
 use Scalar::Util ();
-our @ISA = qw(Imager::Font);
-
-our $VERSION;
+use vars qw($VERSION @ISA);
+@ISA = qw(Imager::Font);
 
 BEGIN {
-  $VERSION = "0.98";
+  $VERSION = "0.88";
 
   require XSLoader;
   XSLoader::load('Imager::Font::FT2', $VERSION);
@@ -79,14 +77,8 @@ sub _bounding_box {
   $self->_valid
     or return;
 
-  my @result =  i_ft2_bbox($self->{id}, $input{size}, $input{sizew},
-			   $input{string}, $input{utf8});
-  unless (@result) {
-    Imager->_set_error(Imager->_error_as_msg);
-    return;
-  }
-
-  return @result;
+  return i_ft2_bbox($self->{id}, $input{size}, $input{sizew}, $input{string}, 
+		    $input{utf8});
 }
 
 sub dpi {
@@ -150,25 +142,8 @@ sub has_chars {
     $Imager::ERRSTR = "No string supplied to \$font->has_chars()";
     return;
   }
-  if (wantarray) {
-    my @result =  i_ft2_has_chars($self->{id}, $hsh{string}, 
-				  _first($hsh{'utf8'}, $self->{utf8}, 0));
-    unless (@result) {
-      Imager->_set_error(Imager->_error_as_msg);
-      return;
-    }
-
-    return @result;
-  }
-  else {
-    my $result =  i_ft2_has_chars($self->{id}, $hsh{string}, 
-				  _first($hsh{'utf8'}, $self->{utf8}, 0));
-    unless (defined $result) {
-      Imager->_set_error(Imager->_error_as_msg);
-      return;
-    }
-    return $result;
-  }
+  return i_ft2_has_chars($self->{id}, $hsh{string}, 
+			 _first($hsh{'utf8'}, $self->{utf8}, 0));
 }
 
 sub face_name {
@@ -181,20 +156,7 @@ sub face_name {
 }
 
 sub can_glyph_names {
-  my ($self) = @_;
-
-  i_ft2_can_do_glyph_names()
-    or return;
-
-  if (ref $self) {
-    $self->_valid
-      or return;
-
-    i_ft2_face_has_glyph_names($self->{id})
-      or return;
-  }
-
-  return 1;
+  i_ft2_can_do_glyph_names();
 }
 
 sub glyph_names {

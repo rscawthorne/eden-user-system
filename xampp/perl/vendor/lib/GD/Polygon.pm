@@ -3,8 +3,6 @@ package GD::Polygon;
 use strict;
 use Carp 'carp';
 use GD;
-use vars '$VERSION';
-$VERSION = '2.73';
 
 # old documentation error
 *GD::Polygon::delete = \&deletePt;
@@ -57,7 +55,6 @@ sub DESTROY {
 sub clear {
   my $self = shift;
   $self->{'points'} = [];
-  $self->{'length'} = 0;
 }
 
 # add an x,y vertex to the polygon
@@ -70,7 +67,7 @@ sub addPt {
 # get a vertex
 sub getPt {
     my($self,$index) = @_;
-    return () unless ($index >= 0) && ($index < $self->{'length'});
+    return () unless ($index>=0) && ($index<$self->{'length'});
     return @{$self->{'points'}->[$index]};
 }
 
@@ -87,13 +84,15 @@ sub setPt {
 
 # return the total number of vertices
 sub length {
-    shift->{'length'}
+    my $self = shift;
+    return $self->{'length'};
 }
 
 # return the array of vertices.
 # each vertex is an two-member (x,y) array
 sub vertices {
-    @{shift->{'points'}}
+    my $self = shift;
+    return @{$self->{'points'}};
 }
 
 # return the bounding box of the polygon

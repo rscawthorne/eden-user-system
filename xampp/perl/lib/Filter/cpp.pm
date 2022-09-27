@@ -1,11 +1,13 @@
 package Filter::cpp;
  
-use Filter::Util::Exec ;
 use Config ;
+use Carp ;
+use Filter::Util::Exec ;
 use strict;
 use warnings;
+use vars qw($VERSION);
 
-our $VERSION = '1.60' ;
+$VERSION = '1.43' ;
 
 my $cpp;
 my $sep;
@@ -18,10 +20,8 @@ else {
     $sep = ':';
 }
 
-if (! $cpp) {
-    require Carp;
-    Carp::croak ("Cannot find cpp\n");
-}
+croak ("Cannot find cpp\n")
+    if ! $cpp;
 
 # Check if cpp is installed
 if ( ! -x $cpp) {
@@ -35,15 +35,15 @@ if ( ! -x $cpp) {
         }
     }
 
-    if (! $foundCPP) {
-        require Carp;
-        Carp::croak("Cannot find cpp\n");
-    }
+    croak "Cannot find cpp\n"
+        if ! $foundCPP ;
 }
 
 sub import 
 { 
     my($self, @args) = @_ ;
+
+    #require "Filter/exec.pm" ;
 
     if ($^O eq 'MSWin32') {
         Filter::Util::Exec::filter_add ($self, 'cmd', '/c', 

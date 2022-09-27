@@ -49,14 +49,6 @@ filter 'DateTime::Tiny', sub {
     return _format( $_[0]->as_string, @_ );
 };
 
-filter 'Class::Date', sub {
-    my ($object, $p) = @_;
-
-    my $string = $object->strftime("%Y-%m-%d %H:%M:%S") .  " [" . $object->tzdst . "]";
-
-    return _format( $string, @_ );
-};
-
 filter 'Date::Calc::Object', sub {
     return _format( $_[0]->string(2), @_ );
 };
@@ -142,8 +134,6 @@ several date and time manipulation classes and displays the time
 
 =item * L<DateTime::Incomplete>
 
-=item * L<Class::Date>
-
 =item * L<Time::Piece>
 
 =item * L<Date::Handler>
@@ -163,3 +153,5 @@ please let us know.
 =head1 SEE ALSO
 
 L<Data::Printer>
+
+

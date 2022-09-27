@@ -1,17 +1,15 @@
 package Clone::PP;
 
-use 5.006;
 use strict;
-use warnings;
 use vars qw($VERSION @EXPORT_OK);
 use Exporter;
 
-$VERSION = 1.08;
+$VERSION = 1.02;
 
 @EXPORT_OK = qw( clone );
 sub import { goto &Exporter::import } # lazy Exporter
 
-# These methods can be temporarily overridden to work with a given class.
+# These methods can be temporarily overriden to work with a given class.
 use vars qw( $CloneSelfMethod $CloneInitMethod );
 $CloneSelfMethod ||= 'clone_self';
 $CloneInitMethod ||= 'clone_init';
@@ -22,8 +20,6 @@ use vars qw( %CloneCache );
 # Generic cloning function
 sub clone {
   my $source = shift;
-
-  return undef if not defined($source);
   
   # Optional depth limit: after a given number of levels, do shallow copy.
   my $depth = shift;
@@ -32,7 +28,7 @@ sub clone {
   # Maintain a shared cache during recursive calls, then clear it at the end.
   local %CloneCache = ( undef => undef ) unless ( exists $CloneCache{undef} );
   
-  return $CloneCache{ $source } if ( defined $CloneCache{ $source } );
+  return $CloneCache{ $source } if ( exists $CloneCache{ $source } );
   
   # Non-reference values are copied shallowly
   my $ref_type = ref $source or return $source;
@@ -49,7 +45,7 @@ sub clone {
   
   # To make a copy:
   # - Prepare a reference to the same type of structure;
-  # - Store it in the cache, to avoid looping if it refers to itself;
+  # - Store it in the cache, to avoid looping it it refers to itself;
   # - Tie in to the same class as the original, if it was tied;
   # - Assign a value to the reference by cloning each item in the original;
   
@@ -157,28 +153,12 @@ to C<Dist=Clone-PP#rt.cpan.org>, replacing C<#> with C<@>.
 
 =head1 SEE ALSO
 
-L<Clone> - a baseclass which provides a C<clone()> method.
+For a faster implementation in XS, see L<Clone/clone>, L<Util/clone>, or <Storable/dclone>.
 
-L<MooseX::Clone> - find-grained cloning for Moose objects.
-
-The C<dclone()> function in L<Storable>.
-
-L<Data::Clone> -
-polymorphic data cloning (see its documentation for what that means).
-
-L<Clone::Any> - use whichever of the cloning methods is available.
-
-=head1 REPOSITORY
-
-L<https://github.com/neilbowers/Clone-PP>
-
-=head1 AUTHOR AND CREDITS
+=head1 CREDITS AND COPYRIGHT
 
 Developed by Matthew Simon Cavalletto at Evolution Softworks. 
 More free Perl software is available at C<www.evoscript.org>.
-
-
-=head1 COPYRIGHT AND LICENSE
 
 Copyright 2003 Matthew Simon Cavalletto. You may contact the author
 directly at C<evo@cpan.org> or C<simonm@cavalletto.org>.

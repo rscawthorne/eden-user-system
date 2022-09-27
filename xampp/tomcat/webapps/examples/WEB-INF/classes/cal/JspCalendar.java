@@ -14,13 +14,14 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
 package cal;
 
 import java.util.Calendar;
 import java.util.Date;
 
 public class JspCalendar {
-    final Calendar  calendar;
+    Calendar  calendar = null;
 
     public JspCalendar() {
         calendar = Calendar.getInstance();
@@ -39,9 +40,8 @@ public class JspCalendar {
                                         "April", "May", "June",
                                         "July", "August", "September",
                                         "October", "November", "December" };
-        if (m > 12) {
+        if (m > 12)
             return "Unknown to Man";
-        }
 
         return months[m - 1];
 
@@ -52,9 +52,8 @@ public class JspCalendar {
         String[] days = new String[] {"Sunday", "Monday", "Tuesday", "Wednesday",
                                       "Thursday", "Friday", "Saturday"};
 
-        if (x > 7) {
+        if (x > 7)
             return "Unknown to Man";
-        }
 
         return days[x - 1];
 

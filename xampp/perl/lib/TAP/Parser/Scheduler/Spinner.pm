@@ -1,7 +1,7 @@
 package TAP::Parser::Scheduler::Spinner;
 
 use strict;
-use warnings;
+use vars qw($VERSION);
 use Carp;
 
 =head1 NAME
@@ -10,11 +10,11 @@ TAP::Parser::Scheduler::Spinner - A no-op job.
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 SYNOPSIS
 
@@ -34,13 +34,11 @@ return a real job.
 
     my $job = TAP::Parser::Scheduler::Spinner->new;
 
-Ignores any arguments and returns a new C<TAP::Parser::Scheduler::Spinner> object.
+Returns a new C<TAP::Parser::Scheduler::Spinner> object.
 
 =cut
 
 sub new { bless {}, shift }
-
-=head2 Instance Methods
 
 =head3 C<is_spinner>
 
@@ -51,11 +49,5 @@ return one right now.
 =cut
 
 sub is_spinner {1}
-
-=head1 SEE ALSO
-
-L<TAP::Parser::Scheduler>, L<TAP::Parser::Scheduler::Job>
-
-=cut
 
 1;

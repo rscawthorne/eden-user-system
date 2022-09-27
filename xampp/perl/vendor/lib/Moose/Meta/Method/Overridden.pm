@@ -1,12 +1,15 @@
 package Moose::Meta::Method::Overridden;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Overridden::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Overridden::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
-use parent 'Moose::Meta::Method';
-
-use Moose::Util 'throw_exception';
+use base 'Moose::Meta::Method';
 
 sub new {
     my ( $class, %args ) = @_;
@@ -22,10 +25,7 @@ sub new {
     my $super = $args{class}->find_next_method_by_name($name);
 
     (defined $super)
-        || throw_exception( CannotOverrideNoSuperMethod => class       => $class,
-                                                           params      => \%args,
-                                                           method_name => $name
-                          );
+        || $class->throw_error("You cannot override '$name' because it has no super method", data => $name);
 
     my $super_body = $super->body;
 
@@ -53,11 +53,9 @@ sub new {
 
 # ABSTRACT: A Moose Method metaclass for overridden methods
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -65,7 +63,7 @@ Moose::Meta::Method::Overridden - A Moose Method metaclass for overridden method
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -77,11 +75,13 @@ the C<super> keyword from the parent class's method definition.
 
 =head1 METHODS
 
-=head2 Moose::Meta::Method::Overridden->new(%options)
+=over 4
+
+=item B<< Moose::Meta::Method::Overridden->new(%options) >>
 
 This constructs a new object. It accepts the following options:
 
-=over 4
+=over 8
 
 =item * class
 
@@ -100,61 +100,25 @@ is required.
 
 =back
 
+=back
+
 =head1 BUGS
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+

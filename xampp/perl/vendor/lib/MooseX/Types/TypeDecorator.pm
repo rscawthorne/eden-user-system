@@ -1,15 +1,17 @@
+package MooseX::Types::TypeDecorator;
+{
+  $MooseX::Types::TypeDecorator::VERSION = '0.35';
+}
+
+#ABSTRACT: Wraps Moose::Meta::TypeConstraint objects with added features
+
 use strict;
 use warnings;
-package MooseX::Types::TypeDecorator;
-# ABSTRACT: Wraps Moose::Meta::TypeConstraint objects with added features
 
-our $VERSION = '0.50';
-
-use Carp::Clan '^MooseX::Types';
+use Carp::Clan qw( ^MooseX::Types );
 use Moose::Util::TypeConstraints ();
 use Moose::Meta::TypeConstraint::Union;
 use Scalar::Util qw(blessed);
-use namespace::autoclean 0.16;
 
 use overload(
     '0+' => sub {
@@ -17,19 +19,17 @@ use overload(
             my $tc = $self->{__type_constraint};
             return 0+$tc;
      },
-    # workaround for perl 5.8.5 bug
-    '==' => sub { 0+$_[0] == 0+$_[1] },
     '""' => sub {
-            my $self = shift @_;
-            if(blessed $self) {
-                return $self->__type_constraint->name;
-            } else {
-                return "$self";
-            }
+    		my $self = shift @_;
+    		if(blessed $self) {
+        		return $self->__type_constraint->name;     		
+    		} else {
+    			return "$self";
+    		}
     },
     bool => sub { 1 },
     '|' => sub {
-
+        
         ## It's kind of ugly that we need to know about Union Types, but this
         ## is needed for syntax compatibility.  Maybe someday we'll all just do
         ## Or[Str,Str,Int]
@@ -43,7 +43,7 @@ use overload(
 
         ( scalar @tc == scalar @args)
             || __PACKAGE__->_throw_error(
-              "one of your type constraints is bad.  Passed: ". join(', ', @args) ." Got: ". join(', ', @tc));
+			  "one of your type constraints is bad.  Passed: ". join(', ', @args) ." Got: ". join(', ', @tc));
 
         ( scalar @tc >= 2 )
             || __PACKAGE__->_throw_error("You must pass in at least 2 type names to make a union");
@@ -52,22 +52,9 @@ use overload(
         return Moose::Util::TypeConstraints::register_type_constraint($union);
     },
     fallback => 1,
+    
 );
 
-#pod =head1 DESCRIPTION
-#pod
-#pod This is a decorator object that contains an underlying type constraint.  We use
-#pod this to control access to the type constraint and to add some features.
-#pod
-#pod =head1 METHODS
-#pod
-#pod This class defines the following methods.
-#pod
-#pod =head2 new
-#pod
-#pod Old school instantiation
-#pod
-#pod =cut
 
 sub new {
     my $proto = shift;
@@ -80,7 +67,7 @@ sub new {
             return bless {'__type_constraint'=>$arg}, $class;
         } elsif(
             blessed $arg &&
-            $arg->isa('MooseX::Types::UndefinedType')
+            $arg->isa('MooseX::Types::UndefinedType') 
           ) {
             ## stub in case we'll need to handle these types differently
             return bless {'__type_constraint'=>$arg}, $class;
@@ -90,34 +77,23 @@ sub new {
             __PACKAGE__->_throw_error("Argument cannot be '$arg'");
         }
     } else {
-        __PACKAGE__->_throw_error("This method [new] requires a single argument.");
+        __PACKAGE__->_throw_error("This method [new] requires a single argument.");        
     }
 }
 
-#pod =head2 __type_constraint ($type_constraint)
-#pod
-#pod Set/Get the type_constraint.
-#pod
-#pod =cut
 
 sub __type_constraint {
-    my $self = shift @_;
+    my $self = shift @_;    
     if(blessed $self) {
         if(defined(my $tc = shift @_)) {
             $self->{__type_constraint} = $tc;
         }
-        return $self->{__type_constraint};
+        return $self->{__type_constraint};        
     } else {
         __PACKAGE__->_throw_error('cannot call __type_constraint as a class method');
     }
 }
 
-#pod =head2 C<isa>
-#pod
-#pod handle C<< $self->isa >> since C<AUTOLOAD> can't - this tries both the type constraint,
-#pod and for a class type, the class.
-#pod
-#pod =cut
 
 sub isa {
   my $self = shift;
@@ -128,11 +104,6 @@ sub isa {
       : $self->SUPER::isa(@_);
 }
 
-#pod =head2 can
-#pod
-#pod handle $self->can since AUTOLOAD can't.
-#pod
-#pod =cut
 
 sub can {
     my $self = shift;
@@ -142,11 +113,6 @@ sub can {
         : $self->SUPER::can(@_);
 }
 
-#pod =head2 _throw_error
-#pod
-#pod properly delegate error messages
-#pod
-#pod =cut
 
 sub _throw_error {
     shift;
@@ -155,35 +121,21 @@ sub _throw_error {
     goto &Moose::throw_error;
 }
 
-#pod =head2 DESTROY
-#pod
-#pod We might need it later
-#pod
-#pod =cut
 
 sub DESTROY {
     return;
 }
 
-#pod =head2 AUTOLOAD
-#pod
-#pod Delegate to the decorator target, unless this is a class type, in which
-#pod case it will try to delegate to the type object, then if that fails try
-#pod the class. The method 'new' is special cased to only be permitted on
-#pod the class; if there is no class, or it does not provide a new method,
-#pod an exception will be thrown.
-#pod
-#pod =cut
 
 sub AUTOLOAD {
     my ($self, @args) = @_;
     my ($method) = (our $AUTOLOAD =~ /([^:]+)$/);
-
+    
     ## We delegate with this method in an attempt to support a value of
     ## __type_constraint which is also AUTOLOADing, in particular the class
     ## MooseX::Types::UndefinedType which AUTOLOADs during autovivication.
 
-    $self->_try_delegate($method, @args);
+    $self->_try_delegate($method, @args);    
 }
 
 sub _try_delegate {
@@ -201,7 +153,7 @@ sub _try_delegate {
             last unless $search_tc && $search_tc->is_subtype_of('Object');
         }
     }
-
+        
     my $inv = do {
         if ($method eq 'new') {
             die "new called on type decorator for non-class-type ".$tc->name
@@ -221,13 +173,11 @@ sub _try_delegate {
     $inv->$method(@args);
 }
 
+
 1;
 
 __END__
-
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -235,7 +185,7 @@ MooseX::Types::TypeDecorator - Wraps Moose::Meta::TypeConstraint objects with ad
 
 =head1 VERSION
 
-version 0.50
+version 0.35
 
 =head1 DESCRIPTION
 
@@ -254,9 +204,9 @@ Old school instantiation
 
 Set/Get the type_constraint.
 
-=head2 C<isa>
+=head2 isa
 
-handle C<< $self->isa >> since C<AUTOLOAD> can't - this tries both the type constraint,
+handle $self->isa since AUTOLOAD can't - this tries both the type constraint,
 and for a class type, the class.
 
 =head2 can
@@ -279,26 +229,21 @@ the class. The method 'new' is special cased to only be permitted on
 the class; if there is no class, or it does not provide a new method,
 an exception will be thrown.
 
-=head1 SUPPORT
+=head1 LICENSE
 
-Bugs may be submitted through L<the RT bug tracker|https://rt.cpan.org/Public/Dist/Display.html?Name=MooseX-Types>
-(or L<bug-MooseX-Types@rt.cpan.org|mailto:bug-MooseX-Types@rt.cpan.org>).
-
-There is also a mailing list available for users of this distribution, at
-L<http://lists.perl.org/list/moose.html>.
-
-There is also an irc channel available for users of this distribution, at
-L<C<#moose> on C<irc.perl.org>|irc://irc.perl.org/#moose>.
+This program is free software; you can redistribute it and/or modify
+it under the same terms as perl itself.
 
 =head1 AUTHOR
 
 Robert "phaylon" Sedlacek <rs@474.at>
 
-=head1 COPYRIGHT AND LICENCE
+=head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2007 by Robert "phaylon" Sedlacek.
+This software is copyright (c) 2012 by Robert "phaylon" Sedlacek.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+

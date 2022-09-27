@@ -1,11 +1,13 @@
 package TAP::Formatter::File;
 
 use strict;
-use warnings;
+use TAP::Formatter::Base ();
 use TAP::Formatter::File::Session;
 use POSIX qw(strftime);
 
-use base 'TAP::Formatter::Base';
+use vars qw($VERSION @ISA);
+
+@ISA = qw(TAP::Formatter::Base);
 
 =head1 NAME
 
@@ -13,11 +15,11 @@ TAP::Formatter::File - Harness output delegate for file output
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 DESCRIPTION
 
@@ -30,7 +32,7 @@ This provides file orientated output formatting for TAP::Harness.
 
 =head2 C<< open_test >>
 
-See L<TAP::Formatter::Base>
+See L<TAP::Formatter::base>
 
 =cut
 

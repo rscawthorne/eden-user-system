@@ -2,7 +2,7 @@ package Text::ParseWords;
 
 use strict;
 require 5.006;
-our $VERSION = "3.30";
+our $VERSION = "3.28";
 
 
 use Exporter;
@@ -202,8 +202,8 @@ one line you can call &parse_line() directly and save a function
 call.
 
 The $keep argument is a boolean flag.  If true, then the tokens are
-split on the specified delimiter, but all other characters (including
-quotes and backslashes) are kept in the tokens.  If $keep is false then the
+split on the specified delimiter, but all other characters (quotes,
+backslashes, etc.) are kept in the tokens.  If $keep is false then the
 &*quotewords() functions remove all quotes and backslashes that are
 not themselves backslash-escaped or inside of single quotes (i.e.,
 &quotewords() tries to interpret these characters just like the Bourne
@@ -243,27 +243,27 @@ demonstrating:
 
 =over 4
 
-=item 0Z<>
+=item 0
 
 a simple word
 
-=item 1Z<>
+=item 1
 
 multiple spaces are skipped because of our $delim
 
-=item 2Z<>
+=item 2
 
 use of quotes to include a space in a word
 
-=item 3Z<>
+=item 3
 
 use of a backslash to include a space in a word
 
-=item 4Z<>
+=item 4
 
 use of a backslash to remove the special meaning of a double-quote
 
-=item 5Z<>
+=item 5
 
 another simple word (note the lack of effect of the
 backslashed double-quote)
@@ -294,10 +294,5 @@ everybody!  Special thanks to Michael Schwern <schwern@envirolink.org>
 for assuring me that a &nested_quotewords() would be useful, and to 
 Jeff Friedl <jfriedl@yahoo-inc.com> for telling me not to worry about
 error-checking (sort of-- you had to be there).
-
-=head1 COPYRIGHT AND LICENSE
-
-This library is free software; you may redistribute and/or modify it
-under the same terms as Perl itself.
 
 =cut

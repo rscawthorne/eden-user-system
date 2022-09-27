@@ -12,16 +12,14 @@ package Data::Random::WordList;
 ################################################################################
 # - Modules and Libraries
 ################################################################################
-use strict;
-use warnings;
-
+#require 5.005_62;
 use FileHandle;
 use File::Basename qw(dirname);
 
 ################################################################################
 # - Global Constants and Variables
 ################################################################################
-our $VERSION = '0.13';
+$Data::Random::WordList::VERSION = '0.08';
 
 ################################################################################
 # - Subroutines
@@ -175,7 +173,7 @@ Closes the filehandle associated with the word list.  It's good practice to do t
 
 =head1 VERSION
 
-0.12
+0.08
 
 
 =head1 AUTHOR
@@ -187,9 +185,7 @@ Currently maintained by: Buddy Burden (barefoot@cpan.org), starting with version
 
 =head1 COPYRIGHT
 
-Copyright (c) 2000-2011 Adekunle Olonoh.
-Copyright (c) 2011-2015 Buddy Burden.
-All rights reserved.  This program is free software; you
+Copyright (c) 2000-2011 Adekunle Olonoh.  All rights reserved.  This program is free software; you
 can redistribute it and/or modify it under the same terms as Perl itself.
 
 

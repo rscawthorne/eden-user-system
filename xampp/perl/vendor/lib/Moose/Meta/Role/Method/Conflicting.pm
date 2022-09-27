@@ -1,12 +1,18 @@
+
 package Moose::Meta::Role::Method::Conflicting;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Role::Method::Conflicting::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Role::Method::Conflicting::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
 use Moose::Util;
 
-use parent 'Moose::Meta::Role::Method::Required';
+use base qw(Moose::Meta::Role::Method::Required);
 
 __PACKAGE__->meta->add_attribute('roles' => (
     reader   => 'roles',
@@ -23,11 +29,9 @@ sub roles_as_english_list {
 
 # ABSTRACT: A Moose metaclass for conflicting methods in Roles
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -35,7 +39,7 @@ Moose::Meta::Role::Method::Conflicting - A Moose metaclass for conflicting metho
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -46,11 +50,13 @@ L<Moose::Meta::Role::Method::Required>.
 
 =head1 METHODS
 
-=head2 Moose::Meta::Role::Method::Conflicting->new(%options)
+=over 4
+
+=item B<< Moose::Meta::Role::Method::Conflicting->new(%options) >>
 
 This creates a new type constraint based on the provided C<%options>:
 
-=over 4
+=over 8
 
 =item * name
 
@@ -62,74 +68,38 @@ The list of role names that generated the conflict. This is required.
 
 =back
 
-=head2 $method->name
+=item B<< $method->name >>
 
 Returns the conflicting method's name, as provided to the constructor.
 
-=head2 $method->roles
+=item B<< $method->roles >>
 
 Returns the roles that generated this conflicting method, as provided to the
 constructor.
 
-=head2 $method->roles_as_english_list
+=item B<< $method->roles_as_english_list >>
 
 Returns the roles that generated this conflicting method as an English list.
+
+=back
 
 =head1 BUGS
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+

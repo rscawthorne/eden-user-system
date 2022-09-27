@@ -2,7 +2,7 @@ package Module::Load::Conditional;
 
 use strict;
 
-use Module::Load qw/load autoload_remote/;
+use Module::Load;
 use Params::Check                       qw[check];
 use Locale::Maketext::Simple Style  => 'gettext';
 
@@ -13,21 +13,18 @@ use version;
 
 use Module::Metadata ();
 
-use constant ON_VMS   => $^O eq 'VMS';
-use constant ON_WIN32 => $^O eq 'MSWin32' ? 1 : 0;
-use constant QUOTE    => do { ON_WIN32 ? q["] : q['] };
+use constant ON_VMS  => $^O eq 'VMS';
 
 BEGIN {
     use vars        qw[ $VERSION @ISA $VERBOSE $CACHE @EXPORT_OK $DEPRECATED
-                        $FIND_VERSION $ERROR $CHECK_INC_HASH $FORCE_SAFE_INC ];
+                        $FIND_VERSION $ERROR $CHECK_INC_HASH];
     use Exporter;
     @ISA            = qw[Exporter];
-    $VERSION        = '0.74';
+    $VERSION        = '0.54';
     $VERBOSE        = 0;
     $DEPRECATED     = 0;
     $FIND_VERSION   = 1;
     $CHECK_INC_HASH = 0;
-    $FORCE_SAFE_INC = 0;
     @EXPORT_OK      = qw[check_install can_load requires];
 }
 
@@ -198,11 +195,9 @@ sub check_install {
         }
     }
 
-    ### we didn't find the filename yet by looking in %INC,
+    ### we didnt find the filename yet by looking in %INC,
     ### so scan the dirs
     unless( $filename ) {
-
-        local @INC = @INC[0..$#INC-1] if $FORCE_SAFE_INC && $INC[-1] eq '.';
 
         DIR: for my $dir ( @INC ) {
 
@@ -238,7 +233,7 @@ sub check_install {
                 $filename = File::Spec->catfile($dir, $file);
                 next unless -e $filename;
 
-                $fh = FileHandle->new();
+                $fh = new FileHandle;
                 if (!$fh->open($filename)) {
                     warn loc(q[Cannot open file '%1': %2], $file, $!)
                             if $args->{verbose};
@@ -259,19 +254,13 @@ sub check_install {
             last DIR unless $FIND_VERSION;
 
             ### otherwise, the user wants us to find the version from files
+            my $mod_info = Module::Metadata->new_from_handle( $fh, $filename );
+            my $ver      = $mod_info->version( $args->{module} );
 
-            {
-              local $SIG{__WARN__} = sub {};
-              my $ver = eval {
-                my $mod_info = Module::Metadata->new_from_handle( $fh, $filename );
-                $mod_info->version( $args->{module} );
-              };
+            if( defined $ver ) {
+                $href->{version} = $ver;
 
-              if( defined $ver ) {
-                  $href->{version} = $ver;
-
-                  last DIR;
-              }
+                last DIR;
             }
         }
     }
@@ -316,22 +305,19 @@ sub check_install {
     }
 
     if ( $DEPRECATED and "$]" >= 5.011 ) {
-        local @INC = @INC[0..$#INC-1] if $FORCE_SAFE_INC && $INC[-1] eq '.';
         require Module::CoreList;
         require Config;
 
-        no warnings 'once';
         $href->{uptodate} = 0 if
            exists $Module::CoreList::version{ 0+$] }{ $args->{module} } and
            Module::CoreList::is_deprecated( $args->{module} ) and
-           $Config::Config{privlibexp} eq $href->{dir}
-           and $Config::Config{privlibexp} ne $Config::Config{sitelibexp};
+           $Config::Config{privlibexp} eq $href->{dir};
     }
 
     return $href;
 }
 
-=head2 $bool = can_load( modules => { NAME => VERSION [,NAME => VERSION] }, [verbose => BOOL, nocache => BOOL, autoload => BOOL] )
+=head2 $bool = can_load( modules => { NAME => VERSION [,NAME => VERSION] }, [verbose => BOOL, nocache => BOOL] )
 
 C<can_load> will take a list of modules, optionally with version
 numbers and determine if it is able to load them. If it can load *ALL*
@@ -341,8 +327,8 @@ This is particularly useful if you have More Than One Way (tm) to
 solve a problem in a program, and only wish to continue down a path
 if all modules could be loaded, and not load them if they couldn't.
 
-This function uses the C<load> function or the C<autoload_remote> function
-from Module::Load under the hood.
+This function uses the C<load> function from Module::Load under the
+hood.
 
 C<can_load> takes the following arguments:
 
@@ -367,12 +353,6 @@ same module twice, nor will it attempt to load a module that has
 already failed to load before. By default, C<can_load> will check its
 cache, but you can override that by setting C<nocache> to true.
 
-=item autoload
-
-This controls whether imports the functions of a loaded modules to the caller package. The default is no importing any functions.
-
-See the C<autoload> function and the C<autoload_remote> function from L<Module::Load> for details.
-
 =cut
 
 sub can_load {
@@ -382,7 +362,6 @@ sub can_load {
         modules     => { default => {}, strict_type => 1 },
         verbose     => { default => $VERBOSE },
         nocache     => { default => 0 },
-        autoload    => { default => 0 },
     };
 
     my $args;
@@ -455,14 +434,7 @@ sub can_load {
 
             if ( $CACHE->{$mod}->{uptodate} ) {
 
-                local @INC = @INC[0..$#INC-1] if $FORCE_SAFE_INC && $INC[-1] eq '.';
-
-                if ( $args->{autoload} ) {
-                    my $who = (caller())[0];
-                    eval { autoload_remote $who, $mod };
-                } else {
-                    eval { load $mod };
-                }
+                eval { load $mod };
 
                 ### in case anything goes wrong, log the error, the fact
                 ### we tried to use this module and return 0;
@@ -522,18 +494,13 @@ sub requires {
         return undef;
     }
 
-    local @INC = @INC[0..$#INC-1] if $FORCE_SAFE_INC && $INC[-1] eq '.';
-
     my $lib = join " ", map { qq["-I$_"] } @INC;
-    my $oneliner = 'print(join(qq[\n],map{qq[BONG=$_]}keys(%INC)),qq[\n])';
-    my $cmd = join '', qq["$^X" $lib -M$who -e], QUOTE, $oneliner, QUOTE;
+    my $cmd = qq["$^X" $lib -M$who -e"print(join(qq[\\n],keys(%INC)))"];
 
     return  sort
                 grep { !/^$who$/  }
                 map  { chomp; s|/|::|g; $_ }
                 grep { s|\.pm$||i; }
-                map  { s!^BONG\=!!; $_ }
-                grep { m!^BONG\=! }
             `$cmd`;
 }
 
@@ -576,12 +543,6 @@ to C<true> will trust any entries in C<%INC> and return them for
 you.
 
 The default is 0;
-
-=head2 $Module::Load::Conditional::FORCE_SAFE_INC
-
-This controls whether C<Module::Load::Conditional> sanitises C<@INC>
-by removing "C<.>". The current default setting is C<0>, but this
-may change in a future release.
 
 =head2 $Module::Load::Conditional::CACHE
 

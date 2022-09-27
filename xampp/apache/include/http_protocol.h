@@ -54,32 +54,11 @@ AP_DECLARE_DATA extern ap_filter_rec_t *ap_old_write_func;
  */
 
 /**
- * Read an empty request and set reasonable defaults.
- * @param c The current connection
- * @return The new request_rec
- */
-AP_DECLARE(request_rec *) ap_create_request(conn_rec *c);
-
-/**
  * Read a request and fill in the fields.
  * @param c The current connection
  * @return The new request_rec
  */
 request_rec *ap_read_request(conn_rec *c);
-
-/**
- * Parse and validate the request line.
- * @param r The current request
- * @return 1 on success, 0 on failure
- */
-AP_DECLARE(int) ap_parse_request_line(request_rec *r);
-
-/**
- * Validate the request header and select vhost.
- * @param r The current request
- * @return 1 on success, 0 on failure
- */
-AP_DECLARE(int) ap_check_request_header(request_rec *r);
 
 /**
  * Read the mime-encoded headers.
@@ -95,13 +74,6 @@ AP_DECLARE(void) ap_get_mime_headers(request_rec *r);
  */
 AP_DECLARE(void) ap_get_mime_headers_core(request_rec *r,
                                           apr_bucket_brigade *bb);
-
-/**
- * Run post_read_request hook and validate.
- * @param r The current request
- * @return OK or HTTP_...
- */
-AP_DECLARE(int) ap_post_read_request(request_rec *r);
 
 /* Finish up stuff after a request */
 
@@ -173,27 +145,6 @@ AP_DECLARE(const char *) ap_make_content_type(request_rec *r,
  */
 AP_DECLARE(void) ap_setup_make_content_type(apr_pool_t *pool);
 
-/** A structure with the ingredients for a file based etag */
-typedef struct etag_rec etag_rec;
-
-/**
- * @brief A structure with the ingredients for a file based etag
- */
-struct etag_rec {
-    /** Optional vary list validator */
-    const char *vlist_validator;
-    /** Time when the request started */
-    apr_time_t request_time;
-    /** finfo.protection (st_mode) set to zero if no such file */
-    apr_finfo_t *finfo;
-    /** File pathname used when generating a digest */
-    const char *pathname;
-    /** File descriptor used when generating a digest */
-    apr_file_t *fd;
-    /** Force a non-digest etag to be weak */
-    int force_weak;
-};
-
 /**
  * Construct an entity tag from the resource information.  If it's a real
  * file, build in some of the file characteristics.
@@ -205,25 +156,10 @@ struct etag_rec {
 AP_DECLARE(char *) ap_make_etag(request_rec *r, int force_weak);
 
 /**
- * Construct an entity tag from information provided in the etag_rec
- * structure.
- * @param r The current request
- * @param er The etag record, containing ingredients for the etag.
- */
-AP_DECLARE(char *) ap_make_etag_ex(request_rec *r, etag_rec *er);
-
-/**
  * Set the E-tag outgoing header
  * @param r The current request
  */
 AP_DECLARE(void) ap_set_etag(request_rec *r);
-
-/**
- * Set the E-tag outgoing header, with the option of forcing a strong ETag.
- * @param r The current request
- * @param fd The file descriptor
- */
-AP_DECLARE(void) ap_set_etag_fd(request_rec *r, apr_file_t *fd);
 
 /**
  * Set the last modified time for the file being sent
@@ -530,17 +466,6 @@ AP_DECLARE(int) ap_index_of_response(int status);
  */
 AP_DECLARE(const char *) ap_get_status_line(int status);
 
-/**
- * Return the Status-Line for a given status code (excluding the
- * HTTP-Version field). If an invalid status code is passed,
- * "500 Internal Server Error" will be returned, whereas an unknown
- * status will be returned like "xxx Status xxx".
- * @param p The pool to allocate from when status is unknown
- * @param status The HTTP status code
- * @return The Status-Line
- */
-AP_DECLARE(const char *) ap_get_status_line_ex(apr_pool_t *p, int status);
-
 /* Reading a block of data from the client connection (e.g., POST arg) */
 
 /**
@@ -633,11 +558,7 @@ AP_DECLARE(void) ap_note_digest_auth_failure(request_rec *r);
 AP_DECLARE_HOOK(int, note_auth_failure, (request_rec *r, const char *auth_type))
 
 /**
- * Get the password from the request headers. This function has multiple side
- * effects due to its prior use in the old authentication framework.
- * ap_get_basic_auth_components() should be preferred.
- *
- * @deprecated @see ap_get_basic_auth_components
+ * Get the password from the request headers
  * @param r The current request
  * @param pw The password as set in the headers
  * @return 0 (OK) if it set the 'pw' argument (and assured
@@ -650,25 +571,6 @@ AP_DECLARE_HOOK(int, note_auth_failure, (request_rec *r, const char *auth_type))
  */
 AP_DECLARE(int) ap_get_basic_auth_pw(request_rec *r, const char **pw);
 
-#define AP_GET_BASIC_AUTH_PW_NOTE "AP_GET_BASIC_AUTH_PW_NOTE"
-
-/**
- * Get the username and/or password from the request's Basic authentication
- * headers. Unlike ap_get_basic_auth_pw(), calling this function has no side
- * effects on the passed request_rec.
- *
- * @param r The current request
- * @param username If not NULL, set to the username sent by the client
- * @param password If not NULL, set to the password sent by the client
- * @return APR_SUCCESS if the credentials were successfully parsed and returned;
- *         APR_EINVAL if there was no authentication header sent or if the
- *         client was not using the Basic authentication scheme. username and
- *         password are unchanged on failure.
- */
-AP_DECLARE(apr_status_t) ap_get_basic_auth_components(const request_rec *r,
-                                                      const char **username,
-                                                      const char **password);
-
 /**
  * parse_uri: break apart the uri
  * @warning Side Effects:
@@ -680,24 +582,17 @@ AP_DECLARE(apr_status_t) ap_get_basic_auth_components(const request_rec *r,
  */
 AP_CORE_DECLARE(void) ap_parse_uri(request_rec *r, const char *uri);
 
-#define AP_GETLINE_FOLD 1 /* Whether to merge continuation lines */
-#define AP_GETLINE_CRLF 2 /* Whether line ends must be in the form CR LF */
-#define AP_GETLINE_NOSPC_EOL 4 /* Whether to consume up to and including the
-                                  end of line on APR_ENOSPC */
-
 /**
  * Get the next line of input for the request
  * @param s The buffer into which to read the line
  * @param n The size of the buffer
  * @param r The request
- * @param flags Bit flag of multiple parsing options
- *              AP_GETLINE_FOLD Whether to merge continuation lines
- *              AP_GETLINE_CRLF Whether line ends must be in the form CR LF
+ * @param fold Whether to merge continuation lines
  * @return The length of the line, if successful
  *         n, if the line is too big to fit in the buffer
  *         -1 for miscellaneous errors
  */
-AP_DECLARE(int) ap_getline(char *s, int n, request_rec *r, int flags);
+AP_DECLARE(int) ap_getline(char *s, int n, request_rec *r, int fold);
 
 /**
  * Get the next line of input for the request
@@ -715,9 +610,7 @@ AP_DECLARE(int) ap_getline(char *s, int n, request_rec *r, int flags);
  * @param n The size of the buffer
  * @param read The length of the line.
  * @param r The request
- * @param flags Bit flag of multiple parsing options
- *              AP_GETLINE_FOLD Whether to merge continuation lines
- *              AP_GETLINE_CRLF Whether line ends must be in the form CR LF
+ * @param fold Whether to merge continuation lines
  * @param bb Working brigade to use when reading buckets
  * @return APR_SUCCESS, if successful
  *         APR_ENOSPC, if the line is too big to fit in the buffer
@@ -726,7 +619,7 @@ AP_DECLARE(int) ap_getline(char *s, int n, request_rec *r, int flags);
 #if APR_CHARSET_EBCDIC
 AP_DECLARE(apr_status_t) ap_rgetline(char **s, apr_size_t n,
                                      apr_size_t *read,
-                                     request_rec *r, int flags,
+                                     request_rec *r, int fold,
                                      apr_bucket_brigade *bb);
 #else /* ASCII box */
 #define ap_rgetline(s, n, read, r, fold, bb) \
@@ -736,7 +629,7 @@ AP_DECLARE(apr_status_t) ap_rgetline(char **s, apr_size_t n,
 /** @see ap_rgetline */
 AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
                                           apr_size_t *read,
-                                          request_rec *r, int flags,
+                                          request_rec *r, int fold,
                                           apr_bucket_brigade *bb);
 
 /**
@@ -808,7 +701,7 @@ AP_DECLARE_HOOK(const char *,http_scheme,(const request_rec *r))
 AP_DECLARE_HOOK(apr_port_t,default_port,(const request_rec *r))
 
 
-#define AP_PROTOCOL_HTTP1        "http/1.1"
+#define AP_PROTOCOL_HTTP1		"http/1.1"
 
 /**
  * Determine the list of protocols available for a connection/request. This may
@@ -873,7 +766,8 @@ AP_DECLARE_HOOK(int,protocol_propose,(conn_rec *c, request_rec *r,
  * @param c The current connection
  * @param r The current request or NULL
  * @param s The server/virtual host selected
- * @param protocol The protocol identifier we try to switch to
+ * @param choices A list of protocol identifiers, normally the clients whishes
+ * @param proposals the list of protocol identifiers proposed by the hooks
  * @return OK or DECLINED
  * @bug This API or implementation and order of operations should be considered
  * experimental and will continue to evolve in future 2.4 releases, with
@@ -1088,8 +982,6 @@ AP_DECLARE(void) ap_finalize_sub_req_protocol(request_rec *sub_r);
  * @param send_headers Whether to send&clear headers in r->headers_out
  */
 AP_DECLARE(void) ap_send_interim_response(request_rec *r, int send_headers);
-
-
 
 #ifdef __cplusplus
 }

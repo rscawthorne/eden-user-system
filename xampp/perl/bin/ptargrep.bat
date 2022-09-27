@@ -31,7 +31,6 @@ goto endofperl
 # archive.  See 'ptargrep --help' for more documentation.
 #
 
-BEGIN { pop @INC if $INC[-1] eq '.' }
 use strict;
 use warnings;
 
@@ -96,10 +95,6 @@ sub process_archive {
 sub match_file {
     my($f)   = @_;
     my $path = $f->name;
-    my $prefix = $f->prefix;
-    if (defined $prefix) {
-        $path = File::Spec->catfile($prefix, $path);
-    }
 
     _log("filename: %s  (%d bytes)", $path, $f->size);
 

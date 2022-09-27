@@ -9,7 +9,7 @@
 #   Andy Wardley   <abw@wardley.org>
 #
 # COPYRIGHT
-#   Copyright (C) 1996-2015 Andy Wardley.  All Rights Reserved.
+#   Copyright (C) 1996-2006 Andy Wardley.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -27,7 +27,7 @@ use Scalar::Util qw( blessed looks_like_number );
 use Template::Filters;
 require Template::Stash;
 
-our $VERSION = '3.009';
+our $VERSION = 2.16;
 our $DEBUG   = 0 unless defined $DEBUG;
 our $PRIVATE = $Template::Stash::PRIVATE;
 
@@ -42,7 +42,6 @@ our $TEXT_VMETHODS = {
     hash        => \&text_hash,
     length      => \&text_length,
     size        => \&text_size,
-    empty       => \&text_empty,
     defined     => \&text_defined,
     upper       => \&text_upper,
     lower       => \&text_lower,
@@ -68,7 +67,6 @@ our $HASH_VMETHODS = {
     item    => \&hash_item,
     hash    => \&hash_hash,
     size    => \&hash_size,
-    empty   => \&hash_empty,
     each    => \&hash_each,
     keys    => \&hash_keys,
     values  => \&hash_values,
@@ -93,7 +91,6 @@ our $LIST_VMETHODS = {
     shift   => \&list_shift,
     max     => \&list_max,
     size    => \&list_size,
-    empty   => \&list_empty,
     defined => \&list_defined,
     first   => \&list_first,
     last    => \&list_last,
@@ -149,10 +146,6 @@ sub text_length {
 
 sub text_size {
     return 1;
-}
-
-sub text_empty {
-    return 0 == text_length($_[0]) ? 1 : 0;
 }
 
 sub text_defined {
@@ -227,7 +220,7 @@ sub text_replace {
             my ($chunk, $start, $end) = @_;
             $chunk =~ s{ \\(\\|\$) | \$ (\d+) }{
                 $1 ? $1
-                    : ($2 > $#$start || $2 == 0 || !defined $start->[$2]) ? ''
+                    : ($2 > $#$start || $2 == 0) ? ''
                     : substr($text, $start->[$2], $end->[$2] - $start->[$2]);
             }exg;
             $chunk;
@@ -261,40 +254,21 @@ sub text_split {
     my ($str, $split, $limit) = @_;
     $str = '' unless defined $str;
 
-    # For versions of Perl prior to 5.18 we have to be very careful about
-    # spelling out each possible combination of arguments because split()
-    # is very sensitive to them, for example C<split(' ', ...)> behaves
-    # differently to C<$space=' '; split($space, ...)>.  Test 33 of 
-    # vmethods/text.t depends on this behaviour.
+    # we have to be very careful about spelling out each possible
+    # combination of arguments because split() is very sensitive
+    # to them, for example C<split(' ', ...)> behaves differently
+    # to C<$space=' '; split($space, ...)>
 
-    if ($] < 5.018) {
-        if (defined $limit) {
-            return [ defined $split
-                     ? split($split, $str, $limit)
-                     : split(' ', $str, $limit) ];
-        }
-        else {
-            return [ defined $split
-                     ? split($split, $str)
-                     : split(' ', $str) ];
-        }
+    if (defined $limit) {
+        return [ defined $split
+                 ? split($split, $str, $limit)
+                 : split(' ', $str, $limit) ];
     }
-
-    # split's behavior changed in Perl 5.18.0 making this:
-    # C<$space=' '; split($space, ...)>
-    # behave the same as this:
-    # C<split(' ', ...)>
-    # qr// behaves the same, so use that for user-defined split.
-
-    my $split_re;
-    if (defined $split) {
-        eval {
-            $split_re = qr/$split/;
-        };
+    else {
+        return [ defined $split
+                 ? split($split, $str)
+                 : split(' ', $str) ];
     }
-    $split_re = ' ' unless defined $split_re;
-    $limit ||= 0;
-    return [split($split_re, $str, $limit)];
 }
 
 sub text_chunk {
@@ -369,10 +343,6 @@ sub hash_hash {
 
 sub hash_size {
     scalar keys %{$_[0]};
-}
-
-sub hash_empty {
-    return 0 == hash_size($_[0]) ? 1 : 0;
 }
 
 sub hash_each {
@@ -504,10 +474,6 @@ sub list_size {
     $#$list + 1;
 }
 
-sub list_empty {
-    return 0 == list_size($_[0]) ? 1 : 0;
-}
-
 sub list_defined {
     # return the item requested, or 1 if no argument to
     # indicate that the hash itself is defined
@@ -584,28 +550,17 @@ sub list_sort {
 sub list_nsort {
     my ($list, @fields) = @_;
     return $list unless @$list > 1;     # no need to sort 1 item lists
-
-    my $sort = sub {
-        my $cmp;
-
-        if(@fields) {
-            # compare each field individually
-            for my $field (@fields) {
-                my $A = _list_sort_make_key($a, [ $field ]);
-                my $B = _list_sort_make_key($b, [ $field ]);
-                ($cmp = $A <=> $B) and last;
-            }
-        }
-        else {
-            my $A = _list_sort_make_key($a);
-            my $B = _list_sort_make_key($b);
-            $cmp = $A <=> $B;
-        }
-
-        $cmp;
-    };
-
-    return [ sort $sort @{ $list } ];
+    return [
+        @fields                         # Schwartzian Transform
+        ?  map  { $_->[0] }             # for case insensitivity
+           sort { $a->[1] <=> $b->[1] }
+           map  { [ $_, _list_sort_make_key($_, \@fields) ] }
+           @$list
+        :  map  { $_->[0] }
+           sort { $a->[1] <=> $b->[1] }
+           map  { [ $_, lc $_ ] }
+           @$list,
+    ];
 }
 
 sub list_unique {

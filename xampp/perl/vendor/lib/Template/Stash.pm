@@ -25,7 +25,7 @@ use Template::VMethods;
 use Template::Exception;
 use Scalar::Util qw( blessed reftype );
 
-our $VERSION    = '3.009';
+our $VERSION    = 2.91;
 our $DEBUG      = 0 unless defined $DEBUG;
 our $PRIVATE    = qr/^[_.]/;
 our $UNDEF_TYPE = 'var.undef';
@@ -75,13 +75,13 @@ sub define_vmethod {
     my $op;
     $type = lc $type;
 
-    if ($type eq 'scalar' || $type eq 'item') {
+    if ($type =~ /^scalar|item$/) {
         $op = $SCALAR_OPS;
     }
     elsif ($type eq 'hash') {
         $op = $HASH_OPS;
     }
-    elsif ($type eq 'list' || $type eq 'array') {
+    elsif ($type =~ /^list|array$/) {
         $op = $LIST_OPS;
     }
     else {
@@ -210,7 +210,7 @@ sub get {
     $root = $self;
 
     if (ref $ident eq 'ARRAY'
-        || (index($ident,'.') > -1)
+        || ($ident =~ /\./) 
         && ($ident = [ map { s/\(.*$//; ($_, 0) } split(/\./, $ident) ])) {
         my $size = $#$ident;
 
@@ -257,7 +257,7 @@ sub set {
 
     ELEMENT: {
         if (ref $ident eq 'ARRAY'
-            || (index($ident,'.') != -1) # has a '.' in it somewhere
+            || ($ident =~ /\./) 
             && ($ident = [ map { s/\(.*$//; ($_, 0) }
                            split(/\./, $ident) ])) {
             
@@ -357,7 +357,7 @@ sub undefined {
 
     if ($self->{ _STRICT }) {
         # Sorry, but we can't provide a sensible source file and line without
-        # re-designing the whole architecture of TT (see TT3)
+        # re-designing the whole architecure of TT (see TT3)
         die Template::Exception->new(
             $UNDEF_TYPE, 
             sprintf(
@@ -491,15 +491,13 @@ sub _dotop {
         eval { @result = $root->$item(@$args); };       
         
         if ($@) {
-            # temporary hack - required to propagate errors thrown
+            # temporary hack - required to propogate errors thrown
             # by views; if $@ is a ref (e.g. Template::Exception
             # object then we assume it's a real error that needs
             # real throwing
 
             my $class = ref($root) || $root;
-
-            # Fail only if the function exists
-            die $@ if ( ref($@) || $root->can($item) );
+            die $@ if ref($@) || ($@ !~ /Can't locate object method "\Q$item\E" via package "\Q$class\E"/);
 
             # failed to call object method, so try some fallbacks
             if (reftype $root eq 'HASH') {
@@ -667,7 +665,7 @@ sub _dump_frame {
     foreach $key (keys %$self) {
         $value = $self->{ $key };
         $value = '<undef>' unless defined $value;
-        next if index($key,'.') == 0; # has '.' as the first char.
+        next if $key =~ /^\./;
         if (ref($value) eq 'ARRAY') {
             $value = '[ ' . join(', ', map { defined $_ ? $_ : '<undef>' }
                                  @$value) . ' ]';
@@ -804,7 +802,7 @@ This method can be used to set or update several variables in one go.
 
 This undocumented feature returns a closure which can be called to get the
 value of a variable.  It is used to implement variable references which are
-evaluated lazily.
+evlauted lazily.
 
     [% x = \foo.bar.baz %]          # x is a reference to foo.bar.baz
     [% x %]                         # evalautes foo.bar.baz
@@ -859,7 +857,7 @@ variables against their root.
 =head2 undefined($ident, $args)
 
 This method is called when L<get()> encounters an undefined value.  If the 
-L<STRICT|Template::Manual::Config#STRICT> option is in effect then it will
+C<STRICT|Template::Manual::Config#STRICT> option is in effect then it will
 throw an exception indicating the use of an undefined value.  Otherwise it
 will silently return an empty string.
 
@@ -872,7 +870,7 @@ Andy Wardley E<lt>abw@wardley.orgE<gt> L<http://wardley.org/>
 
 =head1 COPYRIGHT
 
-Copyright (C) 1996-2013 Andy Wardley.  All Rights Reserved.
+Copyright (C) 1996-2012 Andy Wardley.  All Rights Reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

@@ -1,9 +1,12 @@
 package Net::HTTP::NB;
-our $VERSION = '6.20';
-use strict;
-use warnings;
 
-use base 'Net::HTTP';
+use strict;
+use vars qw($VERSION @ISA);
+
+$VERSION = "6.04";
+
+require Net::HTTP;
+@ISA=qw(Net::HTTP);
 
 sub can_read {
     return 1;
@@ -39,7 +42,7 @@ sub read_entity_body {
     ${*$self}{'httpnb_read_count'} = 0;
     ${*$self}{'httpnb_save'} = ${*$self}{'http_buf'};
     # XXX I'm not so sure this does the correct thing in case of
-    # transfer-encoding transforms
+    # transfer-encoding tranforms
     my $n = eval { $self->SUPER::read_entity_body(@_); };
     if ($@) {
 	$_[0] = "";
@@ -50,17 +53,11 @@ sub read_entity_body {
 
 1;
 
-=pod
-
-=encoding UTF-8
+__END__
 
 =head1 NAME
 
 Net::HTTP::NB - Non-blocking HTTP client
-
-=head1 VERSION
-
-version 6.20
 
 =head1 SYNOPSIS
 
@@ -102,20 +99,11 @@ the value -1 is returned.
 
 L<Net::HTTP>
 
-=head1 AUTHOR
+=head1 COPYRIGHT
 
-Gisle Aas <gisle@activestate.com>
+Copyright 2001 Gisle Aas.
 
-=head1 COPYRIGHT AND LICENSE
-
-This software is copyright (c) 2001-2017 by Gisle Aas.
-
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
 
 =cut
-
-__END__
-
-#ABSTRACT: Non-blocking HTTP client
-

@@ -14,6 +14,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+
 package jsp2.examples.simpletag;
 
 import javax.servlet.jsp.JspException;
@@ -29,7 +31,7 @@ public class FindBookSimpleTag extends SimpleTagSupport {
     private String var;
 
     private static final String BOOK_TITLE = "The Lord of the Rings";
-    private static final String BOOK_AUTHOR = "J. R. R. Tolkien";
+    private static final String BOOK_AUTHOR = "J. R. R. Tolkein";
     private static final String BOOK_ISBN = "0618002251";
 
     @Override

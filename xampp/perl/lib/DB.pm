@@ -38,17 +38,17 @@ BEGIN {
 
   $DB::package = '';    # current package space
   $DB::filename = '';   # current filename
-  $DB::subname = '';    # currently executing sub (fully qualified name)
+  $DB::subname = '';    # currently executing sub (fullly qualified name)
   $DB::lineno = '';     # current line number
 
-  $DB::VERSION = $DB::VERSION = '1.08';
+  $DB::VERSION = $DB::VERSION = '1.04';
 
   # initialize private globals to avoid warnings
 
   $running = 1;         # are we running, or are we stopped?
   @stack = (0);
   @clients = ();
-  $deep = 1000;
+  $deep = 100;
   $ready = 0;
   @saved = ();
   @skippkg = ();
@@ -244,8 +244,8 @@ sub backtrace {
     for (@a) {
       s/'/\\'/g;
       s/([^\0]*)/'$1'/ unless /^-?[\d.]+$/;
-      require 'meta_notation.pm';
-      $_ = _meta_notation($_) if /[[:^print:]]/a;
+      s/([\200-\377])/sprintf("M-%c",ord($1)&0177)/eg;
+      s/([\0-\37\177])/sprintf("^%c",ord($1)^64)/eg;
     }
     $w = $w ? '@ = ' : '$ = ';
     $a = $h ? '(' . join(', ', @a) . ')' : '';
@@ -559,8 +559,7 @@ DB - programmatic interface to the Perl debugging API
     CLIENT->register()      # register a client package name
     CLIENT->done()          # de-register from the debugging API
     CLIENT->skippkg('hide::hide')  # ask DB not to stop in this package
-    CLIENT->cont([WHERE])       # run some more (until BREAK or 
-                                # another breakpointt)
+    CLIENT->cont([WHERE])       # run some more (until BREAK or another breakpt)
     CLIENT->step()              # single step
     CLIENT->next()              # step over
     CLIENT->ret()               # return from current subroutine
@@ -589,8 +588,7 @@ DB - programmatic interface to the Perl debugging API
     CLIENT->stop(FILE,LINE) # when execution stops
     CLIENT->idle()          # while stopped (can be a client event loop)
     CLIENT->cleanup()       # just before exit
-    CLIENT->output(LIST)    # called to print any output that
-                            # the API must show
+    CLIENT->output(LIST)    # called to print any output that API must show
 
 =head1 DESCRIPTION
 

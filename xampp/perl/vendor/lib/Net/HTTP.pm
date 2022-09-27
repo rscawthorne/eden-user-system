@@ -1,26 +1,17 @@
 package Net::HTTP;
-our $VERSION = '6.20';
-use strict;
-use warnings;
 
-our $SOCKET_CLASS;
+use strict;
+use vars qw($VERSION @ISA $SOCKET_CLASS);
+
+$VERSION = "6.06";
 unless ($SOCKET_CLASS) {
-    # Try several, in order of capability and preference
-    if (eval { require IO::Socket::IP }) {
-       $SOCKET_CLASS = "IO::Socket::IP";    # IPv4+IPv6
-    } elsif (eval { require IO::Socket::INET6 }) {
-       $SOCKET_CLASS = "IO::Socket::INET6"; # IPv4+IPv6
-    } elsif (eval { require IO::Socket::INET }) {
-       $SOCKET_CLASS = "IO::Socket::INET";  # IPv4 only
-    } else {
-       require IO::Socket;
-       $SOCKET_CLASS = "IO::Socket::INET";
-    }
+    eval { require IO::Socket::INET } || require IO::Socket;
+    $SOCKET_CLASS = "IO::Socket::INET";
 }
 require Net::HTTP::Methods;
 require Carp;
 
-our @ISA = ($SOCKET_CLASS, 'Net::HTTP::Methods');
+@ISA = ($SOCKET_CLASS, 'Net::HTTP::Methods');
 
 sub new {
     my $class = shift;
@@ -40,17 +31,11 @@ sub http_connect {
 
 1;
 
-=pod
-
-=encoding UTF-8
+__END__
 
 =head1 NAME
 
 Net::HTTP - Low-level HTTP connection (client)
-
-=head1 VERSION
-
-version 6.20
 
 =head1 SYNOPSIS
 
@@ -74,11 +59,10 @@ C<Net::HTTP> class represents a connection to an HTTP server.  The
 HTTP protocol is described in RFC 2616.  The C<Net::HTTP> class
 supports C<HTTP/1.0> and C<HTTP/1.1>.
 
-C<Net::HTTP> is a sub-class of one of C<IO::Socket::IP> (IPv6+IPv4),
-C<IO::Socket::INET6> (IPv6+IPv4), or C<IO::Socket::INET> (IPv4 only).
-You can mix the methods described below with reading and writing from the
-socket directly.  This is not necessary a good idea, unless you know what
-you are doing.
+C<Net::HTTP> is a sub-class of C<IO::Socket::INET>.  You can mix the
+methods described below with reading and writing from the socket
+directly.  This is not necessary a good idea, unless you know what you
+are doing.
 
 The following methods are provided (in addition to those of
 C<IO::Socket::INET>):
@@ -100,9 +84,6 @@ C<IO::Socket::INET>'s as well as these:
 
 The C<Host> option is also the default for C<IO::Socket::INET>'s
 C<PeerAddr>.  The C<PeerPort> defaults to 80 if not provided.
-The C<PeerPort> specification can also be embedded in the C<PeerAddr>
-by preceding it with a ":", and closing the IPv6 address on brackets "[]" if
-necessary: "192.0.2.1:80","[2001:db8::1]:80","any.example.com:80".
 
 The C<Listen> option provided by C<IO::Socket::INET>'s constructor
 method is not allowed.
@@ -172,7 +153,7 @@ format_request().  Returns true if successful.
 
 =item $s->format_chunk( $data )
 
-Returns the string to be written for the given chunk of data.
+Returns the string to be written for the given chunk of data.  
 
 =item $s->write_chunk($data)
 
@@ -288,20 +269,11 @@ names prefixed with C<http_> and C<io_>.
 
 L<LWP>, L<IO::Socket::INET>, L<Net::HTTP::NB>
 
-=head1 AUTHOR
+=head1 COPYRIGHT
 
-Gisle Aas <gisle@activestate.com>
+Copyright 2001-2003 Gisle Aas.
 
-=head1 COPYRIGHT AND LICENSE
-
-This software is copyright (c) 2001-2017 by Gisle Aas.
-
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
 
 =cut
-
-__END__
-
-# ABSTRACT: Low-level HTTP connection (client)
-

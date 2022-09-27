@@ -18,11 +18,9 @@ package compressionFilters;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.zip.GZIPOutputStream;
 
 import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 
 /**
  * Implementation of <b>ServletOutputStream</b> that works with
@@ -97,23 +95,26 @@ public class CompressionResponseStream extends ServletOutputStream {
     protected boolean closed = false;
 
     /**
+     * The content length past which we will not write, or -1 if there is
+     * no defined content length.
+     */
+    protected int length = -1;
+
+    /**
      * The response with which this servlet output stream is associated.
      */
-    protected final CompressionServletResponseWrapper response;
+    protected CompressionServletResponseWrapper response = null;
 
     /**
      * The underlying servlet output stream to which we should write data.
      */
-    protected final ServletOutputStream output;
+    protected ServletOutputStream output = null;
 
 
     // --------------------------------------------------------- Public Methods
 
     /**
-     * Set debug level.
-     *
-     * @param debug The higher the number, the more detail shown. Currently the
-     *              range 0 (none) to 3 (everything) is used.
+     * Set debug level
      */
     public void setDebugLevel(int debug) {
         this.debug = debug;
@@ -142,15 +143,12 @@ public class CompressionResponseStream extends ServletOutputStream {
     }
 
     /**
-     * Set supported mime types.
-     *
-     * @param compressionMimeTypes The mimetypes that will be compressed.
+     * Set supported mime types
      */
     public void setCompressionMimeTypes(String[] compressionMimeTypes) {
         this.compressionMimeTypes = compressionMimeTypes;
         if (debug > 1) {
-            System.out.println("compressionMimeTypes is set to " +
-                    Arrays.toString(this.compressionMimeTypes));
+            System.out.println("compressionMimeTypes is set to " + this.compressionMimeTypes);
         }
     }
 
@@ -164,9 +162,8 @@ public class CompressionResponseStream extends ServletOutputStream {
         if (debug > 1) {
             System.out.println("close() @ CompressionResponseStream");
         }
-        if (closed) {
+        if (closed)
             throw new IOException("This output stream has already been closed");
-        }
 
         if (gzipstream != null) {
             flushToGZip();
@@ -238,9 +235,8 @@ public class CompressionResponseStream extends ServletOutputStream {
         if (debug > 1) {
             System.out.println("write "+b+" in CompressionResponseStream ");
         }
-        if (closed) {
+        if (closed)
             throw new IOException("Cannot write to a closed output stream");
-        }
 
         if (bufferCount >= buffer.length) {
             flushToGZip();
@@ -267,27 +263,6 @@ public class CompressionResponseStream extends ServletOutputStream {
     }
 
 
-
-    /**
-     * TODO SERVLET 3.1
-     */
-    @Override
-    public boolean isReady() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-
-    /**
-     * TODO SERVLET 3.1
-     */
-    @Override
-    public void setWriteListener(WriteListener listener) {
-        // TODO Auto-generated method stub
-
-    }
-
-
     /**
      * Write <code>len</code> bytes from the specified byte array, starting
      * at the specified offset, to our output stream.
@@ -310,13 +285,11 @@ public class CompressionResponseStream extends ServletOutputStream {
             System.out.println(")");
         }
 
-        if (closed) {
+        if (closed)
             throw new IOException("Cannot write to a closed output stream");
-        }
 
-        if (len == 0) {
+        if (len == 0)
             return;
-        }
 
         // Can we write into buffer ?
         if (len <= (buffer.length - bufferCount)) {
@@ -385,19 +358,16 @@ public class CompressionResponseStream extends ServletOutputStream {
             }
 
             if (response.isCommitted()) {
-                if (debug > 1) {
+                if (debug > 1)
                     System.out.print("Response already committed. Using original output stream");
-                }
                 gzipstream = output;
             } else if (alreadyCompressed) {
-                if (debug > 1) {
+                if (debug > 1)
                     System.out.print("Response already compressed. Using original output stream");
-                }
                 gzipstream = output;
             } else if (!compressibleMimeType) {
-                if (debug > 1) {
+                if (debug > 1)
                     System.out.print("Response mime type is not compressible. Using original output stream");
-                }
                 gzipstream = output;
             } else {
                 response.addHeader("Content-Encoding", "gzip");
@@ -413,15 +383,15 @@ public class CompressionResponseStream extends ServletOutputStream {
 
     // -------------------------------------------------------- Package Methods
 
+
     /**
      * Has this response stream been closed?
-     *
-     * @return <code>true</code> if the stream has been closed, otherwise false.
      */
     public boolean closed() {
-        return closed;
-    }
 
+        return (this.closed);
+
+    }
 
     /**
      * Checks if any entry in the string array starts with the specified value
@@ -430,11 +400,10 @@ public class CompressionResponseStream extends ServletOutputStream {
      * @param value string
      */
     private boolean startsWithStringArray(String sArray[], String value) {
-        if (value == null) {
-            return false;
-        }
-        for (String s : sArray) {
-            if (value.startsWith(s)) {
+        if (value == null)
+           return false;
+        for (int i = 0; i < sArray.length; i++) {
+            if (value.startsWith(sArray[i])) {
                 return true;
             }
         }

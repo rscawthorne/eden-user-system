@@ -38,14 +38,18 @@ and any other block braces.
 C<PPI::Structure::Block> has no methods beyond those provided by the
 standard L<PPI::Structure>, L<PPI::Node> and L<PPI::Element> methods.
 
+Got any ideas for methods? Submit a report to rt.cpan.org!
+
 =cut
 
 use strict;
 use PPI::Structure ();
 
-our $VERSION = '1.270'; # VERSION
-
-our @ISA = "PPI::Structure";
+use vars qw{$VERSION @ISA};
+BEGIN {
+	$VERSION = '1.215';
+	@ISA     = 'PPI::Structure';
+}
 
 
 
@@ -55,7 +59,7 @@ our @ISA = "PPI::Structure";
 # PPI::Element Methods
 
 # This is a scope boundary
-sub scope() { 1 }
+sub scope { 1 }
 
 1;
 

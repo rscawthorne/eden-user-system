@@ -1,14 +1,10 @@
-package Test::Object; # git description: 1392ed9
+package Test::Object;
 
 =pod
 
 =head1 NAME
 
 Test::Object - Thoroughly testing objects via registered handlers
-
-=head1 VERSION
-
-version 0.08
 
 =head1 SYNOPSIS
 
@@ -94,6 +90,7 @@ test count.
 
 =cut
 
+use 5.005;
 use strict;
 use Carp               ();
 use Exporter           ();
@@ -101,9 +98,9 @@ use Test::More         ();
 use Scalar::Util       ();
 use Test::Object::Test ();
 
-our $VERSION = '0.08';
-use vars qw{@ISA @EXPORT};
+use vars qw{$VERSION @ISA @EXPORT};
 BEGIN {
+	$VERSION = '0.07';
 	@ISA     = 'Exporter';
 	@EXPORT  = 'object_ok';
 }
@@ -155,7 +152,7 @@ For other issues, contact the author.
 
 =head1 AUTHOR
 
-Adam Kennedy E<lt>adamk@cpan.orgE<gt>
+Adam Kennedy E<lt>cpan@ali.asE<gt>
 
 =head1 SEE ALSO
 
@@ -163,7 +160,7 @@ L<http://ali.as/>, L<Test::More>, L<Test::Builder::Tester>, L<Test::Class>
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006 Adam Kennedy.
+Copyright 2005, 2006 Adam Kennedy. All rights reserved.
 
 This program is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.

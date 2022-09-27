@@ -1,15 +1,20 @@
 package Moose::Meta::Role::Application::ToClass;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Role::Application::ToClass::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Role::Application::ToClass::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 use metaclass;
 
-use List::Util 'first';
-use Moose::Util 'throw_exception';
-use Scalar::Util 'weaken';
+use List::MoreUtils 'firstval';
+use Moose::Util  'english_list';
+use Scalar::Util 'weaken', 'blessed';
 
-use parent 'Moose::Meta::Role::Application';
+use base 'Moose::Meta::Role::Application';
 
 __PACKAGE__->meta->add_attribute('role' => (
     reader => 'role',
@@ -37,16 +42,11 @@ sub apply {
 sub check_role_exclusions {
     my ($self, $role, $class) = @_;
     if ($class->excludes_role($role->name)) {
-        throw_exception( ConflictDetectedInCheckRoleExclusionsInToClass => class_name => $class->name,
-                                                                           role_name  => $role->name,
-                       );
+        $class->throw_error("Conflict detected: " . $class->name . " excludes role '" . $role->name . "'");
     }
     foreach my $excluded_role_name ($role->get_excluded_roles_list) {
         if ($class->does_role($excluded_role_name)) {
-            throw_exception( ClassDoesTheExcludedRole => role_name          => $role->name,
-                                                         excluded_role_name => $excluded_role_name,
-                                                         class_name         => $class->name,
-                           );
+            $class->throw_error("The class " . $class->name . " does the excluded role '$excluded_role_name'");
         }
     }
 }
@@ -87,25 +87,51 @@ sub check_required_methods {
 
         my @same_role_conflicts = grep { $_->roles_as_english_list eq $roles } @conflicts;
 
-        throw_exception( MethodNameConflictInRoles => conflict   => \@same_role_conflicts,
-                                                      class_name => $class->name
-                       );
-    }
-    elsif (@missing) {
-        if (my $meth = first { $class->name->can($_) } @missing) {
-            throw_exception( RequiredMethodsImportedByClass => class_name      => $class->name,
-                                                               role_name       => $role->name,
-                                                               missing_methods => \@missing,
-                                                               imported_method => $meth
-                           );
+        if (@same_role_conflicts == 1) {
+            $error
+                .= "Due to a method name conflict in roles "
+                .  $roles
+                . ", the method '"
+                . $conflict->name
+                . "' must be implemented or excluded by '"
+                . $class->name
+                . q{'};
         }
         else {
-            throw_exception( RequiredMethodsNotImplementedByClass => class_name      => $class->name,
-                                                                     role_name       => $role->name,
-                                                                     missing_methods => \@missing,
-                           );
+            my $methods
+                = Moose::Util::english_list( map { q{'} . $_->name . q{'} } @same_role_conflicts );
+
+            $error
+                .= "Due to method name conflicts in roles "
+                .  $roles
+                . ", the methods "
+                . $methods
+                . " must be implemented or excluded by '"
+                . $class->name
+                . q{'};
         }
     }
+    elsif (@missing) {
+        my $noun = @missing == 1 ? 'method' : 'methods';
+
+        my $list
+            = Moose::Util::english_list( map { q{'} . $_ . q{'} } @missing );
+
+        $error
+            .= q{'}
+            . $role->name
+            . "' requires the $noun $list "
+            . "to be implemented by '"
+            . $class->name . q{'};
+
+        if (my $meth = firstval { $class->name->can($_) } @missing) {
+            $error .= ". If you imported functions intending to use them as "
+                    . "methods, you need to explicitly mark them as such, via "
+                    . $class->name . "->meta->add_method($meth => \\\&$meth)";
+        }
+    }
+
+    $class->throw_error($error);
 }
 
 sub check_required_attributes {
@@ -157,11 +183,9 @@ sub apply_methods {
         my $class_method = $class->get_method($aliased_method_name);
 
         if ( $class_method && $class_method->body != $method->body ) {
-            throw_exception( CannotCreateMethodAliasLocalMethodIsPresentInClass => aliased_method_name => $aliased_method_name,
-                                                                                   method              => $method,
-                                                                                   role_name           => $role->name,
-                                                                                   class_name          => $class->name,
-                           );
+            $class->throw_error(
+                "Cannot create a method alias if a local method of the same name exists"
+            );
         }
 
         $class->add_method(
@@ -212,11 +236,9 @@ sub apply_method_modifiers {
 
 # ABSTRACT: Compose a role into a class
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -224,7 +246,7 @@ Moose::Meta::Role::Application::ToClass - Compose a role into a class
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -258,57 +280,20 @@ version 2.2014
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+

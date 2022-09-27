@@ -24,18 +24,22 @@ There are no methods available for C<PPI::Token::QuoteLike::Command>
 beyond those provided by the parent L<PPI::Token::QuoteLike>, L<PPI::Token>
 and L<PPI::Element> classes.
 
+Got any ideas for methods? Submit a report to rt.cpan.org!
+
 =cut
 
 use strict;
 use PPI::Token::QuoteLike          ();
 use PPI::Token::_QuoteEngine::Full ();
 
-our $VERSION = '1.270'; # VERSION
-
-our @ISA = qw{
-	PPI::Token::_QuoteEngine::Full
-	PPI::Token::QuoteLike
-};
+use vars qw{$VERSION @ISA};
+BEGIN {
+	$VERSION = '1.215';
+	@ISA     = qw{
+		PPI::Token::_QuoteEngine::Full
+		PPI::Token::QuoteLike
+	};
+}
 
 1;
 

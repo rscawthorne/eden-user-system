@@ -9,7 +9,7 @@
 # write to mjd-perl-memoize+@plover.com for a license.
 
 package Memoize;
-$VERSION = '1.03_01';
+$VERSION = '1.03';
 
 # Compile-time constants
 sub SCALAR () { 0 } 
@@ -184,11 +184,7 @@ sub _my_tie {
   }
   my $modulefile = $module . '.pm';
   $modulefile =~ s{::}{/}g;
-  eval {
-    local @INC = @INC;
-    pop @INC if $INC[-1] eq '.';
-    require $modulefile
-  };
+  eval { require $modulefile };
   if ($@) {
     croak "Memoize: Couldn't load hash tie module `$module': $@; aborting";
   }

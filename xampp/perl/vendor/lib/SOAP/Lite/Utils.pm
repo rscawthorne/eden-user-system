@@ -1,8 +1,6 @@
 package SOAP::Lite::Utils;
 use strict;
 
-our $VERSION = '1.27'; # VERSION
-
 sub import {
     my $caller = caller();
     no strict qw(refs);

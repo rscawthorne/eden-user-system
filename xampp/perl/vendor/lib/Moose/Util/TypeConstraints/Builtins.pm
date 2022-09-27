@@ -1,17 +1,23 @@
 package Moose::Util::TypeConstraints::Builtins;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Util::TypeConstraints::Builtins::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Util::TypeConstraints::Builtins::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
 use Class::Load qw( is_class_loaded );
-use List::Util 1.33 ();
-use Scalar::Util qw( blessed );
+use List::MoreUtils ();
+use Scalar::Util qw( blessed looks_like_number reftype );
 
 sub type { goto &Moose::Util::TypeConstraints::type }
 sub subtype { goto &Moose::Util::TypeConstraints::subtype }
 sub as { goto &Moose::Util::TypeConstraints::as }
 sub where (&) { goto &Moose::Util::TypeConstraints::where }
+sub optimize_as (&) { goto &Moose::Util::TypeConstraints::optimize_as }
 sub inline_as (&) { goto &Moose::Util::TypeConstraints::inline_as }
 
 sub define_builtins {
@@ -79,30 +85,11 @@ sub define_builtins {
     my $value_type = Moose::Util::TypeConstraints::find_type_constraint('Value');
     subtype 'Num'
         => as 'Str'
-        => where {
-        my $val = $_;
-        ($val =~ /\A[+-]?[0-9]+\z/) ||
-        ( $val =~ /\A(?:[+-]?)              # matches optional +- in the beginning
-        (?=[0-9]|\.[0-9])                   # matches previous +- only if there is something like 3 or .3
-        [0-9]*                              # matches 0-9 zero or more times
-        (?:\.[0-9]+)?                       # matches optional .89 or nothing
-        (?:[Ee](?:[+-]?[0-9]+))?            # matches E1 or e1 or e-1 or e+1 etc
-        \z/x );
-           }
+        => where { Scalar::Util::looks_like_number($_) }
         => inline_as {
             # the long Str tests are redundant here
-        #storing $_[1] in a temporary value,
-        #so that $_[1] won't get converted to a string for regex match
-        #see t/attributes/numeric_defaults.t for more details
-        'my $val = '.$_[1].';'.
-        $value_type->_inline_check('$val')
-        .' && ( $val =~ /\A[+-]?[0-9]+\z/ || '
-        . '$val =~ /\A(?:[+-]?)             # matches optional +- in the beginning
-                (?=[0-9]|\.[0-9])           # matches previous +- only if there is something like 3 or .3
-                [0-9]*                      # matches 0-9 zero or more times
-                (?:\.[0-9]+)?               # matches optional .89 or nothing
-                (?:[Ee](?:[+-]?[0-9]+))?    # matches E1 or e1 or e-1 or e+1 etc
-                \z/x ); '
+            $value_type->_inline_check($_[1])
+            . ' && Scalar::Util::looks_like_number(' . $_[1] . ')'
         };
 
     subtype 'Int'
@@ -223,7 +210,7 @@ sub define_builtins {
                 'do {'
                     . 'my $check = ' . $val . ';'
                     . 'ref($check) eq "ARRAY" '
-                        . '&& &List::Util::all('
+                        . '&& &List::MoreUtils::all('
                             . 'sub { ' . $type_parameter->_inline_check('$_') . ' }, '
                             . '@{$check}'
                         . ')'
@@ -258,7 +245,7 @@ sub define_builtins {
                 'do {'
                     . 'my $check = ' . $val . ';'
                     . 'ref($check) eq "HASH" '
-                        . '&& &List::Util::all('
+                        . '&& &List::MoreUtils::all('
                             . 'sub { ' . $type_parameter->_inline_check('$_') . ' }, '
                             . 'values %{$check}'
                         . ')'
@@ -303,3 +290,4 @@ __END__
 =for pod_coverage_needs_some_pod
 
 =cut
+

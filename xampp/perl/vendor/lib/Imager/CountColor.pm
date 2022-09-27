@@ -1,14 +1,14 @@
 package Imager::CountColor;
-use 5.006;
 use strict;
 use Imager;
+use vars qw($VERSION @ISA @EXPORT_OK);
 require Exporter;
-our @EXPORT_OK = 'count_color';
+@EXPORT_OK = 'count_color';
 
 BEGIN {
-  our $VERSION = "0.03";
-  our @ISA = qw(Exporter);
-
+  $VERSION = "0.02";
+  @ISA = qw(Exporter);
+  
   require XSLoader;
   XSLoader::load('Imager::CountColor', $VERSION);
 }

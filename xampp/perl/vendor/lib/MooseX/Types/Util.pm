@@ -1,32 +1,19 @@
+package MooseX::Types::Util;
+{
+  $MooseX::Types::Util::VERSION = '0.35';
+}
+
+#ABSTRACT: Common utility functions for the distribution
+
 use warnings;
 use strict;
-package MooseX::Types::Util;
-# ABSTRACT: Common utility functions for the distribution
-
-our $VERSION = '0.50';
-
 use Scalar::Util 'blessed';
-use base 'Exporter';
-use namespace::autoclean;
 
-#pod =head1 DESCRIPTION
-#pod
-#pod This package the exportable functions that many parts in
-#pod L<MooseX::Types> might need.
-#pod
-#pod =cut
+use base 'Exporter';
+
 
 our @EXPORT_OK = qw( filter_tags has_available_type_export );
 
-#pod =head1 FUNCTIONS
-#pod
-#pod =head2 filter_tags
-#pod
-#pod Takes a list and returns two references. The first is a hash reference
-#pod containing the tags as keys and the number of their appearance as values.
-#pod The second is an array reference containing all other elements.
-#pod
-#pod =cut
 
 sub filter_tags {
     my (@list) = @_;
@@ -41,43 +28,6 @@ sub filter_tags {
     return \%tags, \@other;
 }
 
-#pod =head2 has_available_type_export
-#pod
-#pod   TypeConstraint | Undef = has_available_type_export($package, $name);
-#pod
-#pod This function allows you to introspect if a given type export is available
-#pod I<at this point in time>. This means that the C<$package> must have imported
-#pod a type constraint with the name C<$name>, and it must be still in its symbol
-#pod table.
-#pod
-#pod Two arguments are expected:
-#pod
-#pod =over 4
-#pod
-#pod =item $package
-#pod
-#pod The name of the package to introspect.
-#pod
-#pod =item $name
-#pod
-#pod The name of the type export to introspect.
-#pod
-#pod =back
-#pod
-#pod B<Note> that the C<$name> is the I<exported> name of the type, not the declared
-#pod one. This means that if you use L<Sub::Exporter>s functionality to rename an import
-#pod like this:
-#pod
-#pod   use MyTypes Str => { -as => 'MyStr' };
-#pod
-#pod you would have to introspect this type like this:
-#pod
-#pod   has_available_type_export $package, 'MyStr';
-#pod
-#pod The return value will be either the type constraint that belongs to the export
-#pod or an undefined value.
-#pod
-#pod =cut
 
 sub has_available_type_export {
     my ($package, $name) = @_;
@@ -91,19 +41,11 @@ sub has_available_type_export {
     return $sub->();
 }
 
-#pod =head1 SEE ALSO
-#pod
-#pod L<MooseX::Types::Moose>, L<Exporter>
-#pod
-#pod =cut
 
 1;
 
 __END__
-
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -111,11 +53,11 @@ MooseX::Types::Util - Common utility functions for the distribution
 
 =head1 VERSION
 
-version 0.50
+version 0.35
 
 =head1 DESCRIPTION
 
-This package the exportable functions that many parts in
+This package the exportable functions that many parts in 
 L<MooseX::Types> might need.
 
 =head1 FUNCTIONS
@@ -130,9 +72,9 @@ The second is an array reference containing all other elements.
 
   TypeConstraint | Undef = has_available_type_export($package, $name);
 
-This function allows you to introspect if a given type export is available
+This function allows you to introspect if a given type export is available 
 I<at this point in time>. This means that the C<$package> must have imported
-a type constraint with the name C<$name>, and it must be still in its symbol
+a typeconstraint with the name C<$name>, and it must be still in its symbol
 table.
 
 Two arguments are expected:
@@ -166,26 +108,21 @@ or an undefined value.
 
 L<MooseX::Types::Moose>, L<Exporter>
 
-=head1 SUPPORT
+=head1 LICENSE
 
-Bugs may be submitted through L<the RT bug tracker|https://rt.cpan.org/Public/Dist/Display.html?Name=MooseX-Types>
-(or L<bug-MooseX-Types@rt.cpan.org|mailto:bug-MooseX-Types@rt.cpan.org>).
-
-There is also a mailing list available for users of this distribution, at
-L<http://lists.perl.org/list/moose.html>.
-
-There is also an irc channel available for users of this distribution, at
-L<C<#moose> on C<irc.perl.org>|irc://irc.perl.org/#moose>.
+This program is free software; you can redistribute it and/or modify
+it under the same terms as perl itself.
 
 =head1 AUTHOR
 
 Robert "phaylon" Sedlacek <rs@474.at>
 
-=head1 COPYRIGHT AND LICENCE
+=head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2007 by Robert "phaylon" Sedlacek.
+This software is copyright (c) 2012 by Robert "phaylon" Sedlacek.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+

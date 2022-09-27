@@ -45,7 +45,10 @@ use Scalar::Util qw{refaddr reftype blessed};
 use Params::Util qw{_INSTANCE _ARRAY};
 use PPI::Util    ();
 
-our $VERSION = '1.270'; # VERSION
+use vars qw{$VERSION};
+BEGIN {
+	$VERSION = '1.215';
+}
 
 use overload 'bool' => \&PPI::Util::TRUE;
 use overload '=='   => 'equal';
@@ -75,7 +78,7 @@ sub new {
 
 	# Check the required params
 	my $Document  = _INSTANCE($args{Document}, 'PPI::Document') or return undef;
-	my $version   = $args{version};
+	my $version   = $args{version} or return undef;
 	my $functions = _ARRAY($args{functions}) or return undef;
 
 	# Create the object
@@ -150,9 +153,7 @@ sub equal {
 	return undef if $self->{processing};
 
 	# Check the version and function list first
-	my $v1 = $self->version || "undef";
-	my $v2 = $other->version || "undef";
-	return '' if $v1 ne $v2;
+	return '' unless $self->version eq $other->version;
 	$self->_equal_ARRAY( $self->functions, $other->functions ) or return '';
 
 	# Do the main comparison run

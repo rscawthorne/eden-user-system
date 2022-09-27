@@ -18,25 +18,26 @@
 #undef dEXT
 #undef EXTCONST
 #undef dEXTCONST
-
-#  if (defined(WIN32) && defined(__MINGW32__) && ! defined(PERL_IS_MINIPERL)) \
-     || defined(__SYMBIAN32__)
-#    ifdef __cplusplus
-#      define EXT	__declspec(dllexport)
-#      define dEXT
-#      define EXTCONST	__declspec(dllexport) extern const
-#      define dEXTCONST	const
-#    else
-#      define EXT	__declspec(dllexport)
-#      define dEXT
-#      define EXTCONST	__declspec(dllexport) const
-#      define dEXTCONST	const
-#    endif
+#if defined(VMS) && !defined(__GNUC__)
+    /* Suppress portability warnings from DECC for VMS-specific extensions */
+#  ifdef __DECC
+#    pragma message disable (GLOBALEXT,NOSHAREEXT,READONLYEXT)
+#  endif
+#  define EXT globaldef {"$GLOBAL_RW_VARS"} noshare
+#  define dEXT globaldef {"$GLOBAL_RW_VARS"} noshare
+#  define EXTCONST globaldef {"$GLOBAL_RO_VARS"} readonly
+#  define dEXTCONST globaldef {"$GLOBAL_RO_VARS"} readonly
+#else
+#  if (defined(WIN32) && defined(__MINGW32__)) || defined(__SYMBIAN32__)
+#    define EXT		__declspec(dllexport)
+#    define dEXT
+#    define EXTCONST	__declspec(dllexport) const
+#    define dEXTCONST	const
 #  else
 #    ifdef __cplusplus
 #      define EXT
 #      define dEXT
-#      define EXTCONST EXTERN_C const
+#      define EXTCONST extern const
 #      define dEXTCONST const
 #    else
 #      define EXT
@@ -45,6 +46,7 @@
 #      define dEXTCONST const
 #    endif
 #  endif
+#endif
 
 #undef INIT
 #define INIT(x) = x

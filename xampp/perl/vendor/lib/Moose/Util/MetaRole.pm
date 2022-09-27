@@ -1,13 +1,20 @@
 package Moose::Util::MetaRole;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Util::MetaRole::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Util::MetaRole::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 use Scalar::Util 'blessed';
 
-use List::Util 1.33 qw( first all );
+use Carp qw( croak );
+use List::MoreUtils qw( all );
+use List::Util qw( first );
 use Moose::Deprecated;
-use Moose::Util 'throw_exception';
+use Scalar::Util qw( blessed );
 
 sub apply_metaroles {
     my %args = @_;
@@ -38,7 +45,28 @@ sub _metathing_for {
 
     local $Carp::CarpLevel = $Carp::CarpLevel + 1;
 
-    throw_exception( InvalidArgPassedToMooseUtilMetaRole => argument => $passed );
+    my $error_start
+        = 'When using Moose::Util::MetaRole, you must pass a Moose class name,'
+        . ' role name, metaclass object, or metarole object.';
+
+    if ( defined $found && blessed $found ) {
+        croak $error_start
+            . " You passed $passed, and we resolved this to a "
+            . ( blessed $found )
+            . ' object.';
+    }
+
+    if ( defined $passed && !defined $found ) {
+        croak $error_start
+            . " You passed $passed, and this did not resolve to a metaclass or metarole."
+            . ' Maybe you need to call Moose->init_meta to initialize the metaclass first?';
+    }
+
+    if ( !defined $passed ) {
+        croak $error_start
+            . " You passed an undef."
+            . ' Maybe you need to call Moose->init_meta to initialize the metaclass first?';
+    }
 }
 
 sub _make_new_metaclass {
@@ -77,9 +105,7 @@ sub apply_base_class_roles {
     my %args = @_;
 
     my $meta = _metathing_for( $args{for} || $args{for_class} );
-    throw_exception( CannotApplyBaseClassRolesToRole => params    => \%args,
-                                                        role_name => $meta->name,
-                   )
+    croak 'You can only apply base class roles to a Moose class, not a role.'
         if $meta->isa('Moose::Meta::Role');
 
     my $new_base = _make_new_class(
@@ -116,11 +142,9 @@ sub _make_new_class {
 
 # ABSTRACT: Apply roles to any metaclass, as well as the object base class
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -128,7 +152,7 @@ Moose::Util::MetaRole - Apply roles to any metaclass, as well as the object base
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 SYNOPSIS
 
@@ -153,7 +177,7 @@ version 2.2014
       Moose::Util::MetaRole::apply_metaroles(
           for             => $args{for_class},
           class_metaroles => {
-              class       => ['MyApp::Role::Meta::Class'],
+              class => => ['MyApp::Role::Meta::Class'],
               constructor => ['MyApp::Role::Meta::Method::Constructor'],
           },
       );
@@ -273,57 +297,19 @@ This function will apply the specified roles to the object's base class.
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+

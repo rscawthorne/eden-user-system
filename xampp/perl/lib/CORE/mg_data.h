@@ -38,14 +38,13 @@
     /* arylen '#' Array length ($#ary) */
     want_vtbl_arylen | PERL_MAGIC_VALUE_MAGIC,
     0,
-    /* rhash '%' Extra data for restricted hashes */
+    /* rhash '%' extra data for restricted hashes */
     magic_vtable_max | PERL_MAGIC_VALUE_MAGIC,
     0,
     0,
     0,
     0,
-    /* debugvar '*' $DB::single, signal, trace vars */
-    want_vtbl_debugvar,
+    0,
     0,
     0,
     0,
@@ -62,17 +61,18 @@
     0,
     0,
     0,
-    /* symtab ':' Extra data for symbol tables */
+    /* symtab ':' extra data for symbol tables */
     magic_vtable_max | PERL_MAGIC_VALUE_MAGIC,
     0,
-    /* backref '<' For weak ref data */
+    /* backref '<' for weak ref data */
     want_vtbl_backref | PERL_MAGIC_READONLY_ACCEPTABLE | PERL_MAGIC_VALUE_MAGIC,
     0,
     0,
     0,
-    /* arylen_p '@' To move arylen out of XPVAV */
+    /* arylen_p '@' to move arylen out of XPVAV */
     magic_vtable_max | PERL_MAGIC_VALUE_MAGIC,
-    0,
+    /* overload 'A' %OVERLOAD hash */
+    want_vtbl_amagic,
     /* bm 'B' Boyer-Moore (fast string search) */
     want_vtbl_regexp | PERL_MAGIC_READONLY_ACCEPTABLE | PERL_MAGIC_VALUE_MAGIC,
     0,
@@ -81,7 +81,8 @@
     /* env 'E' %ENV hash */
     want_vtbl_env,
     0,
-    0,
+    /* study 'G' study()ed string */
+    want_vtbl_regexp | PERL_MAGIC_READONLY_ACCEPTABLE | PERL_MAGIC_VALUE_MAGIC,
     /* hints 'H' %^H hash */
     want_vtbl_hints,
     /* isa 'I' @ISA array */
@@ -103,21 +104,20 @@
     /* uvar 'U' Available for use by extensions */
     want_vtbl_uvar,
     /* vstring 'V' SV was vstring literal */
+    want_vtbl_vstring | PERL_MAGIC_VALUE_MAGIC,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    /* checkcall ']' inlining/mutation of call to this CV */
     magic_vtable_max | PERL_MAGIC_VALUE_MAGIC,
     0,
     0,
-    /* nonelem 'Y' Array element that does not exist */
-    want_vtbl_nonelem | PERL_MAGIC_VALUE_MAGIC,
     0,
-    0,
-    /* lvref '\' Lvalue reference constructor */
-    want_vtbl_lvref,
-    /* checkcall ']' Inlining/mutation of call to this CV */
-    want_vtbl_checkcall | PERL_MAGIC_VALUE_MAGIC,
-    0,
-    0,
-    0,
-    0,
+    /* overload_elem 'a' %OVERLOAD hash element */
+    want_vtbl_amagicelem,
     0,
     /* overload_table 'c' Holds overload table (AMT) on stash */
     want_vtbl_ovrld,
@@ -126,7 +126,7 @@
     /* envelem 'e' %ENV hash element */
     want_vtbl_envelem,
     /* fm 'f' Formline ('compiled' format) */
-    want_vtbl_regexp | PERL_MAGIC_READONLY_ACCEPTABLE | PERL_MAGIC_VALUE_MAGIC,
+    want_vtbl_regdata | PERL_MAGIC_READONLY_ACCEPTABLE | PERL_MAGIC_VALUE_MAGIC,
     /* regex_global 'g' m//g target */
     want_vtbl_mglob | PERL_MAGIC_READONLY_ACCEPTABLE | PERL_MAGIC_VALUE_MAGIC,
     /* hintselem 'h' %^H hash element */
@@ -146,8 +146,8 @@
     want_vtbl_packelem,
     /* tiedscalar 'q' Tied scalar or handle */
     want_vtbl_packelem,
-    /* qr 'r' Precompiled qr// regex */
-    want_vtbl_regexp | PERL_MAGIC_READONLY_ACCEPTABLE | PERL_MAGIC_VALUE_MAGIC,
+    /* qr 'r' precompiled qr// regex */
+    want_vtbl_regexp | PERL_MAGIC_VALUE_MAGIC,
     /* sigelem 's' %SIG hash element */
     want_vtbl_sigelem,
     /* taint 't' Taintedness */
@@ -166,7 +166,7 @@
     0,
     0,
     /* ext '~' Available for use by extensions */
-    magic_vtable_max | PERL_MAGIC_READONLY_ACCEPTABLE,
+    magic_vtable_max,
     0,
     0,
     0,

@@ -1,14 +1,28 @@
 package DateTime::TimeZone::OlsonDB::Change;
+{
+  $DateTime::TimeZone::OlsonDB::Change::VERSION = '1.57';
+}
 
 use strict;
 use warnings;
-use namespace::autoclean;
 
-our $VERSION = '2.46';
+use Params::Validate qw( validate SCALAR UNDEF OBJECT );
 
 sub new {
     my $class = shift;
-    my %p     = @_;
+    my %p     = validate(
+        @_, {
+            utc_start_datetime   => { type => UNDEF | OBJECT },
+            local_start_datetime => { type => UNDEF | OBJECT },
+            short_name           => { type => SCALAR },
+            observance           => { type => OBJECT },
+            rule                 => { type => OBJECT, default => undef },
+            type => {
+                type  => SCALAR,
+                regex => qr/^(?:observance|rule)$/
+            },
+        }
+    );
 
     # These are almost always mutually exclusive, except when adding
     # an observance change and the last rule has no offset, but the
@@ -32,7 +46,7 @@ sub new {
     $p{is_dst} = 1 if $p{rule} && $p{rule}->offset_from_std;
     $p{is_dst} = 1 if $p{observance}->offset_from_std;
 
-    if ( $p{short_name} =~ m{([\-\+\w]+)/([\-\+\w]+)} ) {
+    if ( $p{short_name} =~ m{(\w+)/(\w+)} ) {
         $p{short_name} = $p{is_dst} ? $2 : $1;
     }
 
@@ -50,7 +64,7 @@ sub offset_from_std      { $_[0]->{offset_from_std} }
 sub total_offset         { $_[0]->offset_from_utc + $_[0]->offset_from_std }
 
 sub two_changes_as_span {
-    my ( $c1, $c2 ) = @_;
+    my ( $c1, $c2, $last_total_offset ) = @_;
 
     my ( $utc_start, $local_start );
 
@@ -76,30 +90,29 @@ sub two_changes_as_span {
     };
 }
 
-## no critic (Subroutines::ProhibitUnusedPrivateSubroutines, InputOutput::RequireCheckedSyscalls)
 sub _debug_output {
     my $self = shift;
 
     my $obs = $self->observance;
 
     if ( $self->utc_start_datetime ) {
-        print ' UTC:        ', $self->utc_start_datetime->datetime,   "\n";
-        print ' Local:      ', $self->local_start_datetime->datetime, "\n";
+        print " UTC:        ", $self->utc_start_datetime->datetime,   "\n";
+        print " Local:      ", $self->local_start_datetime->datetime, "\n";
     }
     else {
         print " First change (starts at -inf)\n";
     }
 
-    print ' Short name: ', $self->short_name,     "\n";
-    print ' UTC offset: ', $obs->offset_from_utc, "\n";
+    print " Short name: ", $self->short_name,     "\n";
+    print " UTC offset: ", $obs->offset_from_utc, "\n";
 
     if ( $obs->offset_from_std || $self->rule ) {
         if ( $obs->offset_from_std ) {
-            print ' Std offset: ', $obs->offset_from_std, "\n";
+            print " Std offset: ", $obs->offset_from_std, "\n";
         }
 
         if ( $self->rule ) {
-            print ' Std offset: ', $self->rule->offset_from_std, ' - ',
+            print " Std offset: ", $self->rule->offset_from_std, ' - ',
                 $self->rule->name, " rule\n";
         }
     }
@@ -109,6 +122,5 @@ sub _debug_output {
 
     print "\n";
 }
-## use critic
 
 1;

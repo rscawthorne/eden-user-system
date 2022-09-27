@@ -1,10 +1,10 @@
 package Imager::Font::Wrap;
-use 5.006;
 use strict;
 use Imager;
 use Imager::Font;
+use vars qw($VERSION);
 
-our $VERSION = "1.005";
+$VERSION = "1.003";
 
 *_first = \&Imager::Font::_first;
 
@@ -89,6 +89,8 @@ sub wrap_text {
   # try to get something useful
   my $x = _first(delete $input{'x'}, 0);
   my $y = _first(delete $input{'y'}, 0);
+  exists $input{image}
+    or return Imager->_set_error('No image parameter supplied');
   my $im = delete $input{image};
   my $imerr = $im || 'Imager';
   my $width = delete $input{width};
@@ -284,7 +286,7 @@ will be stored into the scalar this refers to.
 =item *
 
 C<image> - The image to render the text to.  Can be supplied as
-C<undef> or not provided to simply calculate the bounding box.
+C<undef> to simply calculate the bounding box.
 
 =item *
 

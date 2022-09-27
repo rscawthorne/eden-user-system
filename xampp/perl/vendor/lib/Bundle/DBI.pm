@@ -2,8 +2,7 @@
 
 package Bundle::DBI;
 
-use strict;
-our $VERSION = "12.008696";
+our $VERSION = sprintf("12.%06d", q$Revision: 8695 $ =~ /(\d+)/o);
 
 1;
 

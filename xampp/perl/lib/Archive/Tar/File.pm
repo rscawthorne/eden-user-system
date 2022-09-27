@@ -7,11 +7,13 @@ use File::Spec::Unix    ();
 use File::Spec          ();
 use File::Basename      ();
 
+### avoid circular use, so only require;
+require Archive::Tar;
 use Archive::Tar::Constant;
 
 use vars qw[@ISA $VERSION];
 #@ISA        = qw[Archive::Tar];
-$VERSION    = '2.38';
+$VERSION    = '1.90';
 
 ### set value to 1 to oct() it during the unpack ###
 
@@ -222,7 +224,7 @@ sub _new_from_chunk {
 
 
     if(substr($entry{'size'}, 0, 1) eq "\x80") {	# binary size extension for files >8gigs (> octal 77777777777777)	# cdrake
-      my @sz=unpack("aCSNN",$entry{'size'}); $entry{'size'}=$sz[4]+(2**32)*$sz[3]+$sz[2]*(2**64);	# Use the low 80 bits (should use the upper 15 as well, but as at year 2011, that seems unlikely to ever be needed - the numbers are just too big...) # cdrake
+      my @sz=unpack("aCSNN",$entry{'size'}); $entry{'size'}=$sz[4]+(2**32)*$sz[3]+$sz[2]*(2**64);	# Use the low 80 bits (should use the upper 15 as well, but as at year 2011, that seems unlikley to ever be needed - the numbers are just too big...) # cdrake
     } else {	# cdrake
       ($entry{'size'})=($entry{'size'}=~/^([^\0]*)/); $entry{'size'}=oct $entry{'size'};	# cdrake
     }	# cdrake
@@ -394,23 +396,22 @@ sub _prefix_and_file {
     my $path = shift;
 
     my ($vol, $dirs, $file) = File::Spec->splitpath( $path, $self->is_dir );
-    my @dirs = File::Spec->splitdir( File::Spec->canonpath($dirs) );
+    my @dirs = File::Spec->splitdir( $dirs );
+
+    ### so sometimes the last element is '' -- probably when trailing
+    ### dir slashes are encountered... this is of course pointless,
+    ### so remove it
+    pop @dirs while @dirs and not length $dirs[-1];
 
     ### if it's a directory, then $file might be empty
     $file = pop @dirs if $self->is_dir and not length $file;
 
     ### splitting ../ gives you the relative path in native syntax
-    ### Remove the root (000000) directory
-    ### The volume from splitpath will also be in native syntax
-    if (ON_VMS) {
-        map { $_ = '..' if $_  eq '-'; $_ = '' if $_ eq '000000' } @dirs;
-        if (length($vol)) {
-            $vol = VMS::Filespec::unixify($vol);
-            unshift @dirs, $vol;
-        }
-    }
+    map { $_ = '..' if $_  eq '-' } @dirs if ON_VMS;
 
-    my $prefix = File::Spec::Unix->catdir(@dirs);
+    my $prefix = File::Spec::Unix->catdir(
+                        grep { length } $vol, @dirs
+                    );
     return( $prefix, $file );
 }
 
@@ -467,8 +468,6 @@ sub extract {
 
     local $Carp::CarpLevel += 1;
 
-    ### avoid circular use, so only require;
-    require Archive::Tar;
     return Archive::Tar->_extract_file( $self, @_ );
 }
 
@@ -482,7 +481,7 @@ concatenation of the C<prefix> and C<name> fields.
 sub full_path {
     my $self = shift;
 
-    ### if prefix field is empty
+    ### if prefix field is emtpy
     return $self->name unless defined $self->prefix and length $self->prefix;
 
     ### or otherwise, catfile'd

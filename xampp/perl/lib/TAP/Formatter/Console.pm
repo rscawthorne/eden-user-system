@@ -1,9 +1,12 @@
 package TAP::Formatter::Console;
 
 use strict;
-use warnings;
-use base 'TAP::Formatter::Base';
+use TAP::Formatter::Base ();
 use POSIX qw(strftime);
+
+use vars qw($VERSION @ISA);
+
+@ISA = qw(TAP::Formatter::Base);
 
 =head1 NAME
 
@@ -11,11 +14,11 @@ TAP::Formatter::Console - Harness output delegate for default console output
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 DESCRIPTION
 
@@ -67,28 +70,16 @@ sub _set_colors {
     }
 }
 
-sub _failure_color {
-    my ($self) = @_;
-
-    return $ENV{'HARNESS_SUMMARY_COLOR_FAIL'} || 'red';
-}
-
-sub _success_color {
-    my ($self) = @_;
-
-    return $ENV{'HARNESS_SUMMARY_COLOR_SUCCESS'} || 'green';
-}
-
 sub _output_success {
     my ( $self, $msg ) = @_;
-    $self->_set_colors( $self->_success_color() );
+    $self->_set_colors('green');
     $self->_output($msg);
     $self->_set_colors('reset');
 }
 
 sub _failure_output {
     my $self = shift;
-    $self->_set_colors( $self->_failure_color() );
+    $self->_set_colors('red');
     my $out = join '', @_;
     my $has_newline = chomp $out;
     $self->_output($out);

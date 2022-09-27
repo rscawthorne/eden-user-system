@@ -1,9 +1,10 @@
 package MooseX::ClassAttribute::Trait::Attribute;
+BEGIN {
+  $MooseX::ClassAttribute::Trait::Attribute::VERSION = '0.26';
+}
 
 use strict;
 use warnings;
-
-our $VERSION = '0.29';
 
 use namespace::autoclean;
 use Moose::Role;
@@ -44,10 +45,8 @@ sub _initialize {
     my $metaclass = shift;
 
     if ( $self->has_default() ) {
-        $self->set_value(
-            undef,
-            $self->default( $self->associated_class() )
-        );
+        $self->set_value( undef,
+            $self->default( $self->associated_class() ) );
     }
     elsif ( $self->has_builder() ) {
         $self->set_value( undef, $self->_call_builder( $metaclass->name() ) );
@@ -138,10 +137,8 @@ if ( $Moose::VERSION < 1.99 ) {
         my $code
             = $meta->_inline_set_class_slot_value( $self->slots(), $value )
             . ";";
-        $code .= $meta->_inline_weaken_class_slot_value(
-            $self->slots(),
-            $value
-            )
+        $code
+            .= $meta->_inline_weaken_class_slot_value( $self->slots(), $value )
             . "    if ref $value;"
             if $self->is_weak_ref();
 
@@ -220,11 +217,9 @@ else {
 
 # ABSTRACT: A trait for class attributes
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -232,7 +227,7 @@ MooseX::ClassAttribute::Trait::Attribute - A trait for class attributes
 
 =head1 VERSION
 
-version 0.29
+version 0.26
 
 =head1 DESCRIPTION
 
@@ -248,21 +243,20 @@ is change the behavior of a number of existing methods.
 
 See L<MooseX::ClassAttribute> for details.
 
-Bugs may be submitted through L<the RT bug tracker|http://rt.cpan.org/Public/Dist/Display.html?Name=MooseX-ClassAttribute>
-(or L<bug-moosex-classattribute@rt.cpan.org|mailto:bug-moosex-classattribute@rt.cpan.org>).
-
-I am also usually active on IRC as 'drolsky' on C<irc://irc.perl.org>.
-
 =head1 AUTHOR
 
 Dave Rolsky <autarch@urth.org>
 
-=head1 COPYRIGHT AND LICENCE
+=head1 COPYRIGHT AND LICENSE
 
-This software is Copyright (c) 2016 by Dave Rolsky.
+This software is Copyright (c) 2011 by Dave Rolsky.
 
 This is free software, licensed under:
 
   The Artistic License 2.0 (GPL Compatible)
 
 =cut
+
+
+__END__
+

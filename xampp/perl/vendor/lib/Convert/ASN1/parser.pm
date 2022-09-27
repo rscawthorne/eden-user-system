@@ -6,7 +6,7 @@
 
 package Convert::ASN1::parser;
 {
-  $Convert::ASN1::parser::VERSION = '0.27';
+  $Convert::ASN1::parser::VERSION = '0.26';
 }
 
 use strict;
@@ -733,7 +733,7 @@ sub compile_one {
       }
       $op->[cTAG] = defined($op->[cTAG]) ? asn_encode_tag($op->[cTAG]): $ref->[0][cTAG];
     }
-    $op->[cTAG] |= pack("C",ASN_CONSTRUCTOR)
+    $op->[cTAG] |= chr(ASN_CONSTRUCTOR)
       if length $op->[cTAG] && ($op->[cTYPE] == opSET || $op->[cTYPE] == opEXPLICIT || $op->[cTYPE] == opSEQUENCE);
 
     if ($op->[cCHILD]) {

@@ -64,9 +64,6 @@ that comes with the module source.
   Filter          Arguments   Default value
   autolevels      lsat        0.1
                   usat        0.1
-
-  autolevels_skew lsat        0.1
-                  usat        0.1
                   skew        0
 
   bumpmap         bump lightx lighty
@@ -100,9 +97,6 @@ that comes with the module source.
                   segments(see below)
 
   gaussian        stddev
-
-  gaussian2       stddevX
-                  stddevY
 
   gradgen         xo yo colors 
                   dist         0
@@ -152,39 +146,22 @@ A reference of the filters follows:
 
 =over
 
-=item C<autolevels>
+=item autolevels
 
-Scales the luminosity of the image so that the luminosity will cover
-the possible range for the image.  C<lsat> and C<usat> truncate the
-range by the specified fraction at the top and bottom of the range
-respectively.
-
-  # increase contrast, losing little detail
-  $img->filter(type=>"autolevels")
-    or die $img->errstr;
-
-The method used here is typically called L<Histogram
-Equalization|http://en.wikipedia.org/wiki/Histogram_equalization>.
-
-=item C<autolevels_skew>
-
-Scales the value of each channel so that the values in the image will
+scales the value of each channel so that the values in the image will
 cover the whole possible range for the channel.  C<lsat> and C<usat>
 truncate the range by the specified fraction at the top and bottom of
 the range respectively.
 
   # increase contrast per channel, losing little detail
-  $img->filter(type=>"autolevels_skew")
+  $img->filter(type=>"autolevels")
     or die $img->errstr;
 
   # increase contrast, losing 20% of highlight at top and bottom range
   $img->filter(type=>"autolevels", lsat=>0.2, usat=>0.2)
     or die $img->errstr;
 
-This filter was the original C<autolevels> filter, but it's typically
-useless due to the significant color skew it can produce.
-
-=item C<bumpmap>
+=item bumpmap
 
 uses the channel C<elevation> image C<bump> as a bump map on your
 image, with the light at (C<lightx>, C<lightty>), with a shadow length
@@ -194,7 +171,7 @@ of C<st>.
                lightx=>10, lighty=>10, st=>5)
     or die $img->errstr;
 
-=item C<bumpmap_complex>
+=item bumpmap_complex
 
 uses the channel C<channel> image C<bump> as a bump map on your image.
 If C<< Lz < 0 >> the three L parameters are considered to be the
@@ -207,7 +184,7 @@ coefficient.  C<n> is the shininess of the surface.
   $img->filter(type=>"bumpmap_complex", bump=>$bumpmap_img)
     or die $img->errstr;
 
-=item C<contrast>
+=item contrast
 
 scales each channel by C<intensity>.  Values of C<intensity> < 1.0
 will reduce the contrast.
@@ -220,7 +197,7 @@ will reduce the contrast.
   $img->filter(type=>"contrast", intensity=>0.8)
     or die $img->errstr;
 
-=item C<conv>
+=item conv
 
 performs 2 1-dimensional convolutions on the image using the values
 from C<coef>.  C<coef> should be have an odd length and the sum of the
@@ -238,7 +215,7 @@ coefficients must be non-zero.
   $img->filter(type=>"conv", coef=>[ -0.5, 1, -0.5 ])
     or die $img->errstr;
 
-=item C<fountain>
+=item fountain
 
 renders a fountain fill, similar to the gradient tool in most paint
 software.  The default fill is a linear fill from opaque black to
@@ -329,21 +306,21 @@ The possible values for the super_sample option are:
 
 =over
 
-=item C<none>
+=item none
 
 no super-sampling is done
 
-=item C<grid>
+=item grid
 
 a square grid of points are sampled.  The number of points sampled is
 the square of ceil(0.5 + sqrt(ssample_param)).
 
-=item C<random>
+=item random
 
 a random set of points within the pixel are sampled.  This looks
 pretty bad for low ssample_param values.
 
-=item C<circle>
+=item circle
 
 the points on the radius of a circle within the pixel are sampled.
 This seems to produce the best results, but is fairly slow (for now).
@@ -360,25 +337,25 @@ segment is an array ref containing:
 
 =over
 
-=item C<start>
+=item start
 
 a floating point number between 0 and 1, the start of the range of
 fill parameters covered by this segment.
 
-=item C<middle>
+=item middle
 
 a floating point number between start and end which can be used to
 push the color range towards one end of the segment.
 
-=item C<end>
+=item end
 
 a floating point number between 0 and 1, the end of the range of fill
 parameters covered by this segment.  This should be greater than
 start.
 
-=item C<c0>
+=item c0
 
-=item C<c1>
+=item c1
 
 The colors at each end of the segment.  These can be either
 Imager::Color or Imager::Color::Float objects.
@@ -439,8 +416,8 @@ Really.  It even loads GIMP gradient files.
     or die $radial->errstr;
 
 =for stopwords Gaussian
-
-=item C<gaussian>
+                           
+=item gaussian
 
 performs a Gaussian blur of the image, using C<stddev> as the standard
 deviation of the curve used to combine pixels, larger values give
@@ -459,27 +436,7 @@ values around 5 provide a very strong blur.
   $img->filter(type=>"gaussian", stddev=>5)
     or die $img->errstr;
 
-=item C<gaussian2>
-
-performs a Gaussian blur of the image, using C<stddevX>, C<stddevY> as the
-standard deviation of the curve used to combine pixels on the X and Y axis,
-respectively. Larger values give bigger blurs.  For a definition of Gaussian
-Blur, see:
-
-  http://www.maths.abdn.ac.uk/~igc/tch/mx4002/notes/node99.html
-
-Values of C<stddevX> or C<stddevY> around 0.5 provide a barely noticeable blur,
-values around 5 provide a very strong blur.
-
-  # only slightly blurred
-  $img->filter(type=>"gaussian2", stddevX=>0.5, stddevY=>0.5)
-    or die $img->errstr;
-
-  # blur an image in the Y axis
-  $img->filter(type=>"gaussian", stddevX=>0, stddevY=>5 )
-    or die $img->errstr;
-
-=item C<gradgen>
+=item gradgen
 
 renders a gradient, with the given I<colors> at the corresponding
 points (x,y) in C<xo> and C<yo>.  You can specify the way distance is
@@ -491,7 +448,7 @@ for Euclidean squared, and 2 for Manhattan distance.
                yo=>[ 10, 50, 50 ],
                colors=>[ qw(red blue green) ]);
 
-=item C<hardinvert>
+=item hardinvert
 X<filters, hardinvert>X<hardinvert>
 
 inverts the image, black to white, white to black.  All color channels
@@ -500,7 +457,7 @@ are inverted, excluding the alpha channel if any.
   $img->filter(type=>"hardinvert")
     or die $img->errstr;
 
-=item C<hardinvertall>
+=item hardinvertall
 X<filters, hardinvertall>X<hardinvertall>
 
 inverts the image, black to white, white to black.  All channels are
@@ -509,14 +466,14 @@ inverted, including the alpha channel if any.
   $img->filter(type=>"hardinvertall")
     or die $img->errstr;
 
-=item C<mosaic>
+=item mosaic
 
 produces averaged tiles of the given C<size>.
 
   $img->filter(type=>"mosaic", size=>5)
     or die $img->errstr;
 
-=item C<noise>
+=item noise
 
 adds noise of the given C<amount> to the image.  If C<subtype> is
 zero, the noise is even to each channel, otherwise noise is added to
@@ -532,7 +489,7 @@ each channel independently.
 
 =for stopwords Perlin
 
-=item C<radnoise>
+=item radnoise
 
 renders radiant Perlin turbulent noise.  The center of the noise is at
 (C<xo>, C<yo>), C<ascale> controls the angular scale of the noise ,
@@ -542,7 +499,7 @@ and C<rscale> the radial scale, higher numbers give more detail.
                ascale=>1, rscale=>0.02)
     or die $img->errstr;
 
-=item C<postlevels>
+=item postlevels
 
 alters the image to have only C<levels> distinct level in each
 channel.
@@ -550,7 +507,7 @@ channel.
   $img->filter(type=>"postlevels", levels=>10)
     or die $img->errstr;
 
-=item C<turbnoise>
+=item turbnoise
 
 renders Perlin turbulent noise.  (C<xo>, C<yo>) controls the origin of
 the noise, and C<scale> the scale of the noise, with lower numbers
@@ -561,7 +518,7 @@ giving more detail.
 
 =for stopwords unsharp
 
-=item C<unsharpmask>
+=item unsharpmask
 
 performs an unsharp mask on the image.  This increases the contrast of
 edges in the image.
@@ -598,7 +555,7 @@ to I<Amount> in the GIMP's unsharp mask filter.  Default: 1.0.
 
 =back
 
-=item C<watermark>
+=item watermark
 
 applies C<wmark> as a watermark on the image with strength C<pixdiff>,
 with an origin at (C<tx>, C<ty>)

@@ -1,19 +1,6 @@
-# PODNAME: WWW::Mechanize::Cookbook
-# ABSTRACT: Recipes for using WWW::Mechanize
-
-__END__
-
-=pod
-
-=encoding UTF-8
-
 =head1 NAME
 
 WWW::Mechanize::Cookbook - Recipes for using WWW::Mechanize
-
-=head1 VERSION
-
-version 2.03
 
 =head1 INTRODUCTION
 
@@ -78,26 +65,22 @@ Find all links that have the word "download" in them.
     my @links = $mech->find_all_links(
         tag => "a", text_regex => qr/\bdownload\b/i );
 
-=head1 ADVANCED
+=head1 APPLICATIONS
 
-=head2 See what will be sent without actually sending anything
+=head2 Check all pages on a web site
 
-    $mech->add_handler("request_send", sub { shift->dump; exit; });
-    $mech->get("http://www.example.com");
+Use Abe Timmerman's L<WWW::CheckSite>
+L<http://search.cpan.org/dist/WWW-CheckSite/>
 
 =head1 SEE ALSO
 
 L<WWW::Mechanize>
 
-=head1 AUTHOR
+=head1 AUTHORS
 
-Andy Lester <andy at petdance.com>
+Copyright 2005-2010 Andy Lester C<< <andy@petdance.com> >>
 
-=head1 COPYRIGHT AND LICENSE
-
-This software is copyright (c) 2004 by Andy Lester.
-
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
+Later contributions by Peter Scott, Mark Stosberg and others.  See
+Acknowledgements section in L<WWW::Mechanize> for more.
 
 =cut

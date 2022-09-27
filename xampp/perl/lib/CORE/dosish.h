@@ -32,29 +32,48 @@
 #  define PERL_FS_VERSION	STRINGIFY(PERL_REVISION) "_" \
 				STRINGIFY(PERL_VERSION) "_" \
 				STRINGIFY(PERL_SUBVERSION)
-#elif defined(WIN32)
-#  define PERL_SYS_INIT_BODY(c,v)					\
-      MALLOC_CHECK_TAINT2(*c,*v) Perl_win32_init(c,v); PERLIO_INIT
-#  define PERL_SYS_TERM_BODY()   Perl_win32_term()
-#  define BIT_BUCKET "nul"
-#elif defined(NETWARE)
-#  define PERL_SYS_INIT_BODY(c,v)					\
-    MALLOC_CHECK_TAINT2(*c,*v) Perl_nw5_init(c,v); PERLIO_INIT
-#  define BIT_BUCKET "nwnul"
-#else
-#  define PERL_SYS_INIT_BODY(c,v)		\
-    MALLOC_CHECK_TAINT2(*c,*v); PERLIO_INIT
-#  define BIT_BUCKET "\\dev\\nul" /* "wanna be like, umm, Newlined, or somethin?" */
-#endif
+#else	/* DJGPP */
+#  ifdef WIN32
+#    define PERL_SYS_INIT_BODY(c,v)					\
+	MALLOC_CHECK_TAINT2(*c,*v) Perl_win32_init(c,v); PERLIO_INIT
+#    define PERL_SYS_TERM_BODY()   Perl_win32_term()
+#    define BIT_BUCKET "nul"
+#  else
+#	 ifdef NETWARE
+#      define PERL_SYS_INIT_BODY(c,v)					\
+	MALLOC_CHECK_TAINT2(*c,*v) Perl_nw5_init(c,v); PERLIO_INIT
+#      define BIT_BUCKET "nwnul"
+#    else
+#      define PERL_SYS_INIT_BODY(c,v)		\
+	MALLOC_CHECK_TAINT2(*c,*v); PERLIO_INIT
+#      define BIT_BUCKET "\\dev\\nul" /* "wanna be like, umm, Newlined, or somethin?" */
+#    endif /* NETWARE */
+#  endif
+#endif	/* DJGPP */
 
 #ifndef PERL_SYS_TERM_BODY
-#  define PERL_SYS_TERM_BODY()                         \
-    HINTS_REFCNT_TERM; KEYWORD_PLUGIN_MUTEX_TERM;      \
-    OP_CHECK_MUTEX_TERM; OP_REFCNT_TERM; PERLIO_TERM;  \
-    MALLOC_TERM; LOCALE_TERM; USER_PROP_MUTEX_TERM;    \
-    ENV_TERM;
+#  define PERL_SYS_TERM_BODY() \
+    HINTS_REFCNT_TERM; OP_CHECK_MUTEX_TERM; \
+    OP_REFCNT_TERM; PERLIO_TERM; MALLOC_TERM
 #endif
-#define dXSUB_SYS dNOOP
+#define dXSUB_SYS
+
+/*
+ * 5.003_07 and earlier keyed on #ifdef MSDOS for determining if we were 
+ * running on DOS, *and* if we had to cope with 16 bit memory addressing 
+ * constraints, *and* we need to have memory allocated as unsigned long.
+ *
+ * with the advent of *real* compilers for DOS, they are not locked together.
+ * MSDOS means "I am running on MSDOS". HAS_64K_LIMIT means "I have 
+ * 16 bit memory addressing constraints".
+ *
+ * if you need the last, try #DEFINE MEM_SIZE unsigned long.
+ */
+#ifdef MSDOS
+#  ifndef DJGPP
+#    define HAS_64K_LIMIT
+#  endif
+#endif
 
 /* USEMYBINMODE
  *	This symbol, if defined, indicates that the program should
@@ -71,9 +90,13 @@
  *	information.
  */
 #if defined(WIN64) || defined(USE_LARGE_FILES)
-#  define Stat_t struct _stati64
+#define Stat_t struct _stati64
 #else
-#  define Stat_t struct stat
+#if defined(UNDER_CE)
+#define Stat_t struct xcestat
+#else
+#define Stat_t struct stat
+#endif
 #endif
 
 /* USE_STAT_RDEV:
@@ -178,5 +201,11 @@
 #define PERL_NO_DEV_RANDOM
 
 /*
- * ex: set ts=8 sts=4 sw=4 et:
+ * Local variables:
+ * c-indentation-style: bsd
+ * c-basic-offset: 4
+ * indent-tabs-mode: t
+ * End:
+ *
+ * ex: set ts=8 sts=4 sw=4 noet:
  */

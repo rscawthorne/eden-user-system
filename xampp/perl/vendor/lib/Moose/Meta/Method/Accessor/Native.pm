@@ -1,15 +1,18 @@
 package Moose::Meta::Method::Accessor::Native;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
 use Carp qw( confess );
-use Scalar::Util qw( blessed );
+use Scalar::Util qw( blessed weaken );
 
 use Moose::Role;
-
-use Moose::Util 'throw_exception';
 
 around new => sub {
     my $orig = shift;
@@ -19,9 +22,7 @@ around new => sub {
     $options{curried_arguments} = []
         unless exists $options{curried_arguments};
 
-    throw_exception( MustSupplyArrayRefAsCurriedArguments => params     => \%options,
-                                                             class_name => $class
-                   )
+    confess 'You must supply a curried_arguments which is an ARRAY reference'
         unless $options{curried_arguments}
             && ref($options{curried_arguments}) eq 'ARRAY';
 
@@ -74,9 +75,13 @@ sub _inline_check_argument_count {
     if (my $min = $self->_minimum_arguments) {
         push @code, (
             'if (@_ < ' . $min . ') {',
-                $self->_inline_throw_exception( MethodExpectsMoreArgs =>
-                                                'method_name           => "'.$self->delegate_to_method.'",'.
-                                                "minimum_args          => ".$min,
+                $self->_inline_throw_error(
+                    sprintf(
+                        '"Cannot call %s without at least %s argument%s"',
+                        $self->delegate_to_method,
+                        $min,
+                        ($min == 1 ? '' : 's'),
+                    )
                 ) . ';',
             '}',
         );
@@ -85,9 +90,13 @@ sub _inline_check_argument_count {
     if (defined(my $max = $self->_maximum_arguments)) {
         push @code, (
             'if (@_ > ' . $max . ') {',
-                $self->_inline_throw_exception( MethodExpectsFewerArgs =>
-                                                'method_name            => "'.$self->delegate_to_method.'",'.
-                                                'maximum_args           => '.$max,
+                $self->_inline_throw_error(
+                    sprintf(
+                        '"Cannot call %s with %s argument%s"',
+                        $self->delegate_to_method,
+                        $max ? "more than $max" : 'any',
+                        ($max == 1 ? '' : 's'),
+                    )
                 ) . ';',
             '}',
         );

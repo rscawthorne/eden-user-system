@@ -3,21 +3,17 @@ package File::HomeDir::Driver;
 # Abstract base class that provides no functionality,
 # but confirms the class is a File::HomeDir driver class.
 
-use 5.008003;
+use 5.00503;
 use strict;
-use warnings;
 use Carp ();
 
 use vars qw{$VERSION};
-
-BEGIN
-{
-    $VERSION = '1.006';
+BEGIN {
+	$VERSION = '1.00';
 }
 
-sub my_home
-{
-    Carp::croak("$_[0] does not implement compulsory method $_[1]");
+sub my_home {
+	Carp::croak("$_[0] does not implement compulsory method $_[1]");
 }
 
 1;
@@ -48,8 +44,6 @@ L<File::HomeDir>
 =head1 COPYRIGHT
 
 Copyright 2009 - 2011 Adam Kennedy.
-
-Copyright 2017 - 2020 Jens Rehsack
 
 This program is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.

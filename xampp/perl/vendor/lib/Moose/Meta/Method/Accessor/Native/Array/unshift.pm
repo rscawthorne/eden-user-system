@@ -1,12 +1,24 @@
 package Moose::Meta::Method::Accessor::Native::Array::unshift;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Array::unshift::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Array::unshift::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Array::Writer';
+with 'Moose::Meta::Method::Accessor::Native::Array::Writer' => {
+    -excludes => [
+        qw(
+            _inline_optimized_set_new_value
+            _return_value
+            )
+    ]
+};
 
 sub _adds_members { 1 }
 

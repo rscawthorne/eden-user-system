@@ -1,20 +1,17 @@
 {
     package DBD::ExampleP;
 
-    use strict;
     use Symbol;
 
     use DBI qw(:sql_types);
 
     require File::Spec;
-   
-    our (@EXPORT,$VERSION,@statnames,%statnames,@stattypes,%stattypes,
-	@statprec,%statprec,$drh,);
 
     @EXPORT = qw(); # Do NOT @EXPORT anything.
-    $VERSION = "12.014311";
+    $VERSION = sprintf("12.%06d", q$Revision: 14310 $ =~ /(\d+)/o);
 
-#   $Id: ExampleP.pm 14310 2010-08-02 06:35:25Z Jens $
+
+#   $Id: ExampleP.pm 14310 2010-08-02 06:35:25Z REHSACK $
 #
 #   Copyright (c) 1994,1997,1998 Tim Bunce
 #
@@ -247,12 +244,8 @@
 
     sub STORE {
 	my ($dbh, $attrib, $value) = @_;
-	# store only known attributes else pass up to DBI to handle
-        if ($attrib eq 'examplep_set_err') {
-            # a fake attribute to enable a test case where STORE issues a warning
-            $dbh->set_err($value, $value);
-            return;
-        }
+	# would normally validate and only store known attributes
+	# else pass up to DBI to handle
 	if ($attrib eq 'AutoCommit') {
 	    # convert AutoCommit values to magic ones to let DBI
 	    # know that the driver has 'handled' the AutoCommit attribute

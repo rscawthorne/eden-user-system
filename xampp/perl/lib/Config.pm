@@ -3,14 +3,12 @@
 
 # for a description of the variables, please have a look at the
 # Glossary file, as written in the Porting folder, or use the url:
-# https://github.com/Perl/perl5/blob/blead/Porting/Glossary
+# http://perl5.git.perl.org/perl.git/blob/HEAD:/Porting/Glossary
 
 package Config;
 use strict;
 use warnings;
-our ( %Config, $VERSION );
-
-$VERSION = "5.032001";
+use vars '%Config';
 
 # Skip @Config::EXPORT because it only contains %Config, which we special
 # case below as it's not a function. @Config::EXPORT won't change in the
@@ -56,11 +54,12 @@ sub import {
     return;
 }
 
-die "$0: Perl lib version (5.32.1) doesn't match executable '$^X' version ($])"
+die "Perl lib version (5.16.3) doesn't match executable '$0' version ($])"
     unless $^V;
 
-$^V eq 5.32.1
-    or die sprintf "%s: Perl lib version (5.32.1) doesn't match executable '$^X' version (%vd)", $0, $^V;
+$^V eq 5.16.3
+    or die "Perl lib version (5.16.3) doesn't match executable '$0' version (" .
+	sprintf("v%vd",$^V) . ")";
 
 
 sub FETCH {
@@ -84,30 +83,30 @@ sub AUTOLOAD {
 
 # tie returns the object, so the value returned to require will be true.
 tie %Config, 'Config', {
-    archlibexp => '\\Users\\Cosmic\\Documents\\GitHub\\eden-user-system\\xampp\\perl\\lib',
-    archname => 'MSWin32-x64-multi-thread',
+    archlibexp => '\\xampp\\perl\\lib',
+    archname => 'MSWin32-x86-multi-thread',
     cc => 'gcc',
     d_readlink => undef,
     d_symlink => undef,
-    dlext => 'xs.dll',
+    dlext => 'dll',
     dlsrc => 'dl_win32.xs',
     dont_use_nlink => undef,
     exe_ext => '.exe',
     inc_version_list => '',
     intsize => '4',
     ldlibpthname => '',
-    libpth => '\\Users\\Cosmic\\Documents\\GitHub\\eden-user-system\\xampp\\c\\lib \\xampp\\c\\x86_64-w64-mingw32\\lib \\xampp\\c\\lib\\gcc\\x86_64-w64-mingw32\\8.3.0',
+    libpth => '\\xampp\\c\\lib \\xampp\\c\\i686-w64-mingw32\\lib',
     osname => 'MSWin32',
-    osvers => '10.0.19042.746',
+    osvers => '4.0',
     path_sep => ';',
-    privlibexp => '\\Users\\Cosmic\\Documents\\GitHub\\eden-user-system\\xampp\\perl\\lib',
-    scriptdir => '\\Users\\Cosmic\\Documents\\GitHub\\eden-user-system\\xampp\\perl\\bin',
-    sitearchexp => '\\Users\\Cosmic\\Documents\\GitHub\\eden-user-system\\xampp\\perl\\site\\lib',
-    sitelibexp => '\\Users\\Cosmic\\Documents\\GitHub\\eden-user-system\\xampp\\perl\\site\\lib',
+    privlibexp => '\\xampp\\perl\\lib',
+    scriptdir => '\\xampp\\perl\\bin',
+    sitearchexp => '\\xampp\\perl\\site\\lib',
+    sitelibexp => '\\xampp\\perl\\site\\lib',
     so => 'dll',
     useithreads => 'define',
     usevendorprefix => 'define',
-    version => '5.32.1',
+    version => '5.16.3',
 };
 eval {
 	require Portable;

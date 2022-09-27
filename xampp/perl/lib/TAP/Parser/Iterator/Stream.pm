@@ -1,9 +1,11 @@
 package TAP::Parser::Iterator::Stream;
 
 use strict;
-use warnings;
+use vars qw($VERSION @ISA);
 
-use base 'TAP::Parser::Iterator';
+use TAP::Parser::Iterator ();
+
+@ISA = 'TAP::Parser::Iterator';
 
 =head1 NAME
 
@@ -11,11 +13,11 @@ TAP::Parser::Iterator::Stream - Iterator for filehandle-based TAP sources
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 SYNOPSIS
 
@@ -88,16 +90,6 @@ sub next_raw {
 sub _finish {
     my $self = shift;
     close delete $self->{fh};
-}
-
-sub get_select_handles {
-    my $self = shift;
-
-    # return our handle in case it's a socket or pipe (select()-able)
-    return ( $self->{fh}, )
-        if (-S $self->{fh} || -p $self->{fh});
-
-    return;
 }
 
 1;

@@ -14,7 +14,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 --%>
-<%@ page session="false" trimDirectiveWhitespaces="true" %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
  <head>
@@ -73,7 +72,7 @@
    </ul>
    <p>
     For more information - please see the
-    <a href="/docs/manager-howto.html" rel="noopener noreferrer">Manager App How-To</a>.
+    <a href="/docs/manager-howto.html">Manager App HOW-TO</a>.
    </p>
  </body>
 

@@ -1,33 +1,38 @@
 package Moose::Meta::Method::Accessor::Native::Hash::accessor;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Hash::accessor::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Hash::accessor::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Hash::set',
-     'Moose::Meta::Method::Accessor::Native::Hash::get';
-
-sub _inline_process_arguments {
-    my $self = shift;
-    $self->Moose::Meta::Method::Accessor::Native::Hash::set::_inline_process_arguments(@_);
-}
-
-sub _inline_check_argument_count {
-    my $self = shift;
-    $self->Moose::Meta::Method::Accessor::Native::Hash::set::_inline_check_argument_count(@_);
-}
-
-sub _inline_check_arguments {
-    my $self = shift;
-    $self->Moose::Meta::Method::Accessor::Native::Hash::set::_inline_check_arguments(@_);
-}
-
-sub _return_value {
-    my $self = shift;
-    $self->Moose::Meta::Method::Accessor::Native::Hash::set::_return_value(@_);
-}
+with 'Moose::Meta::Method::Accessor::Native::Hash::set' => {
+    -excludes => [
+        qw(
+            _generate_method
+            _minimum_arguments
+            _maximum_arguments
+            )
+    ]
+    },
+    'Moose::Meta::Method::Accessor::Native::Hash::get' => {
+    -excludes => [
+        qw(
+            _generate_method
+            _minimum_arguments
+            _maximum_arguments
+            _inline_check_argument_count
+            _inline_check_arguments
+            _inline_process_arguments
+            _return_value
+            )
+    ]
+    };
 
 sub _generate_method {
     my $self = shift;

@@ -28,7 +28,7 @@ require utf8;
 } unless defined &utf8::is_utf8;
 
 $DBI::PurePerl = $ENV{DBI_PUREPERL} || 1;
-$DBI::PurePerl::VERSION = "2.014286";
+$DBI::PurePerl::VERSION = sprintf("2.%06d", q$Revision: 14285 $ =~ /(\d+)/o);
 
 $DBI::neat_maxlen ||= 400;
 
@@ -120,7 +120,7 @@ use constant IMA_NO_TAINT_IN   	=> 0x0010; #/* don't check for tainted args*/
 use constant IMA_NO_TAINT_OUT   => 0x0020; #/* don't taint results	*/
 use constant IMA_COPY_UP_STMT   => 0x0040; #/* copy sth Statement to dbh */
 use constant IMA_END_WORK	=> 0x0080; #/* set on commit & rollback	*/
-use constant IMA_STUB		=> 0x0100; #/* do nothing eg $dbh->connected */
+use constant IMA_STUB		=> 0x0100; #/* donothing eg $dbh->connected */
 use constant IMA_CLEAR_STMT     => 0x0200; #/* clear Statement before call  */
 use constant IMA_UNRELATED_TO_STMT=> 0x0400; #/* profile as empty Statement   */
 use constant IMA_NOT_FOUND_OKAY	=> 0x0800; #/* not error if not found */
@@ -149,7 +149,6 @@ my %is_flag_attribute = map {$_ =>1 } qw(
 	PrintError
 	PrintWarn
 	RaiseError
-	RaiseWarn
 	ShowErrorStatement
 	Warn
 );
@@ -226,9 +225,8 @@ sub  _install_method {
     return if $method_name eq 'can';
 
     push @pre_call_frag, q{
-        delete $h->{CachedKids};
         # ignore DESTROY for outer handle (DESTROY for inner likely to follow soon)
-        return if $h_inner;
+	return if $h_inner;
         # handle AutoInactiveDestroy and InactiveDestroy
         $h->{InactiveDestroy} = 1
             if $h->{AutoInactiveDestroy} and $$ != $h->{dbi_pp_pid};
@@ -271,31 +269,31 @@ sub  _install_method {
 
     if (IMA_KEEP_ERR & $bitmask) {
 	push @pre_call_frag, q{
-	    my $keep_error = DBI::_err_hash($h);
+	    my $keep_error = 1;
 	};
     }
     else {
 	my $ke_init = (IMA_KEEP_ERR_SUB & $bitmask)
-		? q{= ($h->{dbi_pp_parent}->{dbi_pp_call_depth} && DBI::_err_hash($h)) }
+		? q{= $h->{dbi_pp_parent}->{dbi_pp_call_depth} }
 		: "";
 	push @pre_call_frag, qq{
 	    my \$keep_error $ke_init;
 	};
-	my $clear_error_code = q{
+	my $keep_error_code = q{
 	    #warn "$method_name cleared err";
 	    $h->{err}    = $DBI::err    = undef;
 	    $h->{errstr} = $DBI::errstr = undef;
 	    $h->{state}  = $DBI::state  = '';
 	};
-	$clear_error_code = q{
+	$keep_error_code = q{
 	    printf $DBI::tfh "    !! %s: %s CLEARED by call to }.$method_name.q{ method\n".
 		    $h->{err}, $h->{err}
 		if defined $h->{err} && $DBI::dbi_debug & 0xF;
-	}. $clear_error_code
+	}. $keep_error_code
 	    if exists $ENV{DBI_TRACE};
 	push @pre_call_frag, ($ke_init)
-		? qq{ unless (\$keep_error) { $clear_error_code }}
-		: $clear_error_code
+		? qq{ unless (\$keep_error) { $keep_error_code }}
+		: $keep_error_code
 	    unless $method_name eq 'set_err';
     }
 
@@ -349,11 +347,7 @@ sub  _install_method {
     } if IMA_IS_FACTORY & $bitmask;
 
     push @post_call_frag, q{
-        if ($keep_error) {
-            $keep_error = 0
-                if $h->{ErrCount} > $ErrCount
-                or DBI::_err_hash($h) ne $keep_error;
-        }
+	$keep_error = 0 if $keep_error && $h->{ErrCount} > $ErrCount;
 
 	$DBI::err    = $h->{err};
 	$DBI::errstr = $h->{errstr};
@@ -364,11 +358,11 @@ sub  _install_method {
 	&& ($call_depth <= 1 && !$h->{dbi_pp_parent}{dbi_pp_call_depth})
 	) {
 
-	    my($pe,$pw,$re,$rw,$he) = @{$h}{qw(PrintError PrintWarn RaiseError RaiseWarn HandleError)};
+	    my($pe,$pw,$re,$he) = @{$h}{qw(PrintError PrintWarn RaiseError HandleError)};
 	    my $msg;
 
 	    if ($err && ($pe || $re || $he)	# error
-	    or (!$err && length($err) && ($pw || $rw))	# warning
+	    or (!$err && length($err) && $pw)	# warning
 	    ) {
 		my $last = ($DBI::last_method_except{$method_name})
 		    ? ($h->{'dbi_pp_last_method'}||$method_name) : $method_name;
@@ -389,11 +383,6 @@ sub  _install_method {
 		}
 		if ($err eq "0") { # is 'warning' (not info)
 		    carp $msg if $pw;
-		    my $do_croak = $rw;
-		    if ((my $subsub = $h->{'HandleError'}) && $do_croak) {
-			$do_croak = 0 if &$subsub($msg,$h,$ret[0]);
-		    }
-		    die $msg if $do_croak;
 		}
 		else {
 		    my $do_croak = 1;
@@ -504,26 +493,21 @@ sub _setup_handle {
     $h_inner->{"Kids"} = $h_inner->{"ActiveKids"} = 0;	# XXX not maintained
     if ($parent) {
 	foreach (qw(
-	    RaiseError PrintError RaiseWarn PrintWarn HandleError HandleSetErr
+	    RaiseError PrintError PrintWarn HandleError HandleSetErr
 	    Warn LongTruncOk ChopBlanks AutoCommit ReadOnly
 	    ShowErrorStatement FetchHashKeyName LongReadLen CompatMode
 	)) {
 	    $h_inner->{$_} = $parent->{$_}
 		if exists $parent->{$_} && !exists $h_inner->{$_};
 	}
-	if (ref($parent) =~ /::db$/) { # is sth
+	if (ref($parent) =~ /::db$/) {
 	    $h_inner->{Database} = $parent;
 	    $parent->{Statement} = $h_inner->{Statement};
 	    $h_inner->{NUM_OF_PARAMS} = 0;
-            $h_inner->{Active} = 0; # driver sets true when there's data to fetch
 	}
-	elsif (ref($parent) =~ /::dr$/){ # is dbh
+	elsif (ref($parent) =~ /::dr$/){
 	    $h_inner->{Driver} = $parent;
-            $h_inner->{Active} = 0;
 	}
-        else {
-            warn "panic: ".ref($parent); # should never happen
-        }
 	$h_inner->{dbi_pp_parent} = $parent;
 
 	# add to the parent's ChildHandles
@@ -540,7 +524,7 @@ sub _setup_handle {
     }
     else {	# setting up a driver handle
         $h_inner->{Warn}		= 1;
-        $h_inner->{PrintWarn}		= 1;
+        $h_inner->{PrintWarn}		= $^W;
         $h_inner->{AutoCommit}		= 1;
         $h_inner->{TraceLevel}		= 0;
         $h_inner->{CompatMode}		= (1==0);
@@ -548,11 +532,11 @@ sub _setup_handle {
 	$h_inner->{LongReadLen}		||= 80;
 	$h_inner->{ChildHandles}        ||= [] if $HAS_WEAKEN;
 	$h_inner->{Type}                ||= 'dr';
-        $h_inner->{Active}              = 1;
     }
     $h_inner->{"dbi_pp_call_depth"} = 0;
     $h_inner->{"dbi_pp_pid"} = $$;
     $h_inner->{ErrCount} = 0;
+    $h_inner->{Active} = 1;
 }
 
 sub constant {
@@ -773,7 +757,7 @@ sub _get_sorted_hash_keys {
             for keys %$hash_ref;
         $num_sort = $sort_guess;
     }
-
+    
     my @keys = keys %$hash_ref;
     no warnings 'numeric';
     my @sorted = ($num_sort)
@@ -782,10 +766,6 @@ sub _get_sorted_hash_keys {
     return \@sorted;
 }
 
-sub _err_hash {
-    return 1 unless defined $_[0]->{err};
-    return "$_[0]->{err} $_[0]->{errstr}"
-}
 
 
 package
@@ -898,13 +878,7 @@ sub STORE {
 	    $h,$key,$value);
     }
     $h->{$key} = $is_flag_attribute{$key} ? !!$value : $value;
-    Scalar::Util::weaken($h->{$key}) if $key eq 'CachedKids';
     return 1;
-}
-sub DELETE {
-    my ($h, $key) = @_;
-    return $h->FETCH($key) unless $key =~ /^private_/;
-    return delete $h->{$key};
 }
 sub err    { return shift->{err}    }
 sub errstr { return shift->{errstr} }
@@ -977,7 +951,7 @@ sub take_imp_data {
     my $dbh = shift;
     # A reasonable default implementation based on the one in DBI.xs.
     # Typically a pure-perl driver would have their own take_imp_data method
-    # that would delete all but the essential items in the hash before ending with:
+    # that would delete all but the essential items in the hash before einding with:
     #      return $dbh->SUPER::take_imp_data();
     # Of course it's useless if the driver doesn't also implement support for
     # the dbi_imp_data attribute to the connect() method.
@@ -1158,7 +1132,7 @@ you want to use the PurePerl version.
 
  DBI_PUREPERL == 2 Always use PurePerl
 
-You may set the environment variable in your shell (e.g. with
+You may set the enviornment variable in your shell (e.g. with
 set or setenv or export, etc) or else set it in your script like
 this:
 

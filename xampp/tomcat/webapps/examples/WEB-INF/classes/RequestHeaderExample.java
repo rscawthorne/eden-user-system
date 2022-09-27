@@ -40,22 +40,20 @@ public class RequestHeaderExample extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
+    private static final ResourceBundle RB = ResourceBundle.getBundle("LocalStrings");
+
     @Override
     public void doGet(HttpServletRequest request,
                       HttpServletResponse response)
         throws IOException, ServletException
     {
-        ResourceBundle rb = ResourceBundle.getBundle("LocalStrings",request.getLocale());
-
         response.setContentType("text/html");
-        response.setCharacterEncoding("UTF-8");
 
         PrintWriter out = response.getWriter();
-        out.println("<!DOCTYPE html><html>");
+        out.println("<html>");
         out.println("<head>");
-        out.println("<meta charset=\"UTF-8\" />");
 
-        String title = rb.getString("requestheader.title");
+        String title = RB.getString("requestheader.title");
         out.println("<title>" + title + "</title>");
         out.println("</head>");
         out.println("<body bgcolor=\"white\">");

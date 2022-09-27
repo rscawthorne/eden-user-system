@@ -1,8 +1,11 @@
 package Net::HTTP::Methods;
-our $VERSION = '6.20';
+
+require 5.005;  # 4-arg substr
+
 use strict;
-use warnings;
-use URI;
+use vars qw($VERSION);
+
+$VERSION = "6.06";
 
 my $CRLF = "\015\012";   # "\r\n" is not portable
 
@@ -33,7 +36,7 @@ sub http_configure {
     my($self, $cnf) = @_;
 
     die "Listen option not allowed" if $cnf->{Listen};
-    my $explicit_host = (exists $cnf->{Host});
+    my $explict_host = (exists $cnf->{Host});
     my $host = delete $cnf->{Host};
     my $peer = $cnf->{PeerAddr} || $cnf->{PeerHost};
     if (!$peer) {
@@ -41,30 +44,20 @@ sub http_configure {
 	$cnf->{PeerAddr} = $peer = $host;
     }
 
-    # CONNECTIONS
-    # PREFER: port number from PeerAddr, then PeerPort, then http_default_port
-    my $peer_uri = URI->new("http://$peer");
-    $cnf->{"PeerPort"} =  $peer_uri->_port || $cnf->{PeerPort} ||  $self->http_default_port;
-    $cnf->{"PeerAddr"} = $peer_uri->host;
+    if ($peer =~ s,:(\d+)$,,) {
+	$cnf->{PeerPort} = int($1);  # always override
+    }
+    if (!$cnf->{PeerPort}) {
+	$cnf->{PeerPort} = $self->http_default_port;
+    }
 
-    # HOST header:
-    # If specified but blank, ignore.
-    # If specified with a value, add the port number
-    # If not specified, set to PeerAddr and port number
-    # ALWAYS: If IPv6 address, use [brackets]  (thanks to the URI package)
-    # ALWAYS: omit port number if http_default_port
-    if (($host) || (! $explicit_host)) {
-        my $uri =  ($explicit_host) ? URI->new("http://$host") : $peer_uri->clone;
-        if (!$uri->_port) {
-            # Always use *our*  $self->http_default_port  instead of URI's  (Covers HTTP, HTTPS)
-            $uri->port( $cnf->{PeerPort} ||  $self->http_default_port);
-        }
-        my $host_port = $uri->host_port;               # Returns host:port or [ipv6]:port
-        my $remove = ":" . $self->http_default_port;   # we want to remove the default port number
-        if (substr($host_port,0-length($remove)) eq $remove) {
-            substr($host_port,0-length($remove)) = "";
-        }
-        $host = $host_port;
+    if (!$explict_host) {
+	$host = $peer;
+	$host =~ s/:.*//;
+    }
+    if ($host && $host !~ /:/) {
+	my $p = $cnf->{PeerPort};
+	$host .= ":$p" if $p != $self->http_default_port;
     }
 
     $cnf->{Proto} = 'tcp';
@@ -261,30 +254,20 @@ sub my_readline {
 		if $max_line_length && length($_) > $max_line_length;
 
 	    # need to read more data to find a line ending
-            my $new_bytes = 0;
-
           READ:
-            {   # wait until bytes start arriving
-                $self->can_read
-                     or die "read timeout";
-
-                # consume all incoming bytes
-                my $bytes_read = $self->sysread($_, 1024, length);
-                if(defined $bytes_read) {
-                    $new_bytes += $bytes_read;
+            {
+                die "read timeout" unless $self->can_read;
+                my $n = $self->sysread($_, 1024, length);
+                unless (defined $n) {
+                    redo READ if $!{EINTR} || $!{EAGAIN};
+                    # if we have already accumulated some data let's at least
+                    # return that as a line
+                    die "$what read failed: $!" unless length;
                 }
-                elsif($!{EINTR} || $!{EAGAIN} || $!{EWOULDBLOCK}) {
-                    redo READ;
+                unless ($n) {
+                    return undef unless length;
+                    return substr($_, 0, length, "");
                 }
-                else {
-                    # if we have already accumulated some data let's at
-                    # least return that as a line
-                    length or die "$what read failed: $!";
-                }
-
-                # no line-ending, no new bytes
-                return length($_) ? substr($_, 0, length($_), "") : undef
-                    if $new_bytes==0;
             }
 	}
 	die "$what line too long ($pos; limit is $max_line_length)"
@@ -301,9 +284,8 @@ sub can_read {
     my $self = shift;
     return 1 unless defined(fileno($self));
     return 1 if $self->isa('IO::Socket::SSL') && $self->pending;
-    return 1 if $self->isa('Net::SSL') && $self->can('pending') && $self->pending;
 
-    # With no timeout, wait forever.  An explicit timeout of 0 can be
+    # With no timeout, wait forever.  An explict timeout of 0 can be
     # used to just check if the socket is readable without waiting.
     my $timeout = @_ ? shift : (${*$self}{io_socket_timeout} || undef);
 
@@ -315,8 +297,8 @@ sub can_read {
         $before = time if $timeout;
         my $nfound = select($fbits, undef, undef, $timeout);
         if ($nfound < 0) {
-            if ($!{EINTR} || $!{EAGAIN} || $!{EWOULDBLOCK}) {
-                # don't really think EAGAIN/EWOULDBLOCK can happen here
+            if ($!{EINTR} || $!{EAGAIN}) {
+                # don't really think EAGAIN can happen here
                 if ($timeout) {
                     $timeout -= time - $before;
                     $timeout = 0 if $timeout < 0;
@@ -638,32 +620,3 @@ sub inflate_ok {
 } # BEGIN
 
 1;
-
-=pod
-
-=encoding UTF-8
-
-=head1 NAME
-
-Net::HTTP::Methods - Methods shared by Net::HTTP and Net::HTTPS
-
-=head1 VERSION
-
-version 6.20
-
-=head1 AUTHOR
-
-Gisle Aas <gisle@activestate.com>
-
-=head1 COPYRIGHT AND LICENSE
-
-This software is copyright (c) 2001-2017 by Gisle Aas.
-
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
-
-=cut
-
-__END__
-
-# ABSTRACT: Methods shared by Net::HTTP and Net::HTTPS

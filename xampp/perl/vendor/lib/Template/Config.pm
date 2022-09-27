@@ -21,32 +21,29 @@ package Template::Config;
 use strict;
 use warnings;
 use base 'Template::Base';
+use vars qw( $VERSION $DEBUG $ERROR $INSTDIR
+             $PARSER $PROVIDER $PLUGINS $FILTERS $ITERATOR 
+             $LATEX_PATH $PDFLATEX_PATH $DVIPS_PATH
+             $STASH $SERVICE $CONTEXT $CONSTANTS @PRELOAD );
 
-our $VERSION   = '3.009';
-
-our $DEBUG;
+$VERSION   = 2.75;
 $DEBUG     = 0 unless defined $DEBUG;
-our $ERROR     = '';
-our $CONTEXT   = 'Template::Context';
-our $FILTERS   = 'Template::Filters';
-our $ITERATOR  = 'Template::Iterator';
-our $PARSER    = 'Template::Parser';
-our $PLUGINS   = 'Template::Plugins';
-our $PROVIDER  = 'Template::Provider';
-our $SERVICE   = 'Template::Service';
-our $STASH;
+$ERROR     = '';
+$CONTEXT   = 'Template::Context';
+$FILTERS   = 'Template::Filters';
+$ITERATOR  = 'Template::Iterator';
+$PARSER    = 'Template::Parser';
+$PLUGINS   = 'Template::Plugins';
+$PROVIDER  = 'Template::Provider';
+$SERVICE   = 'Template::Service';
 $STASH     = 'Template::Stash::XS';
-our $CONSTANTS = 'Template::Namespace::Constants';
+$CONSTANTS = 'Template::Namespace::Constants';
 
-our $LATEX_PATH;
-our $PDFLATEX_PATH;
-our $DVIPS_PATH;
-
-our @PRELOAD   = ( $CONTEXT, $FILTERS, $ITERATOR, $PARSER,
+@PRELOAD   = ( $CONTEXT, $FILTERS, $ITERATOR, $PARSER,
                $PLUGINS, $PROVIDER, $SERVICE, $STASH );
 
 # the following is set at installation time by the Makefile.PL 
-our $INSTDIR  = '';
+$INSTDIR  = '';
 
 
 #========================================================================
@@ -73,7 +70,7 @@ sub preload {
 #------------------------------------------------------------------------
 # load($module)
 #
-# Load a module via require().  Any occurrences of '::' in the module name
+# Load a module via require().  Any occurences of '::' in the module name
 # are be converted to '/' and '.pm' is appended.  Returns 1 on success
 # or undef on error.  Use $class->error() to examine the error string.
 #------------------------------------------------------------------------
@@ -82,7 +79,6 @@ sub load {
     my ($class, $module) = @_;
     $module =~ s[::][/]g;
     $module .= '.pm';
-    return 1 if $INC{$module};
     eval { require $module; };
     return $@ ? $class->error("failed to load $module: $@") : 1;
 }
@@ -268,7 +264,7 @@ sub instdir {
     my ($class, $dir) = @_;
     my $inst = $INSTDIR 
         || return $class->error("no installation directory");
-    chop $inst while substr($inst,-1) eq '/';
+    $inst =~ s[/$][]g;
     $inst .= "/$dir" if $dir;
     return $inst;
 }
@@ -330,10 +326,9 @@ object from the new class.
 
 =head2 load($module)
 
-Load a module using Perl's L<require()>. Any occurrences of 'C<::>' in the
-module name are be converted to 'C</>', and 'C<.pm>' is appended. Returns 1 on
-success or undef on error.  Use C<$class-E<gt>error()> to examine the error
-string.
+Load a module using Perl's L<require()>. Any occurences of 'C<::>' in the module
+name are be converted to 'C</>', and 'C<.pm>' is appended. Returns 1 on success or
+undef on error.  Use C<$class-E<gt>error()> to examine the error string.
 
 =head2 preload()
 

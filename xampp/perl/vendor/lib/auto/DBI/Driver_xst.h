@@ -1,5 +1,5 @@
 /*
-#  $Id$
+#  $Id: Driver_xst.h 15353 2012-07-13 12:31:30Z timbo $
 #  Copyright (c) 2002  Tim Bunce  Ireland
 #
 #  You may distribute under the terms of either the GNU General Public

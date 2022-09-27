@@ -94,14 +94,11 @@ a img {
     min-width: 720px;
     max-width: 1000px;
 }
-
 .curved {
     border-radius: 10px;
-}
-
-#tomcat-logo {
-    width: 150px;
-    height: 106px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -khtml-border-radius: 10px;
 }
 
 #navigation {
@@ -132,7 +129,7 @@ a img {
 
 #asf-box {
     height: 40px;
-    background: #fff url(asf-logo-wide.svg) no-repeat top right;}
+    background: #fff url(asf-logo.png) no-repeat top right;}
 #asf-box h1 {
     padding: 0;
     margin: 0;

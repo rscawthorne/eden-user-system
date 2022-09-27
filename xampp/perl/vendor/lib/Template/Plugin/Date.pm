@@ -26,11 +26,7 @@ use base 'Template::Plugin';
 
 use POSIX ();
 
-use Config ();
-
-use constant HAS_SETLOCALE => $Config::Config{d_setlocale};
-
-our $VERSION = '3.009';
+our $VERSION = 2.78;
 our $FORMAT  = '%H:%M:%S %d-%b-%Y';    # default strftime() format
 our @LOCALE_SUFFIX = qw( .ISO8859-1 .ISO_8859-15 .US-ASCII .UTF-8 );
 
@@ -78,27 +74,23 @@ sub now {
 sub format {
     my $self   = shift;
     my $params = ref($_[$#_]) eq 'HASH' ? pop(@_) : { };
-
-    my $time   = shift(@_);
-    $time = $params->{ time } || $self->{ time } || $self->now() if !defined $time;
-
+    my $time   = shift(@_) || $params->{ time } || $self->{ time } 
+                           || $self->now();
     my $format = @_ ? shift(@_) 
                     : ($params->{ format } || $self->{ format } || $FORMAT);
     my $locale = @_ ? shift(@_)
                     : ($params->{ locale } || $self->{ locale });
     my $gmt = @_ ? shift(@_)
             : ($params->{ gmt } || $self->{ gmt });
-    my $offset = @_ ? shift(@_)
-            : ( $params->{ use_offset } || $self->{ use_offset });
     my (@date, $datestr);
 
     if ($time =~ /^-?\d+$/) {
         # $time is now in seconds since epoch
         if ($gmt) {
-            @date = (gmtime($time))[ 0 .. ( $offset ? 6 : 8 ) ];
+            @date = (gmtime($time))[0..6];
         }
         else {
-            @date = (localtime($time))[ 0 .. ( $offset ? 6 : 8 ) ];
+            @date = (localtime($time))[0..6];
         }
     }
     else {
@@ -106,7 +98,7 @@ sub format {
         # otherwise, we try to parse it as either a 'Y:M:D H:M:S' or a
         # 'H:M:S D:M:Y' string
 
-        my @parts = (split(/\D/, $time));
+        my @parts = (split(/(?:\/| |:|-)/, $time));
 
         if (@parts >= 6) {
             if (length($parts[0]) == 4) {
@@ -127,33 +119,24 @@ sub format {
         $date[4] -= 1;     # correct month number 1-12 to range 0-11
         $date[5] -= 1900;  # convert absolute year to years since 1900
         $time = &POSIX::mktime(@date);
-
-        if ($offset) {
-            push @date, $gmt
-                ? (gmtime($time))[6..8] : (localtime($time))[6..8];
-        }
     }
     
     if ($locale) {
         # format the date in a specific locale, saving and subsequently
         # restoring the current locale.
-        my $old_locale = HAS_SETLOCALE
-                       ? &POSIX::setlocale(&POSIX::LC_ALL)
-                       : undef;
+        my $old_locale = &POSIX::setlocale(&POSIX::LC_ALL);
 
         # some systems expect locales to have a particular suffix
         for my $suffix ('', @LOCALE_SUFFIX) {
             my $try_locale = $locale.$suffix;
-            my $setlocale = HAS_SETLOCALE
-                       ? &POSIX::setlocale(&POSIX::LC_ALL, $try_locale)
-                       : undef;
+            my $setlocale = &POSIX::setlocale(&POSIX::LC_ALL, $try_locale);
             if (defined $setlocale && $try_locale eq $setlocale) {
                 $locale = $try_locale;
                 last;
             }
         }
         $datestr = &POSIX::strftime($format, @date);
-        &POSIX::setlocale(&POSIX::LC_ALL, $old_locale) if HAS_SETLOCALE;
+        &POSIX::setlocale(&POSIX::LC_ALL, $old_locale);
     }
     else {
         $datestr = &POSIX::strftime($format, @date);
@@ -185,7 +168,7 @@ sub throw {
 
 package Template::Plugin::Date::Calc;
 use base qw( Template::Plugin );
-our $AUTOLOAD;
+use vars qw( $AUTOLOAD );
 *throw = \&Template::Plugin::Date::throw;
 
 sub AUTOLOAD {
@@ -204,7 +187,7 @@ sub AUTOLOAD {
 
 package Template::Plugin::Date::Manip;
 use base qw( Template::Plugin );
-our $AUTOLOAD;
+use vars qw( $AUTOLOAD );
 *throw = \&Template::Plugin::Date::throw;
 
 sub AUTOLOAD {
@@ -252,11 +235,10 @@ Template::Plugin::Date - Plugin to generate formatted date strings
     # named parameters 
     [% date.format(mytime, format = '%H:%M:%S') %]
     [% date.format(locale = 'en_GB') %]
-    [% date.format(time       = date.now,
-                   format     = '%H:%M:%S',
-                   locale     = 'en_GB'
-                   use_offset = 1) %]
-
+    [% date.format(time   = date.now, 
+                   format = '%H:%M:%S', 
+                   locale = 'en_GB) %]
+    
     # specify default format to plugin
     [% USE date(format = '%H:%M:%S', locale = 'de_DE') %]
     
@@ -323,11 +305,6 @@ seconds-since-the-epoch input:
 Note that in this case, if the local time is not GMT, then also specifying
 'C<%Z>' (time zone) in the format parameter will lead to an extremely 
 misleading result.
-
-To maintain backwards compatibility, using the C<%z> placeholder in the format
-string (to output the UTC offset) currently requires the C<use_offset>
-parameter to be set to a true value. This can also be passed as the fifth
-parameter to format (but the former will probably be clearer).
 
 Any or all of these parameters may be named.  Positional parameters
 should always be in the order C<($time, $format, $locale)>.

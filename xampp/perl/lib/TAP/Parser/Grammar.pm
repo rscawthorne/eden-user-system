@@ -1,12 +1,13 @@
 package TAP::Parser::Grammar;
 
 use strict;
-use warnings;
+use vars qw($VERSION @ISA);
 
+use TAP::Object                  ();
 use TAP::Parser::ResultFactory   ();
 use TAP::Parser::YAMLish::Reader ();
 
-use base 'TAP::Object';
+@ISA = qw(TAP::Object);
 
 =head1 NAME
 
@@ -14,11 +15,11 @@ TAP::Parser::Grammar - A grammar for the Test Anything Protocol.
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 SYNOPSIS
 
@@ -178,7 +179,7 @@ my %language_for;
     my %v13 = (
         %v12,
         plan => {
-            syntax  => qr/^1\.\.(\d+)\s*(?:\s*#\s*SKIP\b(.*))?\z/i,
+            syntax  => qr/^1\.\.(\d+)(?:\s*#\s*SKIP\b(.*))?\z/i,
             handler => sub {
                 my ( $self, $line ) = @_;
                 my ( $tests_planned, $explanation ) = ( $1, $2 );
@@ -404,10 +405,7 @@ sub _make_test_token {
     my ( $self, $line, $ok, $num, $desc, $dir, $explanation ) = @_;
     return {
         ok          => $ok,
-
-        # forcing this to be an integer (and not a string) reduces memory
-        # consumption. RT #84939
-        test_num    => ( defined $num ? 0 + $num : undef ),
+        test_num    => $num,
         description => _trim($desc),
         directive   => ( defined $dir ? uc $dir : '' ),
         explanation => _trim($explanation),

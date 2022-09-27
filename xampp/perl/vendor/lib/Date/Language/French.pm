@@ -32,6 +32,5 @@ sub format_b { $MoYs[$_[0]->[4]] }
 sub format_B { $MoY[$_[0]->[4]] }
 sub format_h { $MoYs[$_[0]->[4]] }
 sub format_p { $_[0]->[2] >= 12 ?  $AMPM[1] : $AMPM[0] }
-sub format_o { $_[0]->[3] }
 
 1;

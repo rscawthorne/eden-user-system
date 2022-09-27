@@ -1,15 +1,21 @@
+
 package Class::MOP::Package;
-our $VERSION = '2.2014';
+BEGIN {
+  $Class::MOP::Package::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Class::MOP::Package::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
 
-use Scalar::Util 'blessed', 'weaken';
+use Scalar::Util 'blessed', 'reftype', 'weaken';
+use Carp         'confess';
 use Devel::GlobalDestruction 'in_global_destruction';
-use Module::Runtime 'module_notional_filename';
 use Package::Stash;
 
-use parent 'Class::MOP::Object';
+use base 'Class::MOP::Object';
 
 # creation ...
 
@@ -20,6 +26,7 @@ sub initialize {
 
     my %options = @args;
     my $package_name = delete $options{package};
+
 
     # we hand-construct the class until we can bootstrap it
     if ( my $meta = Class::MOP::get_metaclass_by_name($package_name) ) {
@@ -48,9 +55,7 @@ sub reinitialize {
 
     (defined $package_name && $package_name
       && (!blessed $package_name || $package_name->isa('Class::MOP::Package')))
-        || $class->_throw_exception( MustPassAPackageNameOrAnExistingClassMOPPackageInstance => params => \%options,
-                                                                                       class  => $class
-                          );
+        || confess "You must pass a package name or an existing Class::MOP::Package instance";
 
     $package_name = $package_name->name
         if blessed $package_name;
@@ -64,12 +69,7 @@ sub create {
     my $class = shift;
     my @args = @_;
 
-    my $meta = $class->initialize(@args);
-    my $filename = module_notional_filename($meta->name);
-    $INC{$filename} = '(set by Moose)'
-        unless exists $INC{$filename};
-
-    return $meta;
+    return $class->initialize(@args);
 }
 
 ## ANON packages
@@ -127,14 +127,7 @@ sub create {
         return $meta;
     }
 
-    sub _anon_cache_key {
-        my $class = shift;
-        my %options = @_;
-        $class->_throw_exception( PackagesAndModulesAreNotCachable => class_name => $class,
-                                                             params     => \%options,
-                                                             is_module  => 0
-                       );
-    }
+    sub _anon_cache_key { confess "Packages are not cacheable" }
 
     sub DESTROY {
         my $self = shift;
@@ -176,8 +169,6 @@ sub create {
         delete ${$first_fragments . '::'}{$last_fragment . '::'};
 
         Class::MOP::remove_metaclass_by_name($name);
-
-        delete $INC{module_notional_filename($name)};
     }
 
 }
@@ -271,11 +262,9 @@ sub get_all_package_symbols {
 
 # ABSTRACT: Package Meta Object
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -283,7 +272,7 @@ Class::MOP::Package - Package Meta Object
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -293,14 +282,16 @@ looking at and changing that namespace's symbol table.
 
 =head1 METHODS
 
-=head2 Class::MOP::Package->initialize($package_name, %options)
+=over 4
+
+=item B<< Class::MOP::Package->initialize($package_name, %options) >>
 
 This method creates a new C<Class::MOP::Package> instance which
 represents specified package. If an existing metaclass object exists
 for the package, that will be returned instead. No options are valid at the
 package level.
 
-=head2 Class::MOP::Package->reinitialize($package, %options)
+=item B<< Class::MOP::Package->reinitialize($package, %options) >>
 
 This method forcibly removes any existing metaclass for the package
 before calling C<initialize>. In contrast to C<initialize>, you may
@@ -309,47 +300,41 @@ a package name as C<$package>.
 
 Do not call this unless you know what you are doing.
 
-=head2 Class::MOP::Package->create($package, %options)
+=item B<< Class::MOP::Package->create($package, %options) >>
 
 Creates a new C<Class::MOP::Package> instance which represents the specified
 package, and also does some initialization of that package. Currently, this
 just does the same thing as C<initialize>, but is overridden in subclasses,
 such as C<Class::MOP::Class>.
 
-=head2 Class::MOP::Package->create_anon(%options)
+=item B<< Class::MOP::Package->create_anon(%options) >>
 
 Creates a new anonymous package. Valid keys for C<%options> are:
 
 =over 4
 
-=item C<cache>
-
-If this will be C<true> (the default is C<false>), the instance will be cached
-in C<Class::MOP>'s metaclass cache.
-
 =item C<weaken>
 
-If this is C<true> (the default C<true> when L<cache> is C<false>), the instance
-stored in C<Class::MOP>'s metaclass cache will be weakened, so that the
-anonymous package will be garbage collected when the returned instance goes out
-of scope.
+If this is true (the default), the instance stored in C<Class::MOP>'s metaclass
+cache will be weakened, so that the anonymous package will be garbage collected
+when the returned instance goes out of scope.
 
 =back
 
-=head2 $metapackage->is_anon
+=item B<< $metapackage->is_anon >>
 
 Returns true if the package is an anonymous package.
 
-=head2 $metapackage->name
+=item B<< $metapackage->name >>
 
 This is returns the package's name, as passed to the constructor.
 
-=head2 $metapackage->namespace
+=item B<< $metapackage->namespace >>
 
 This returns a hash reference to the package's symbol table. The keys
 are symbol names and the values are typeglob references.
 
-=head2 $metapackage->add_package_symbol($variable_name, $initial_value)
+=item B<< $metapackage->add_package_symbol($variable_name, $initial_value) >>
 
 This method accepts a variable name and an optional initial value. The
 C<$variable_name> must contain a leading sigil.
@@ -357,36 +342,36 @@ C<$variable_name> must contain a leading sigil.
 This method creates the variable in the package's symbol table, and
 sets it to the initial value if one was provided.
 
-=head2 $metapackage->get_package_symbol($variable_name)
+=item B<< $metapackage->get_package_symbol($variable_name) >>
 
 Given a variable name, this method returns the variable as a reference
 or undef if it does not exist. The C<$variable_name> must contain a
 leading sigil.
 
-=head2 $metapackage->get_or_add_package_symbol($variable_name)
+=item B<< $metapackage->get_or_add_package_symbol($variable_name) >>
 
 Given a variable name, this method returns the variable as a reference.
 If it does not exist, a default value will be generated if possible. The
 C<$variable_name> must contain a leading sigil.
 
-=head2 $metapackage->has_package_symbol($variable_name)
+=item B<< $metapackage->has_package_symbol($variable_name) >>
 
 Returns true if there is a package variable defined for
 C<$variable_name>. The C<$variable_name> must contain a leading sigil.
 
-=head2 $metapackage->remove_package_symbol($variable_name)
+=item B<< $metapackage->remove_package_symbol($variable_name) >>
 
 This will remove the package variable specified C<$variable_name>. The
 C<$variable_name> must contain a leading sigil.
 
-=head2 $metapackage->remove_package_glob($glob_name)
+=item B<< $metapackage->remove_package_glob($glob_name) >>
 
 Given the name of a glob, this will remove that glob from the
 package's symbol table. Glob names do not include a sigil. Removing
 the glob removes all variables and subroutines with the specified
 name.
 
-=head2 $metapackage->list_all_package_symbols($type_filter)
+=item B<< $metapackage->list_all_package_symbols($type_filter) >>
 
 This will list all the glob names associated with the current
 package. These names do not have leading sigils.
@@ -394,67 +379,31 @@ package. These names do not have leading sigils.
 You can provide an optional type filter, which should be one of
 'SCALAR', 'ARRAY', 'HASH', or 'CODE'.
 
-=head2 $metapackage->get_all_package_symbols($type_filter)
+=item B<< $metapackage->get_all_package_symbols($type_filter) >>
 
 This works much like C<list_all_package_symbols>, but it returns a
 hash reference. The keys are glob names and the values are references
 to the value for that name.
 
-=head2 Class::MOP::Package->meta
+=item B<< Class::MOP::Package->meta >>
 
 This will return a L<Class::MOP::Class> instance for this class.
 
-=head1 AUTHORS
-
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
 =back
+
+=head1 AUTHOR
+
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+

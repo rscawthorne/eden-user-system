@@ -5,14 +5,14 @@ require 5;
 package I18N::LangTags::Detect;
 use strict;
 
-our ( $MATCH_SUPERS, $USING_LANGUAGE_TAGS,
-             $USE_LITERALS, $MATCH_SUPERS_TIGHTLY);
+use vars qw( @ISA $VERSION $MATCH_SUPERS $USING_LANGUAGE_TAGS
+             $USE_LITERALS $MATCH_SUPERS_TIGHTLY);
 
 BEGIN { unless(defined &DEBUG) { *DEBUG = sub () {0} } }
  # define the constant 'DEBUG' at compile-time
 
-our $VERSION = "1.08";
-our @ISA = ();
+$VERSION = "1.05";
+@ISA = ();
 use I18N::LangTags qw(alternate_language_tags locale2language_tag);
 
 sub _uniq { my %seen; return grep(!($seen{$_}++), @_); }
@@ -145,8 +145,6 @@ sub _try_use {   # Basically a wrapper around "require Modulename"
   print " About to use $module ...\n" if DEBUG;
   {
     local $SIG{'__DIE__'};
-    local @INC = @INC;
-    pop @INC if $INC[-1] eq '.';
     eval "require $module"; # used to be "use $module", but no point in that.
   }
   if($@) {
@@ -203,13 +201,11 @@ C<I18N::LangTags::implicate_supers(...)>, like so:
 
 =head1 ENVIRONMENT
 
-This module looks at several environment variables:
+This module looks for several environment variables, including
 REQUEST_METHOD, HTTP_ACCEPT_LANGUAGE,
 LANGUAGE, LC_ALL, LC_MESSAGES, and LANG.
 
-It will also use the L<Win32::Locale> module, if it's installed
-and IGNORE_WIN32_LOCALE is not set to a true value in the
-environment.
+It will also use the L<Win32::Locale> module, if it's installed.
 
 
 =head1 SEE ALSO

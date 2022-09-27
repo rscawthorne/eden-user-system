@@ -6,8 +6,7 @@ use Devel::Declare ();
 use B::Hooks::EndOfScope;
 use Carp qw/confess/;
 
-our $VERSION = '0.006022';
-$VERSION =~ tr/_//d;
+our $VERSION = '0.006011';
 
 sub new {
   my $class = shift;

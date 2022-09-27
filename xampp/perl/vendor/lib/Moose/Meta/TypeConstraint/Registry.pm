@@ -1,5 +1,11 @@
+
 package Moose::Meta::TypeConstraint::Registry;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::TypeConstraint::Registry::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::TypeConstraint::Registry::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
@@ -7,9 +13,7 @@ use metaclass;
 
 use Scalar::Util 'blessed';
 
-use parent 'Class::MOP::Object';
-
-use Moose::Util 'throw_exception';
+use base 'Class::MOP::Object';
 
 __PACKAGE__->meta->add_attribute('parent_registry' => (
     reader    => 'get_parent_registry',
@@ -45,9 +49,8 @@ sub add_type_constraint {
     my ($self, $type) = @_;
 
     unless ( $type && blessed $type && $type->isa('Moose::Meta::TypeConstraint') ) {
-        throw_exception( InvalidTypeConstraint => registry_object => $self,
-                                                  type            => $type
-                       );
+        require Moose;
+        Moose->throw_error("No type supplied / type is not a valid type constraint");
     }
 
     $self->type_constraints->{$type->name} = $type;
@@ -66,11 +69,9 @@ sub find_type_constraint {
 
 # ABSTRACT: registry for type constraints
 
-__END__
+
 
 =pod
-
-=encoding UTF-8
 
 =head1 NAME
 
@@ -78,7 +79,7 @@ Moose::Meta::TypeConstraint::Registry - registry for type constraints
 
 =head1 VERSION
 
-version 2.2014
+version 2.0604
 
 =head1 DESCRIPTION
 
@@ -96,11 +97,13 @@ L<Class::MOP::Object>.
 
 =head1 METHODS
 
-=head2 Moose::Meta::TypeConstraint::Registry->new(%options)
+=over 4
+
+=item B<< Moose::Meta::TypeConstraint::Registry->new(%options) >>
 
 This creates a new registry object based on the provided C<%options>:
 
-=over 4
+=over 8
 
 =item * parent_registry
 
@@ -115,92 +118,57 @@ created.
 
 =back
 
-=head2 $registry->get_parent_registry
+=item B<< $registry->get_parent_registry >>
 
 Returns the registry's parent registry, if it has one.
 
-=head2 $registry->has_parent_registry
+=item B<< $registry->has_parent_registry >>
 
 Returns true if the registry has a parent.
 
-=head2 $registry->set_parent_registry($registry)
+=item B<< $registry->set_parent_registry($registry) >>
 
 Sets the parent registry.
 
-=head2 $registry->get_type_constraint($type_name)
+=item B<< $registry->get_type_constraint($type_name) >>
 
 This returns the L<Moose::Meta::TypeConstraint> object from the
 registry for the given name, if one exists.
 
-=head2 $registry->has_type_constraint($type_name)
+=item B<< $registry->has_type_constraint($type_name) >>
 
 Returns true if the registry has a type of the given name.
 
-=head2 $registry->add_type_constraint($type)
+=item B<< $registry->add_type_constraint($type) >>
 
 Adds a new L<Moose::Meta::TypeConstraint> object to the registry.
 
-=head2 $registry->find_type_constraint($type_name)
+=item B<< $registry->find_type_constraint($type_name) >>
 
 This method looks in the current registry for the named type. If the
 type is not found, then this method will look in the registry's
 parent, if it has one.
 
+=back
+
 =head1 BUGS
 
 See L<Moose/BUGS> for details on reporting bugs.
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-=over 4
-
-=item *
-
-Stevan Little <stevan@cpan.org>
-
-=item *
-
-Dave Rolsky <autarch@urth.org>
-
-=item *
-
-Jesse Luehrs <doy@cpan.org>
-
-=item *
-
-Shawn M Moore <sartak@cpan.org>
-
-=item *
-
-יובל קוג'מן (Yuval Kogman) <nothingmuch@woobling.org>
-
-=item *
-
-Karen Etheridge <ether@cpan.org>
-
-=item *
-
-Florian Ragwitz <rafl@debian.org>
-
-=item *
-
-Hans Dieter Pearcey <hdp@cpan.org>
-
-=item *
-
-Chris Prather <chris@prather.org>
-
-=item *
-
-Matt S Trout <mstrout@cpan.org>
-
-=back
+Moose is maintained by the Moose Cabal, along with the help of many contributors. See L<Moose/CABAL> and L<Moose/CONTRIBUTORS> for details.
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2006 by Infinity Interactive, Inc.
+This software is copyright (c) 2012 by Infinity Interactive, Inc..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
+
+
+__END__
+
+

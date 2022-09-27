@@ -1,9 +1,10 @@
 package TAP::Parser::Result::Pragma;
 
 use strict;
-use warnings;
 
-use base 'TAP::Parser::Result';
+use vars qw($VERSION @ISA);
+use TAP::Parser::Result;
+@ISA = 'TAP::Parser::Result';
 
 =head1 NAME
 
@@ -11,11 +12,11 @@ TAP::Parser::Result::Pragma - TAP pragma token.
 
 =head1 VERSION
 
-Version 3.42
+Version 3.26
 
 =cut
 
-our $VERSION = '3.42';
+$VERSION = '3.26';
 
 =head1 DESCRIPTION
 

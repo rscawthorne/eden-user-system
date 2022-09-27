@@ -4,6 +4,8 @@
 # SOAP::Lite is free software; you can redistribute it
 # and/or modify it under the same terms as Perl itself.
 #
+# $Id: SOAP.pm 414 2012-07-15 09:18:42Z kutterma $
+#
 # ======================================================================
 
 package Apache::SOAP;
@@ -13,7 +15,7 @@ use vars qw(@ISA $VERSION);
 use SOAP::Transport::HTTP;
 
 @ISA = qw(SOAP::Transport::HTTP::Apache);
-our $VERSION = '1.27'; # VERSION
+our $VERSION = 0.715;
 
 my $server = __PACKAGE__->new;
 
@@ -73,7 +75,7 @@ This Apache Perl module provides the ability to add support for SOAP (Simple
 Object Access Protocol) protocol with easy configuration (either in .conf or
 in .htaccess file). This functionality should give you lightweight option
 for hosting SOAP services and greatly simplify configuration aspects. This
-module inherits functionality from SOAP::Transport::HTTP::Apache component
+module inherites functionality from SOAP::Transport::HTTP::Apache component
 of SOAP::Lite module.
 
 =head1 CONFIGURATION

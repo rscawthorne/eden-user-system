@@ -9,8 +9,8 @@
  * Options:
  *
  * Defining _USE_MSVCRT_MEM_ALLOC will cause all memory allocations
- * to be forwarded to the compiler's MSVCR*.DLL. Defining _USE_LINKED_LIST as
- * well will track all allocations in a doubly linked list, so that the host can
+ * to be forwarded to MSVCRT.DLL. Defining _USE_LINKED_LIST as well will
+ * track all allocations in a doubly linked list, so that the host can
  * free all memory allocated when it goes away.
  * If _USE_MSVCRT_MEM_ALLOC is not defined then Knuth's boundary tag algorithm
  * is used; defining _USE_BUDDY_BLOCKS will use Knuth's algorithm R
@@ -21,7 +21,9 @@
 #ifndef ___VMEM_H_INC___
 #define ___VMEM_H_INC___
 
+#ifndef UNDER_CE
 #define _USE_MSVCRT_MEM_ALLOC
+#endif
 #define _USE_LINKED_LIST
 
 // #define _USE_BUDDY_BLOCKS
@@ -63,10 +65,13 @@ inline void MEMODSlx(char *str, long x)
 #endif
 
 /* 
- * Pass all memory requests through to the compiler's msvcr*.dll.
- * Optionaly track by using a doubly linked header.
+ * Pass all memory requests throught to msvcrt.dll 
+ * optionaly track by using a doubly linked header
  */
 
+typedef void (*LPFREE)(void *block);
+typedef void* (*LPMALLOC)(size_t size);
+typedef void* (*LPREALLOC)(void *block, size_t size);
 #ifdef _USE_LINKED_LIST
 class VMem;
 typedef struct _MemoryBlockHeader* PMEMORY_BLOCK_HEADER;
@@ -82,14 +87,14 @@ class VMem
 public:
     VMem();
     ~VMem();
-    void* Malloc(size_t size);
-    void* Realloc(void* pMem, size_t size);
-    void Free(void* pMem);
-    void GetLock(void);
-    void FreeLock(void);
-    int IsLocked(void);
-    long Release(void);
-    long AddRef(void);
+    virtual void* Malloc(size_t size);
+    virtual void* Realloc(void* pMem, size_t size);
+    virtual void Free(void* pMem);
+    virtual void GetLock(void);
+    virtual void FreeLock(void);
+    virtual int IsLocked(void);
+    virtual long Release(void);
+    virtual long AddRef(void);
 
     inline BOOL CreateOk(void)
     {
@@ -116,20 +121,30 @@ protected:
     }
 
     MEMORY_BLOCK_HEADER	m_Dummy;
-    CRITICAL_SECTION	m_cs;		// access lock
 #endif
 
     long		m_lRefCount;	// number of current users
+    CRITICAL_SECTION	m_cs;		// access lock
+    HINSTANCE		m_hLib;
+    LPFREE		m_pfree;
+    LPMALLOC		m_pmalloc;
+    LPREALLOC		m_prealloc;
 };
 
 VMem::VMem()
 {
     m_lRefCount = 1;
-#ifdef _USE_LINKED_LIST
     InitializeCriticalSection(&m_cs);
+#ifdef _USE_LINKED_LIST
     m_Dummy.pNext = m_Dummy.pPrev =  &m_Dummy;
     m_Dummy.owner = this;
 #endif
+    m_hLib = LoadLibrary("msvcrt.dll");
+    if (m_hLib) {
+	m_pfree = (LPFREE)GetProcAddress(m_hLib, "free");
+	m_pmalloc = (LPMALLOC)GetProcAddress(m_hLib, "malloc");
+	m_prealloc = (LPREALLOC)GetProcAddress(m_hLib, "realloc");
+    }
 }
 
 VMem::~VMem(void)
@@ -138,15 +153,17 @@ VMem::~VMem(void)
     while (m_Dummy.pNext != &m_Dummy) {
 	Free(m_Dummy.pNext+1);
     }
-    DeleteCriticalSection(&m_cs);
 #endif
+    if (m_hLib)
+	FreeLibrary(m_hLib);
+    DeleteCriticalSection(&m_cs);
 }
 
 void* VMem::Malloc(size_t size)
 {
 #ifdef _USE_LINKED_LIST
     GetLock();
-    PMEMORY_BLOCK_HEADER ptr = (PMEMORY_BLOCK_HEADER)malloc(size+sizeof(MEMORY_BLOCK_HEADER));
+    PMEMORY_BLOCK_HEADER ptr = (PMEMORY_BLOCK_HEADER)m_pmalloc(size+sizeof(MEMORY_BLOCK_HEADER));
     if (!ptr) {
 	FreeLock();
 	return NULL;
@@ -155,7 +172,7 @@ void* VMem::Malloc(size_t size)
     FreeLock();
     return (ptr+1);
 #else
-    return malloc(size);
+    return m_pmalloc(size);
 #endif
 }
 
@@ -173,7 +190,7 @@ void* VMem::Realloc(void* pMem, size_t size)
     GetLock();
     PMEMORY_BLOCK_HEADER ptr = (PMEMORY_BLOCK_HEADER)(((char*)pMem)-sizeof(MEMORY_BLOCK_HEADER));
     UnlinkBlock(ptr);
-    ptr = (PMEMORY_BLOCK_HEADER)realloc(ptr, size+sizeof(MEMORY_BLOCK_HEADER));
+    ptr = (PMEMORY_BLOCK_HEADER)m_prealloc(ptr, size+sizeof(MEMORY_BLOCK_HEADER));
     if (!ptr) {
 	FreeLock();
 	return NULL;
@@ -183,7 +200,7 @@ void* VMem::Realloc(void* pMem, size_t size)
 
     return (ptr+1);
 #else
-    return realloc(pMem, size);
+    return m_prealloc(pMem, size);
 #endif
 }
 
@@ -195,8 +212,9 @@ void VMem::Free(void* pMem)
         if (ptr->owner != this) {
 	    if (ptr->owner) {
 #if 1
+		dTHX;
 	    	int *nowhere = NULL;
-	    	Perl_warn_nocontext("Free to wrong pool %p not %p",this,ptr->owner);
+	    	Perl_warn(aTHX_ "Free to wrong pool %p not %p",this,ptr->owner);
             	*nowhere = 0; /* this segfault is deliberate, 
             	                 so you can see the stack trace */
 #else
@@ -208,26 +226,22 @@ void VMem::Free(void* pMem)
 	GetLock();
 	UnlinkBlock(ptr);
 	ptr->owner = NULL;
-	free(ptr);
+	m_pfree(ptr);
 	FreeLock();
     }
-#else /*_USE_LINKED_LIST*/
-    free(pMem);
+#else
+    m_pfree(pMem);
 #endif
 }
 
 void VMem::GetLock(void)
 {
-#ifdef _USE_LINKED_LIST
     EnterCriticalSection(&m_cs);
-#endif
 }
 
 void VMem::FreeLock(void)
 {
-#ifdef _USE_LINKED_LIST
     LeaveCriticalSection(&m_cs);
-#endif
 }
 
 int VMem::IsLocked(void)
@@ -282,7 +296,7 @@ long VMem::AddRef(void)
  * is freed, therefore space needs to be reserved for them.  Thus, the minimum
  * block size (not counting the tags) is 8 bytes.
  *
- * Since memory allocation may occur on a single threaded, explicit locks are not
+ * Since memory allocation may occur on a single threaded, explict locks are not
  * provided.
  * 
  */
@@ -399,14 +413,14 @@ class VMem
 public:
     VMem();
     ~VMem();
-    void* Malloc(size_t size);
-    void* Realloc(void* pMem, size_t size);
-    void Free(void* pMem);
-    void GetLock(void);
-    void FreeLock(void);
-    int IsLocked(void);
-    long Release(void);
-    long AddRef(void);
+    virtual void* Malloc(size_t size);
+    virtual void* Realloc(void* pMem, size_t size);
+    virtual void Free(void* pMem);
+    virtual void GetLock(void);
+    virtual void FreeLock(void);
+    virtual int IsLocked(void);
+    virtual long Release(void);
+    virtual long AddRef(void);
 
     inline BOOL CreateOk(void)
     {
@@ -1010,7 +1024,7 @@ int VMem::HeapAdd(void* p, size_t size
     , BOOL bBigBlock
 #endif
     )
-{   /* if the block can be successfully added to the heap, returns 0; otherwise -1. */
+{   /* if the block can be succesfully added to the heap, returns 0; otherwise -1. */
     int index;
 
     /* Check size, then round size down to next long word boundary. */

@@ -1,6 +1,6 @@
 @echo off
 cd /D %~dp0
-cmd.exe /C start "" /MIN call "@@BITROCK_INSTALLDIR@@\killprocess.bat" "httpd.exe"
+apache\bin\pv -f -k httpd.exe -q
 if not exist apache\logs\httpd.pid GOTO exit
 del apache\logs\httpd.pid
 

@@ -1,9 +1,10 @@
 package Imager::Expr;
-use 5.006;
+
 use Imager::Regops;
 use strict;
+use vars qw($VERSION);
 
-our $VERSION = "1.008";
+$VERSION = "1.005";
 
 my %expr_types;
 
@@ -295,7 +296,8 @@ sub dumpcode {
 }
 
 package Imager::Expr::Postfix;
-our @ISA = qw(Imager::Expr);
+use vars qw(@ISA);
+@ISA = qw(Imager::Expr);
 
 Imager::Expr::Postfix->register_type('rpnexpr');
 
@@ -317,15 +319,13 @@ sub compile {
 
 package Imager::Expr::Infix;
 
-our @ISA = qw(Imager::Expr);
+use vars qw(@ISA);
+@ISA = qw(Imager::Expr);
 use Imager::Regops qw(%Attr $MaxOperands);
 
-{
-  local @INC = @INC;
-  pop @INC if $INC[-1] eq '.';
-  eval "use Parse::RecDescent;";
-  __PACKAGE__->register_type('expr') if !$@;
-}
+
+eval "use Parse::RecDescent;";
+__PACKAGE__->register_type('expr') if !$@;
 
 # I really prefer bottom-up parsers
 my $grammar = <<'GRAMMAR';
@@ -695,9 +695,5 @@ Try to avoid doing your own optimization beyond literal folding - if
 we add some sort of jump, the existing optimizer will need to be
 rewritten, and any optimization you perform may well be broken too
 (well, your code generation will probably be broken anyway <sigh>).
-
-=head1 AUTHOR
-
-Tony Cook <tonyc@cpan.org>, Arnar M. Hrafnkelsson
 
 =cut

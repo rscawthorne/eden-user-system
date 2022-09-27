@@ -1,22 +1,18 @@
 # Net::Cmd.pm
 #
-# Copyright (C) 1995-2006 Graham Barr.  All rights reserved.
-# Copyright (C) 2013-2016, 2020 Steve Hay.  All rights reserved.
-# This module is free software; you can redistribute it and/or modify it under
-# the same terms as Perl itself, i.e. under the terms of either the GNU General
-# Public License or the Artistic License, as specified in the F<LICENCE> file.
+# Copyright (c) 1995-2006 Graham Barr <gbarr@pobox.com>. All rights reserved.
+# This program is free software; you can redistribute it and/or
+# modify it under the same terms as Perl itself.
 
 package Net::Cmd;
 
-use 5.008001;
+require 5.001;
+require Exporter;
 
 use strict;
-use warnings;
-
+use vars qw(@ISA @EXPORT $VERSION);
 use Carp;
-use Exporter;
 use Symbol 'gensym';
-use Errno 'EINTR';
 
 BEGIN {
   if ($^O eq 'os390') {
@@ -26,22 +22,37 @@ BEGIN {
   }
 }
 
-our $VERSION = "3.13";
-our @ISA     = qw(Exporter);
-our @EXPORT  = qw(CMD_INFO CMD_OK CMD_MORE CMD_REJECT CMD_ERROR CMD_PENDING);
+BEGIN {
+  if (!eval { require utf8 }) {
+    *is_utf8 = sub { 0 };
+  }
+  elsif (eval { utf8::is_utf8(undef); 1 }) {
+    *is_utf8 = \&utf8::is_utf8;
+  }
+  elsif (eval { require Encode; Encode::is_utf8(undef); 1 }) {
+    *is_utf8 = \&Encode::is_utf8;
+  }
+  else {
+    *is_utf8 = sub { $_[0] =~ /[^\x00-\xff]/ };
+  }
+}
 
-use constant CMD_INFO    => 1;
-use constant CMD_OK      => 2;
-use constant CMD_MORE    => 3;
-use constant CMD_REJECT  => 4;
-use constant CMD_ERROR   => 5;
-use constant CMD_PENDING => 0;
+$VERSION = "2.29";
+@ISA     = qw(Exporter);
+@EXPORT  = qw(CMD_INFO CMD_OK CMD_MORE CMD_REJECT CMD_ERROR CMD_PENDING);
 
-use constant DEF_REPLY_CODE => 421;
+
+sub CMD_INFO    {1}
+sub CMD_OK      {2}
+sub CMD_MORE    {3}
+sub CMD_REJECT  {4}
+sub CMD_ERROR   {5}
+sub CMD_PENDING {0}
 
 my %debug = ();
 
 my $tr = $^O eq 'os390' ? Convert::EBCDIC->new() : undef;
+
 
 sub toebcdic {
   my $cmd = shift;
@@ -67,7 +78,7 @@ sub toascii {
 
 
 sub _print_isa {
-  no strict 'refs'; ## no critic (TestingAndDebugging::ProhibitNoStrict)
+  no strict qw(refs);
 
   my $pkg = shift;
   my $cmd = $pkg;
@@ -100,7 +111,7 @@ sub _print_isa {
 
 
 sub debug {
-  @_ == 1 or @_ == 2 or croak 'usage: $obj->debug([$level])';
+  @_ == 1 or @_ == 2 or croak 'usage: $obj->debug([LEVEL])';
 
   my ($cmd, $level) = @_;
   my $pkg    = ref($cmd) || $cmd;
@@ -158,7 +169,7 @@ sub code {
 
   my $cmd = shift;
 
-  ${*$cmd}{'net_cmd_code'} = $cmd->DEF_REPLY_CODE
+  ${*$cmd}{'net_cmd_code'} = "000"
     unless exists ${*$cmd}{'net_cmd_code'};
 
   ${*$cmd}{'net_cmd_code'};
@@ -175,12 +186,12 @@ sub status {
 
 
 sub set_status {
-  @_ == 3 or croak 'usage: $obj->set_status($code, $resp)';
+  @_ == 3 or croak 'usage: $obj->set_status(CODE, MESSAGE)';
 
   my $cmd = shift;
   my ($code, $resp) = @_;
 
-  $resp = defined $resp ? [$resp] : []
+  $resp = [$resp]
     unless ref($resp);
 
   (${*$cmd}{'net_cmd_code'}, ${*$cmd}{'net_cmd_resp'}) = ($code, $resp);
@@ -188,95 +199,22 @@ sub set_status {
   1;
 }
 
-sub _syswrite_with_timeout {
-  my $cmd = shift;
-  my $line = shift;
-
-  my $len    = length($line);
-  my $offset = 0;
-  my $win    = "";
-  vec($win, fileno($cmd), 1) = 1;
-  my $timeout = $cmd->timeout || undef;
-  my $initial = time;
-  my $pending = $timeout;
-
-  local $SIG{PIPE} = 'IGNORE' unless $^O eq 'MacOS';
-
-  while ($len) {
-    my $wout;
-    my $nfound = select(undef, $wout = $win, undef, $pending);
-    if ((defined $nfound and $nfound > 0) or -f $cmd)    # -f for testing on win32
-    {
-      my $w = syswrite($cmd, $line, $len, $offset);
-      if (! defined($w) ) {
-        my $err = $!;
-        $cmd->close;
-        $cmd->_set_status_closed($err);
-        return;
-      }
-      $len -= $w;
-      $offset += $w;
-    }
-    elsif ($nfound == -1) {
-      if ( $! == EINTR ) {
-        if ( defined($timeout) ) {
-          redo if ($pending = $timeout - ( time - $initial ) ) > 0;
-          $cmd->_set_status_timeout;
-          return;
-        }
-        redo;
-      }
-      my $err = $!;
-      $cmd->close;
-      $cmd->_set_status_closed($err);
-      return;
-    }
-    else {
-      $cmd->_set_status_timeout;
-      return;
-    }
-  }
-
-  return 1;
-}
-
-sub _set_status_timeout {
-  my $cmd = shift;
-  my $pkg = ref($cmd) || $cmd;
-
-  $cmd->set_status($cmd->DEF_REPLY_CODE, "[$pkg] Timeout");
-  carp(ref($cmd) . ": " . (caller(1))[3] . "(): timeout") if $cmd->debug;
-}
-
-sub _set_status_closed {
-  my $cmd = shift;
-  my $err = shift;
-  my $pkg = ref($cmd) || $cmd;
-
-  $cmd->set_status($cmd->DEF_REPLY_CODE, "[$pkg] Connection closed");
-  carp(ref($cmd) . ": " . (caller(1))[3]
-    . "(): unexpected EOF on command channel: $err") if $cmd->debug;
-}
-
-sub _is_closed {
-  my $cmd = shift;
-  if (!defined fileno($cmd)) {
-     $cmd->_set_status_closed($!);
-     return 1;
-  }
-  return 0;
-}
 
 sub command {
   my $cmd = shift;
 
-  return $cmd
-    if $cmd->_is_closed;
+  unless (defined fileno($cmd)) {
+    $cmd->set_status("599", "Connection closed");
+    return $cmd;
+  }
+
 
   $cmd->dataend()
     if (exists ${*$cmd}{'net_cmd_last_ch'});
 
   if (scalar(@_)) {
+    local $SIG{PIPE} = 'IGNORE' unless $^O eq 'MacOS';
+
     my $str = join(
       " ",
       map {
@@ -288,13 +226,17 @@ sub command {
     $str = $cmd->toascii($str) if $tr;
     $str .= "\015\012";
 
+    my $len = length $str;
+    my $swlen;
+
+    $cmd->close
+      unless (defined($swlen = syswrite($cmd, $str, $len)) && $swlen == $len);
+
     $cmd->debug_print(1, $str)
       if ($cmd->debug);
 
-    # though documented to return undef on failure, the legacy behavior
-    # was to return $cmd even on failure, so this odd construct does that
-    $cmd->_syswrite_with_timeout($str)
-      or return $cmd;
+    ${*$cmd}{'net_cmd_resp'} = [];       # the response
+    ${*$cmd}{'net_cmd_code'} = "000";    # Made this one up :-)
   }
 
   $cmd;
@@ -312,8 +254,8 @@ sub ok {
 sub unsupported {
   my $cmd = shift;
 
-  $cmd->set_status(580, 'Unsupported command');
-
+  ${*$cmd}{'net_cmd_resp'} = ['Unsupported command'];
+  ${*$cmd}{'net_cmd_code'} = 580;
   0;
 }
 
@@ -327,11 +269,11 @@ sub getline {
     if scalar(@{${*$cmd}{'net_cmd_lines'}});
 
   my $partial = defined(${*$cmd}{'net_cmd_partial'}) ? ${*$cmd}{'net_cmd_partial'} : "";
+  my $fd      = fileno($cmd);
 
-  return
-    if $cmd->_is_closed;
+  return undef
+    unless defined $fd;
 
-  my $fd = fileno($cmd);
   my $rin = "";
   vec($rin, $fd, 1) = 1;
 
@@ -344,10 +286,10 @@ sub getline {
     my $select_ret = select($rout = $rin, undef, undef, $timeout);
     if ($select_ret > 0) {
       unless (sysread($cmd, $buf = "", 1024)) {
-        my $err = $!;
+        carp(ref($cmd) . ": Unexpected EOF on command channel")
+          if $cmd->debug;
         $cmd->close;
-        $cmd->_set_status_closed($err);
-        return;
+        return undef;
       }
 
       substr($buf, 0, 0) = $partial;    ## prepend from last sysread
@@ -360,8 +302,9 @@ sub getline {
 
     }
     else {
-      $cmd->_set_status_timeout;
-      return;
+      my $msg = $select_ret ? "Error or Interrupted: $!" : "Timeout";
+      carp("$cmd: $msg") if ($cmd->debug);
+      return undef;
     }
   }
 
@@ -396,7 +339,7 @@ sub response {
   my $cmd = shift;
   my ($code, $more) = (undef) x 2;
 
-  $cmd->set_status($cmd->DEF_REPLY_CODE, undef); # initialize the response
+  ${*$cmd}{'net_cmd_resp'} ||= [];
 
   while (1) {
     my $str = $cmd->getline();
@@ -409,10 +352,8 @@ sub response {
 
     ($code, $more) = $cmd->parse_response($str);
     unless (defined $code) {
-      carp("$cmd: response(): parse error in '$str'") if ($cmd->debug);
       $cmd->ungetline($str);
-      $@ = $str;   # $@ used as tunneling hack
-      return CMD_ERROR;
+      last;
     }
 
     ${*$cmd}{'net_cmd_code'} = $code;
@@ -422,7 +363,6 @@ sub response {
     last unless ($more);
   }
 
-  return unless defined $code;
   substr($code, 0, 1);
 }
 
@@ -433,7 +373,7 @@ sub read_until_dot {
   my $arr = [];
 
   while (1) {
-    my $str = $cmd->getline() or return;
+    my $str = $cmd->getline() or return undef;
 
     $cmd->debug_print(0, $str)
       if ($cmd->debug & 4);
@@ -459,24 +399,13 @@ sub datasend {
   my $arr  = @_ == 1 && ref($_[0]) ? $_[0] : \@_;
   my $line = join("", @$arr);
 
-  # Perls < 5.10.1 (with the exception of 5.8.9) have a performance problem with
-  # the substitutions below when dealing with strings stored internally in
-  # UTF-8, so downgrade them (if possible).
-  # Data passed to datasend() should be encoded to octets upstream already so
-  # shouldn't even have the UTF-8 flag on to start with, but if it so happens
-  # that the octets are stored in an upgraded string (as can sometimes occur)
-  # then they would still downgrade without fail anyway.
-  # Only Unicode codepoints > 0xFF stored in an upgraded string will fail to
-  # downgrade. We fail silently in that case, and a "Wide character in print"
-  # warning will be emitted later by syswrite().
-  utf8::downgrade($line, 1) if $] < 5.010001 && $] != 5.008009;
+  # encode to individual utf8 bytes if
+  # $line is a string (in internal UTF-8)
+  utf8::encode($line) if is_utf8($line);
 
-  return 0
-    if $cmd->_is_closed;
+  return 0 unless defined(fileno($cmd));
 
   my $last_ch = ${*$cmd}{'net_cmd_last_ch'};
-
-  # We have not send anything yet, so last_ch = "\012" means we are at the start of a line
   $last_ch = ${*$cmd}{'net_cmd_last_ch'} = "\012" unless defined $last_ch;
 
   return 1 unless length $line;
@@ -492,13 +421,9 @@ sub datasend {
   my $first_ch = '';
 
   if ($last_ch eq "\015") {
-    # Remove \012 so it does not get prefixed with another \015 below
-    # and escape the . if there is one following it because the fixup
-    # below will not find it
-    $first_ch = "\012" if $line =~ s/^\012(\.?)/$1$1/;
+    $first_ch = "\012" if $line =~ s/^\012//;
   }
   elsif ($last_ch eq "\012") {
-    # Fixup below will not find the . as the first character of the buffer
     $first_ch = "." if $line =~ /^\./;
   }
 
@@ -508,8 +433,32 @@ sub datasend {
 
   ${*$cmd}{'net_cmd_last_ch'} = substr($line, -1, 1);
 
-  $cmd->_syswrite_with_timeout($line)
-    or return;
+  my $len    = length($line);
+  my $offset = 0;
+  my $win    = "";
+  vec($win, fileno($cmd), 1) = 1;
+  my $timeout = $cmd->timeout || undef;
+
+  local $SIG{PIPE} = 'IGNORE' unless $^O eq 'MacOS';
+
+  while ($len) {
+    my $wout;
+    my $s = select(undef, $wout = $win, undef, $timeout);
+    if ((defined $s and $s > 0) or -f $cmd)    # -f for testing on win32
+    {
+      my $w = syswrite($cmd, $line, $len, $offset);
+      unless (defined($w)) {
+        carp("$cmd: $!") if $cmd->debug;
+        return undef;
+      }
+      $len -= $w;
+      $offset += $w;
+    }
+    else {
+      carp("$cmd: Timeout") if ($cmd->debug);
+      return undef;
+    }
+  }
 
   1;
 }
@@ -520,8 +469,7 @@ sub rawdatasend {
   my $arr  = @_ == 1 && ref($_[0]) ? $_[0] : \@_;
   my $line = join("", @$arr);
 
-  return 0
-    if $cmd->_is_closed;
+  return 0 unless defined(fileno($cmd));
 
   return 1
     unless length($line);
@@ -531,8 +479,29 @@ sub rawdatasend {
     print STDERR $b, join("\n$b", split(/\n/, $line)), "\n";
   }
 
-  $cmd->_syswrite_with_timeout($line)
-    or return;
+  my $len    = length($line);
+  my $offset = 0;
+  my $win    = "";
+  vec($win, fileno($cmd), 1) = 1;
+  my $timeout = $cmd->timeout || undef;
+
+  local $SIG{PIPE} = 'IGNORE' unless $^O eq 'MacOS';
+  while ($len) {
+    my $wout;
+    if (select(undef, $wout = $win, undef, $timeout) > 0) {
+      my $w = syswrite($cmd, $line, $len, $offset);
+      unless (defined($w)) {
+        carp("$cmd: $!") if $cmd->debug;
+        return undef;
+      }
+      $len -= $w;
+      $offset += $w;
+    }
+    else {
+      carp("$cmd: Timeout") if ($cmd->debug);
+      return undef;
+    }
+  }
 
   1;
 }
@@ -541,8 +510,7 @@ sub rawdatasend {
 sub dataend {
   my $cmd = shift;
 
-  return 0
-    if $cmd->_is_closed;
+  return 0 unless defined(fileno($cmd));
 
   my $ch = ${*$cmd}{'net_cmd_last_ch'};
   my $tosend;
@@ -556,11 +524,12 @@ sub dataend {
 
   $tosend .= ".\015\012";
 
+  local $SIG{PIPE} = 'IGNORE' unless $^O eq 'MacOS';
+
   $cmd->debug_print(1, ".\n")
     if ($cmd->debug);
 
-  $cmd->_syswrite_with_timeout($tosend)
-    or return 0;
+  syswrite($cmd, $tosend, length $tosend);
 
   delete ${*$cmd}{'net_cmd_last_ch'};
 
@@ -652,68 +621,59 @@ Net::Cmd - Network Command class (as used by FTP, SMTP etc)
 
 =head1 DESCRIPTION
 
-C<Net::Cmd> is a collection of methods that can be inherited by a sub-class
-of C<IO::Socket::INET>. These methods implement the functionality required for a
+C<Net::Cmd> is a collection of methods that can be inherited by a sub class
+of C<IO::Handle>. These methods implement the functionality required for a
 command based protocol, for example FTP and SMTP.
 
-If your sub-class does not also derive from C<IO::Socket::INET> or similar (e.g.
-C<IO::Socket::IP>, C<IO::Socket::INET6> or C<IO::Socket::SSL>) then you must
-provide the following methods by other means yourself: C<close()> and
-C<timeout()>.
-
-=head2 Public Methods
+=head1 USER METHODS
 
 These methods provide a user interface to the C<Net::Cmd> object.
 
 =over 4
 
-=item C<debug($level)>
+=item debug ( VALUE )
 
-Set the level of debug information for this object. If C<$level> is not given
+Set the level of debug information for this object. If C<VALUE> is not given
 then the current state is returned. Otherwise the state is changed to 
-C<$level> and the previous state returned. 
+C<VALUE> and the previous state returned. 
 
 Different packages
 may implement different levels of debug but a non-zero value results in 
 copies of all commands and responses also being sent to STDERR.
 
-If C<$level> is C<undef> then the debug level will be set to the default
+If C<VALUE> is C<undef> then the debug level will be set to the default
 debug level for the class.
 
 This method can also be called as a I<static> method to set/get the default
 debug level for a given class.
 
-=item C<message()>
+=item message ()
 
-Returns the text message returned from the last command. In a scalar
-context it returns a single string, in a list context it will return
-each line as a separate element. (See L<PSEUDO RESPONSES> below.)
+Returns the text message returned from the last command
 
-=item C<code()>
+=item code ()
 
 Returns the 3-digit code from the last command. If a command is pending
-then the value 0 is returned. (See L<PSEUDO RESPONSES> below.)
+then the value 0 is returned
 
-=item C<ok()>
+=item ok ()
 
 Returns non-zero if the last code value was greater than zero and
 less than 400. This holds true for most command servers. Servers
 where this does not hold may override this method.
 
-=item C<status()>
+=item status ()
 
 Returns the most significant digit of the current status code. If a command
 is pending then C<CMD_PENDING> is returned.
 
-=item C<datasend($data)>
+=item datasend ( DATA )
 
 Send data to the remote server, converting LF to CRLF. Any line starting
 with a '.' will be prefixed with another '.'.
-C<$data> may be an array or a reference to an array.
-The C<$data> passed in must be encoded by the caller to octets of whatever
-encoding is required, e.g. by using the Encode module's C<encode()> function.
+C<DATA> may be an array or a reference to an array.
 
-=item C<dataend()>
+=item dataend ()
 
 End the sending of data to the remote server. This is done by ensuring that
 the data already sent ends with CRLF then sending '.CRLF' to end the
@@ -722,53 +682,53 @@ returns true if C<response> returns CMD_OK.
 
 =back
 
-=head2 Protected Methods
+=head1 CLASS METHODS
 
 These methods are not intended to be called by the user, but used or 
 over-ridden by a sub-class of C<Net::Cmd>
 
 =over 4
 
-=item C<debug_print($dir, $text)>
+=item debug_print ( DIR, TEXT )
 
-Print debugging information. C<$dir> denotes the direction I<true> being
+Print debugging information. C<DIR> denotes the direction I<true> being
 data being sent to the server. Calls C<debug_text> before printing to
 STDERR.
 
-=item C<debug_text($dir, $text)>
+=item debug_text ( TEXT )
 
-This method is called to print debugging information. C<$text> is
-the text being sent. The method should return the text to be printed.
+This method is called to print debugging information. TEXT is
+the text being sent. The method should return the text to be printed
 
 This is primarily meant for the use of modules such as FTP where passwords
 are sent, but we do not want to display them in the debugging information.
 
-=item C<command($cmd[, $args, ... ])>
+=item command ( CMD [, ARGS, ... ])
 
-Send a command to the command server. All arguments are first joined with
+Send a command to the command server. All arguments a first joined with
 a space character and CRLF is appended, this string is then sent to the
 command server.
 
-Returns undef upon failure.
+Returns undef upon failure
 
-=item C<unsupported()>
+=item unsupported ()
 
 Sets the status code to 580 and the response text to 'Unsupported command'.
 Returns zero.
 
-=item C<response()>
+=item response ()
 
 Obtain a response from the server. Upon success the most significant digit
-of the status code is returned. Upon failure, timeout etc., I<CMD_ERROR> is
+of the status code is returned. Upon failure, timeout etc., I<undef> is
 returned.
 
-=item C<parse_response($text)>
+=item parse_response ( TEXT )
 
 This method is called by C<response> as a method with one argument. It should
 return an array of 2 values, the 3-digit status code and a flag which is true
-when this is part of a multi-line response and this line is not the last.
+when this is part of a multi-line response and this line is not the list.
 
-=item C<getline()>
+=item getline ()
 
 Retrieve one line, delimited by CRLF, from the remote server. Returns I<undef>
 upon failure.
@@ -776,26 +736,23 @@ upon failure.
 B<NOTE>: If you do use this method for any reason, please remember to add
 some C<debug_print> calls into your method.
 
-=item C<ungetline($text)>
+=item ungetline ( TEXT )
 
 Unget a line of text from the server.
 
-=item C<rawdatasend($data)>
+=item rawdatasend ( DATA )
 
-Send data to the remote server without performing any conversions. C<$data>
+Send data to the remote server without performing any conversions. C<DATA>
 is a scalar.
-As with C<datasend()>, the C<$data> passed in must be encoded by the caller
-to octets of whatever encoding is required, e.g. by using the Encode module's
-C<encode()> function.
 
-=item C<read_until_dot()>
+=item read_until_dot ()
 
 Read data from the remote server until a line consisting of a single '.'.
 Any lines starting with '..' will have one of the '.'s removed.
 
 Returns a reference to a list containing the lines, or I<undef> upon failure.
 
-=item C<tied_fh()>
+=item tied_fh ()
 
 Returns a filehandle tied to the Net::Cmd object.  After issuing a
 command, you may read from this filehandle using read() or <>.  The
@@ -807,104 +764,20 @@ See the Net::POP3 and Net::SMTP modules for examples of this.
 
 =back
 
-=head2 Pseudo Responses
-
-Normally the values returned by C<message()> and C<code()> are
-obtained from the remote server, but in a few circumstances, as
-detailed below, C<Net::Cmd> will return values that it sets. You
-can alter this behavior by overriding DEF_REPLY_CODE() to specify
-a different default reply code, or overriding one of the specific
-error handling methods below.
-
-=over 4
-
-=item Initial value
-
-Before any command has executed or if an unexpected error occurs
-C<code()> will return "421" (temporary connection failure) and
-C<message()> will return undef.
-
-=item Connection closed
-
-If the underlying C<IO::Handle> is closed, or if there are
-any read or write failures, the file handle will be forced closed,
-and C<code()> will return "421" (temporary connection failure)
-and C<message()> will return "[$pkg] Connection closed"
-(where $pkg is the name of the class that subclassed C<Net::Cmd>).
-The _set_status_closed() method can be overridden to set a different
-message (by calling set_status()) or otherwise trap this error.
-
-=item Timeout
-
-If there is a read or write timeout C<code()> will return "421"
-(temporary connection failure) and C<message()> will return
-"[$pkg] Timeout" (where $pkg is the name of the class
-that subclassed C<Net::Cmd>). The _set_status_timeout() method
-can be overridden to set a different message (by calling set_status())
-or otherwise trap this error.
-
-=back
-
 =head1 EXPORTS
 
-The following symbols are, or can be, exported by this module:
-
-=over 4
-
-=item Default Exports
-
-C<CMD_INFO>,
-C<CMD_OK>,
-C<CMD_MORE>,
-C<CMD_REJECT>,
-C<CMD_ERROR>,
-C<CMD_PENDING>.
-
-(These correspond to possible results of C<response()> and C<status()>.)
-
-=item Optional Exports
-
-I<None>.
-
-=item Export Tags
-
-I<None>.
-
-=back
-
-=head1 KNOWN BUGS
-
-See L<https://rt.cpan.org/Dist/Display.html?Status=Active&Queue=libnet>.
+C<Net::Cmd> exports six subroutines, five of these, C<CMD_INFO>, C<CMD_OK>,
+C<CMD_MORE>, C<CMD_REJECT> and C<CMD_ERROR>, correspond to possible results
+of C<response> and C<status>. The sixth is C<CMD_PENDING>.
 
 =head1 AUTHOR
 
-Graham Barr E<lt>L<gbarr@pobox.com|mailto:gbarr@pobox.com>E<gt>.
-
-Steve Hay E<lt>L<shay@cpan.org|mailto:shay@cpan.org>E<gt> is now maintaining
-libnet as of version 1.22_02.
+Graham Barr <gbarr@pobox.com>
 
 =head1 COPYRIGHT
 
-Copyright (C) 1995-2006 Graham Barr.  All rights reserved.
-
-Copyright (C) 2013-2016, 2020 Steve Hay.  All rights reserved.
-
-=head1 LICENCE
-
-This module is free software; you can redistribute it and/or modify it under the
-same terms as Perl itself, i.e. under the terms of either the GNU General Public
-License or the Artistic License, as specified in the F<LICENCE> file.
-
-=head1 VERSION
-
-Version 3.13
-
-=head1 DATE
-
-23 Dec 2020
-
-=head1 HISTORY
-
-See the F<Changes> file.
+Copyright (c) 1995-2006 Graham Barr. All rights reserved.
+This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
 
 =cut

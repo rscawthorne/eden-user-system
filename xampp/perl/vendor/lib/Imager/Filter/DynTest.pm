@@ -1,10 +1,10 @@
 package Imager::Filter::DynTest;
-use 5.006;
 use strict;
 use Imager;
+use vars qw($VERSION @ISA);
 
 BEGIN {
-  our $VERSION = "0.03";
+  $VERSION = "0.02";
   
   require XSLoader;
   XSLoader::load('Imager::Filter::DynTest', $VERSION);

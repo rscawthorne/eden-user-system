@@ -1,5 +1,10 @@
 package Moose::Meta::Method::Accessor::Native::Hash::shallow_clone;
-our $VERSION = '2.2014';
+BEGIN {
+  $Moose::Meta::Method::Accessor::Native::Hash::shallow_clone::AUTHORITY = 'cpan:STEVAN';
+}
+{
+  $Moose::Meta::Method::Accessor::Native::Hash::shallow_clone::VERSION = '2.0604';
+}
 
 use strict;
 use warnings;
@@ -8,7 +13,14 @@ use Params::Util ();
 
 use Moose::Role;
 
-with 'Moose::Meta::Method::Accessor::Native::Reader';
+with 'Moose::Meta::Method::Accessor::Native::Reader' => {
+    -excludes => [
+        qw(
+            _minimum_arguments
+            _maximum_arguments
+            )
+    ]
+};
 
 sub _minimum_arguments { 0 }
 
