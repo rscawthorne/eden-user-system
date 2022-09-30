@@ -1,22 +1,22 @@
 <?php // All pages must include 'include_head.php' at the start, and 'include_tail.php' at the end ?>
 
 <!-- page head -->
-<?php include_once('include_head.php');?>
+<?php include_once('includes\include_head.php');?>
 
 <?php // function to make form input component
-include_once('include_makeforminput.php');?>
+include_once('includes\include_make_form_component.php');?>
 
 <!-- page specific code here -->
     <b>Use these login credentials:</b>
     <br>email: admin@admin.com
     <br>password: 9n36F582b8JBLMny
         <!-- login form -->
-		<form id="loginform" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']);?>" method="post">
+		<form id="loginform" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']);?>" method="post" class="row py-3 needs-validation" novalidate>
             <!-- email address input -->
-            <?php makeFormInput('email', 'Email', 'email', 'is-invalid', 'Enter email', 'required', 'Please provide a valid email address.'); ?>
+            <?php makeForm_input('email', 'Email', 'email', '', '', 'Enter email', 'required', 'Please provide a valid email address.'); ?>
 
             <!-- password input -->
-            <?php makeFormInput('password', 'Password', 'password', 'is-invalid', 'Enter password', 'required', 'Please enter your password.'); ?>
+            <?php makeForm_input('password', 'Password', 'password', '', '', 'Enter password', 'required', 'Please enter your password.'); ?>
             
             <!-- submit button -->
 			<div class="col-12 py-2">
@@ -26,6 +26,27 @@ include_once('include_makeforminput.php');?>
 
         <!-- login form handler -->
         <script type="text/javascript">
+            // Form validation feedback
+            // Starter JavaScript for disabling form submissions if there are invalid fields
+            (() => {
+                'use strict';
+
+                // Fetch all the forms we want to apply custom Bootstrap validation styles to
+                const formComponents = document.querySelectorAll('.needs-validation');
+
+                // Loop over them and prevent submission
+                Array.prototype.slice.call(formComponents).forEach((formItem) => {
+                    formItem.addEventListener('submit', (event) => {
+                        if (!formItem.checkValidity()) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        formItem.classList.add('was-validated');
+                    }, false);
+                });
+            })();
+            
+            // AJAX submission
             $(document).ready(function() {
                 $('#loginform').submit(function(e) {
                     e.preventDefault();
@@ -57,4 +78,4 @@ include_once('include_makeforminput.php');?>
         </script>
 
 <!-- page tail -->
-<?php include_once('include_tail.php');?>
+<?php include_once('includes\include_tail.php');?>

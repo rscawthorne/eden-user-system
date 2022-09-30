@@ -1,7 +1,7 @@
 <?php // All pages must include 'include_head.php' at the start, and 'include_tail.php' at the end ?>
 
 <!-- page head -->
-<?php include_once('include_head.php');?>
+<?php include_once('includes\include_head.php');?>
 
 <!-- page specific code here -->
 <?php
@@ -10,12 +10,13 @@
         // return to homepage
         header("location: /");
     }
-
-    echo '<h1>Colleague Details</h1>';
 ?>
 
+<h1>Colleague Details</h1>
+Enter the colleague details below.
+
 <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']);?>" method="post">
-    <?php include_once('include_personal_form.php');?>
+    <?php include_once('includes\include_personal_form.php');?>
 
     <!-- bot check -->
     <div class="form-group row px-3 py-1">
@@ -34,4 +35,4 @@
 </form>
 
 <!-- page tail -->
-<?php include_once('include_tail.php');?>
+<?php include_once('includes\include_tail.php');?>

@@ -1,14 +1,14 @@
 <?php // All pages must include 'include_head.php' at the start, and 'include_tail.php' at the end ?>
 
 <!-- page head -->
-<?php include_once('include_head.php');?>
+<?php include_once('includes\include_head.php');?>
 
 <?php // function to make form input component
-include_once('include_makeforminput.php');?>
+include_once('includes\include_make_form_component.php');?>
 
 <!-- page specific code here -->
 		<form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']);?>" method="post">
-            <?php include_once('include_personal_form.php');?>
+            <?php include_once('includes\include_personal_form.php');?>
 
             <!-- bot check -->
             <div class="form-group row px-3 py-1">
@@ -27,4 +27,4 @@ include_once('include_makeforminput.php');?>
 		</form>
 
 <!-- page tail -->
-<?php include_once('include_tail.php');?>
+<?php include_once('includes\include_tail.php');?>

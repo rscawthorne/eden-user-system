@@ -2,12 +2,13 @@
 	// ajax files are accessed directly - be careful
 
 	// check user logged in: store user info in $db_user, $db_personal, $db_colleague, $db_permissions
-	include_once('include_session.php');
-
+	include_once('includes\include_session.php');
+	
     // check url parameters
     if($_SERVER["REQUEST_METHOD"] == "POST") {
         $email =  mysqli_real_escape_string($db, $_POST['email']);
         $password = mysqli_real_escape_string($db, $_POST['password']);
+		
         // SQL find user record
         $sql = "SELECT * FROM users WHERE email='$email';";
         $result = mysqli_query($db,$sql);
