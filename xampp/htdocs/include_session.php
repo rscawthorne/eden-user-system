@@ -1,3 +1,11 @@
+<?php 
+	// prevent direct access
+	if (basename(__FILE__) == basename($_SERVER['SCRIPT_NAME'])){
+		http_response_code(404);
+		echo '404 Forbidden';
+		die();
+	}
+?>
 
 <?php
 	// connect to database, stored in $db
@@ -10,20 +18,21 @@
 	$db_permissions = '';
 	// load the cookie
 	session_start();
+	//echo '<br>'; print_r($_COOKIE);
 	
 	// check if there exists a session cookie
-	if(isset($_SESSION['session_user'])){
-		$session_user  = mysqli_real_escape_string($db, $_SESSION['session_user']);
-		$session_token = mysqli_real_escape_string($db, $_SESSION['session_token']);
+	if(isset($_COOKIE['session_id'])){
+		$session_id    = mysqli_real_escape_string($db, $_COOKIE['session_id']);
+		$session_token = mysqli_real_escape_string($db, $_COOKIE['session_token']);
 		// check for matching username and sessionkey
-		$query = "select * from users where id='$session_user' AND session_token='$session_token';";
+		$query = "select * from users where id='$session_id' AND session_token='$session_token';";
 		//$query = "select * from users where id='1';";
 		$result = mysqli_query($db, $query) or die("Error: " . mysqli_error($db));
 		// Count the returned rows, 1 would mean user-id and session-token was found
 		if(mysqli_num_rows($result)){
 			// get USER row
 			$db_user = mysqli_fetch_assoc($result);
-			//echo 'USER: '; print_r($db_user); echo '<br>';
+			//echo '<br>USER: '; print_r($db_user);
 			
 			// get PERSONAL row from fk_personal in db_user
 			if(isset($db_user['fk_personal'])){
@@ -34,7 +43,7 @@
 					$db_personal = mysqli_fetch_assoc($result);
 				}
 			}
-			//echo 'PERSONAL: '; print_r($db_personal); echo '<br>';
+			//echo '<br>PERSONAL: '; print_r($db_personal);
 			
 			// get COLLEAGUE row from fk_colleague in db_user
 			if(isset($db_user['fk_colleague'])){
@@ -45,7 +54,7 @@
 					$db_colleague = mysqli_fetch_assoc($result);
 				}
 			}
-			//echo 'COLLEAGUE: '; print_r($db_colleague); echo '<br>';
+			//echo '<br>COLLEAGUE: '; print_r($db_colleague);
 			
 			// get PERMISSIONS row from fk_permissions in db_user
 			if(isset($db_user['fk_permissions'])){
@@ -56,7 +65,7 @@
 					$db_permissions = mysqli_fetch_assoc($result);
 				}
 			}
-			//echo 'PERMISSIONS: '; print_r($db_permissions); echo '<br>';
+			//echo '<br>PERMISSIONS: '; print_r($db_permissions);
 		}else{
 			// invalid cookie: user-id and/or session-token
 			echo 'Invalid session';
