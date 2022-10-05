@@ -1,33 +1,68 @@
 
 body {
-	background: none;
+  margin: 0;
+  font-family: "Lato", sans-serif;
 }
 
-.full {
-  background: url(/assets/bg.jpg) no-repeat center center fixed; 
-  -webkit-background-size: cover;
-  -moz-background-size: cover;
-  -o-background-size: cover;
-  background-size: cover;
-  background-size: cover;
+.table.table-sm td {
+	padding: 2px 2px;
 }
 
-.fill {
-  object-fit: fill;
+.sidebar {
+  margin: 0;
+  padding-top: 75px; /* Padding for the navigation bar */
+  width: 200px; /* Same as the width of the content class */
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+  /* z-index: 1; Stay on top */
+  top: 0;  /* Stay at the top */
+  left: 0; /* Stay on the left */
 }
 
-.contain {
-  object-fit: contain;
+.sidebar h1,h2,h3,h4 {
+  color: black;
+  padding: 0px 0px 0px 16px;
 }
 
-.cover {
-  object-fit: cover;
+.sidebar a {
+  display: block;
+  color: black;
+  padding: 3px 3px 3px 20px;
+  text-decoration: none;
+  font-size: 16px;
+}
+ 
+.sidebar a.active {
+  background-color: #444;
+  color: white;
 }
 
-.none {
-  object-fit: none;
+.sidebar a:hover:not(.active) {
+  background-color: #DDD;
+  color: black;
 }
 
-.scale-down {
-  object-fit: scale-down;
+div.content {
+  margin-left: 200px; /* Same as the width of the sidebar class */
+  padding: 10px 0px;
+  height: 1000px;
+}
+
+@media screen and (max-width: 700px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+  .sidebar a {float: left;}
+  div.content {margin-left: 0;}
+}
+
+@media screen and (max-width: 400px) {
+  .sidebar a {
+    text-align: center;
+    float: none;
+  }
 }

@@ -1,24 +1,23 @@
-<?php // All pages must include 'include_head.php' at the start, and 'include_tail.php' at the end ?>
+<?php // All pages must include 'inc_head.php' at the start, and 'inc_tail.php' at the end ?>
 
 <!-- page head -->
-<?php include_once('includes\include_head.php');?>
-
-<?php // function to make form input component
-include_once('includes\include_make_form_component.php');?>
+<?php include_once('includes\inc_head.php');?>
 
 <!-- page specific code here -->
-		<form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']);?>" method="post">
-            <?php include_once('includes\include_personal_form.php');?>
+<?php include_once('includes\inc_form_builder.php'); // form builder ?>
 
-            <!-- bot check -->
-            <div class="form-group row px-3 py-1">
-				<div class="col-sm-2 form-check">
-                    <input class="form-check-input is-invalid" type="checkbox" value="" id="botcheck" required>
-                    <label class="form-check-label" for="botcheck">I'm not a bot.</label>
-				</div>
-                <div id="botcheck_feedback" class="col-sm-6 invalid_feedback">You must agree before submitting.</div>
-                <div class="col-sm-4"></div>
-			</div>
+This page doesn't do anything yet.
+		<form 
+                action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']);?>" 
+                method="post"
+            class="row col-sm-12 col-lg-10 py-3"
+        >
+            <?php 
+                // personal form builder
+                build_personal_form();
+                // bot check
+                build_bot_check();
+            ?>
 
             <!-- submit button -->
 			<div class="col-12 py-1">
@@ -27,4 +26,4 @@ include_once('includes\include_make_form_component.php');?>
 		</form>
 
 <!-- page tail -->
-<?php include_once('includes\include_tail.php');?>
+<?php include_once('includes\inc_tail.php');?>

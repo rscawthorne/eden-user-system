@@ -1,7 +1,7 @@
-<?php // All pages must include 'include_head.php' at the start, and 'include_tail.php' at the end ?>
+<?php // All pages must include 'inc_head.php' at the start, and 'inc_tail.php' at the end ?>
 
 <!-- page head -->
-<?php include_once('includes\include_head.php');?>
+<?php include_once('includes\inc_head.php');?>
 
 <!-- page specific code here -->
 <?php
@@ -13,4 +13,5 @@
 ?>
 
 <!-- page tail -->
-<?php include_once('includes\include_tail.php');?>
+<?php include_once('includes\inc_tail.php');?>
+
