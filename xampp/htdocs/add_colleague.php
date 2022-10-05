@@ -7,7 +7,7 @@
 <?php include_once('includes\inc_form_builder.php'); // form builder ?>
 <?php include_once('includes\inc_access_admins.php'); // logged in admins only ?>
 
-<h1>Colleague Details</h1>
+<h1>Add Colleague</h1>
 This form is not implemented yet. Validation works on inputs, but does not create a database record.
 
 <form 

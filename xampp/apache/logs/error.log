@@ -1742,3 +1742,13 @@
 [Wed Oct 05 08:17:36.358821 2022] [:error] [pid 4868:tid 1976] [client 127.0.0.1:56886] PHP Fatal error:  Cannot use object of type mysqli_result as array in C:\\Users\\Cosmic\\Documents\\GitHub\\eden_user_system\\xampp\\htdocs\\view_colleague.php on line 36, referer: https://localhost/add_colleague.php
 [Wed Oct 05 08:18:25.404712 2022] [:error] [pid 4868:tid 1976] [client 127.0.0.1:56891] PHP Notice:  Undefined variable: result in C:\\Users\\Cosmic\\Documents\\GitHub\\eden_user_system\\xampp\\htdocs\\view_colleague.php on line 42, referer: https://localhost/view_colleague.php
 [Wed Oct 05 08:18:25.407475 2022] [:error] [pid 4868:tid 1976] [client 127.0.0.1:56891] PHP Warning:  mysqli_fetch_assoc() expects parameter 1 to be mysqli_result, null given in C:\\Users\\Cosmic\\Documents\\GitHub\\eden_user_system\\xampp\\htdocs\\view_colleague.php on line 42, referer: https://localhost/view_colleague.php
+[Wed Oct 05 09:38:48.538455 2022] [ssl:warn] [pid 14660:tid 652] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Wed Oct 05 09:38:48.607457 2022] [core:warn] [pid 14660:tid 652] AH00098: pid file C:/Users/Cosmic/Documents/GitHub/eden_user_system/xampp/apache/logs/httpd.pid overwritten -- Unclean shutdown of previous Apache run?
+[Wed Oct 05 09:38:48.707718 2022] [ssl:warn] [pid 14660:tid 652] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Wed Oct 05 09:38:49.077440 2022] [mpm_winnt:notice] [pid 14660:tid 652] AH00455: Apache/2.4.23 (Win32) OpenSSL/1.0.2h PHP/5.6.24 configured -- resuming normal operations
+[Wed Oct 05 09:38:49.077440 2022] [mpm_winnt:notice] [pid 14660:tid 652] AH00456: Apache Lounge VC11 Server built: Jul  7 2016 11:13:22
+[Wed Oct 05 09:38:49.077440 2022] [core:notice] [pid 14660:tid 652] AH00094: Command line: 'c:\\users\\cosmic\\documents\\github\\eden_user_system\\xampp\\apache\\bin\\httpd.exe -d C:/Users/Cosmic/Documents/GitHub/eden_user_system/xampp/apache'
+[Wed Oct 05 09:38:49.077440 2022] [mpm_winnt:notice] [pid 14660:tid 652] AH00418: Parent: Created child process 10564
+[Wed Oct 05 09:38:49.955294 2022] [ssl:warn] [pid 10564:tid 656] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Wed Oct 05 09:38:50.102395 2022] [ssl:warn] [pid 10564:tid 656] AH01909: www.example.com:443:0 server certificate does NOT include an ID which matches the server name
+[Wed Oct 05 09:38:50.155734 2022] [mpm_winnt:notice] [pid 10564:tid 656] AH00354: Child: Starting 150 worker threads.

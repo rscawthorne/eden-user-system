@@ -34,11 +34,11 @@
         <h4>Menu</h4>
 		<?php 
 			makeSideLink_checkActive('/', 'Home');
-			makeSideLink_checkActive('/dashboard.php', 'Dashboard');
 			
 			// check if the user is logged in
 			if($db_user){
 				// user logged in
+				makeSideLink_checkActive('/dashboard.php', 'Dashboard');
 				
 				// if user is an admin
 				if($db_permissions){if($db_permissions['is_admin']){

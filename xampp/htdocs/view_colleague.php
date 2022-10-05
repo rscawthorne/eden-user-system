@@ -5,6 +5,8 @@
 
 <!-- page specific code here -->
 <?php include_once('includes\inc_access_admins.php'); // logged in admins only ?>
+
+<h1>View Colleagues</h1>
 List of users and colleagues.
 Many features are not yet implemented.
 
